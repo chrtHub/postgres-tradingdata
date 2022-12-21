@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      docker: 18
+      nodejs: 16
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 897621100871.dkr.ecr.us-east-1.amazonaws.com
+      - npm install
+  build:
+    commands:
+      - npm run build
+      - docker build -t chrt-express-postgres-tradingdata .
+      - docker tag chrt-express-postgres-tradingdata:latest 897621100871.dkr.ecr.us-east-1.amazonaws.com/chrt-express-postgres-tradingdata:latest
+  post_build:
+    commands:
+      - docker push 897621100871.dkr.ecr.us-east-1.amazonaws.com/chrt-express-postgres-tradingdata:latest
+      # - printf $PORT
+#
+# artifacts:
+# files:
