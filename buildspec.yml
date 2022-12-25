@@ -16,7 +16,7 @@ phases:
   post_build:
     commands:
       - docker push 897621100871.dkr.ecr.us-east-1.amazonaws.com/chrt-express-postgres-tradingdata:latest
-      # below, "name" = Task Definition Name
+      # below, "name" = Task Definition Name, or rather the Container Name listed under Task Definition Revisions in the AWS Console (perhaps the same as Task Def. name)
       - printf '[{"name":"express-postgres","imageUri":"897621100871.dkr.ecr.us-east-1.amazonaws.com/chrt-express-postgres-tradingdata:latest"}]' > imagedefinitions.json
 artifacts:
   files: imagedefinitions.json
