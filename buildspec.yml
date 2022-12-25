@@ -18,4 +18,4 @@ phases:
       - docker push 897621100871.dkr.ecr.us-east-1.amazonaws.com/chrt-express-postgres-tradingdata:latest
       - printf '[{"name":"chrt-express-postgres-tradingdata","imageUri":"897621100871.dkr.ecr.us-east-1.amazonaws.com/chrt-express-postgres-tradingdata:latest"}' > imagedefinitions.json
 artifacts:
-files: imagedefinitions.json
+  files: imagedefinitions.json
