@@ -15,8 +15,8 @@ ls -l
 # User
 # "ec2-user"
 
-# EC2 Bastion instance public IPv4
-# 44.211.243.36
+# EC2 Bastion instance public IPv4 (as of 2022-12-25)
+# 18.207.101.199
 
 # command to make tunnel
 ssh -i "chrt-1-bastion-postgres-02.pem" -NL 2222:db-instance-chrt-user-trading-data.cmlzf31dlxgq.us-east-1.rds.amazonaws.com:5432 ec2-user@18.207.101.199
