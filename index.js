@@ -7,11 +7,6 @@ app.get("/", function (req, res) {
   res.send("Hello World");
 });
 
-//-- Target Group Health Check --//
-app.get("/health", function (req, res) {
-  res.send("healthy!");
-});
-
 app.get("/data", function (req, res) {
   res.json({ foo: "bar" });
 });
