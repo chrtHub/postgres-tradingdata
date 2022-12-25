@@ -1,3 +1,5 @@
-# initial commit
+# Server
 
-protected main branch
+Web server available at https://alb.chrt.com
+
+To be used for querying RDS instance running PostgreSQL
