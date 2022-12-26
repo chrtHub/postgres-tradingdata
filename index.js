@@ -1,3 +1,6 @@
+//-- Express server --//
+import express from "express";
+
 //-- Secrets Manager --//
 import {
   SecretsManagerClient,
@@ -7,11 +10,12 @@ import {
 //-- SSM (for Parameter Store) --//
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 
-//-- pg package for PosgtgreSQL queries --//
-const Client = require("pg");
+//-- Allow for a CommonJS "require" statement inside this ES Modules file --//
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
-//-- Express server --//
-import express from "express";
+//-- Use "require" statement for 'pg' package used for PosgtgreSQL queries --//
+const Client = require("pg");
 
 //-- Express server --//
 const app = express();
@@ -40,7 +44,7 @@ const ssm_client = new SSMClient({
 let getParameter_response;
 let database_url;
 
-async function getParams() {
+async function getDatabaseUrlFromParameterStore() {
   try {
     getParameter_response = await ssm_client.send(
       new GetParameterCommand({
@@ -53,7 +57,7 @@ async function getParams() {
     console.error(error);
   }
 }
-await getParams();
+await getDatabaseUrlFromParameterStore();
 
 //-- Database password from Secrets Manager --//
 const secretsManager_client = new SecretsManagerClient({
@@ -62,7 +66,7 @@ const secretsManager_client = new SecretsManagerClient({
 let getSecret_response;
 let database_password;
 
-async function getSecrets() {
+async function getDatabasePasswordFromSecretsManager() {
   try {
     getSecret_response = await secretsManager_client.send(
       new GetSecretValueCommand({
@@ -78,7 +82,7 @@ async function getSecrets() {
     // throw error;
   }
 }
-await getSecrets();
+await getDatabasePasswordFromSecretsManager();
 
 //-- pg connect to RDS Instance --//
 const pgClient = new Client();
