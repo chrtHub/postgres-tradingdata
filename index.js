@@ -73,16 +73,6 @@ async function getDatabasePasswordFromSecretsManager() {
 }
 await getDatabasePasswordFromSecretsManager();
 
-//-- pg connect to RDS Instance --//
-// const pgClient = new Client();
-// await pgClient.connect();
-
-// const res = await pgClient.query("SELECT $1::text as message", [
-//   "Hello world!",
-// ]);
-// console.log(res.rows[0].message); // Hello world!
-// await pgClient.end();
-
 //-- Configure pg Client to connect to RDS Instance --//
 const pgClient = new Client({
   host: `${db_host}`,
@@ -97,3 +87,13 @@ await pgClient.connect();
 const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
 console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
 await pgClient.end();
+
+//-- pg connect to RDS Instance --//
+// const pgClient = new Client();
+// await pgClient.connect();
+
+// const res = await pgClient.query("SELECT $1::text as message", [
+//   "Hello world!",
+// ]);
+// console.log(res.rows[0].message); // Hello world!
+// await pgClient.end();
