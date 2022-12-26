@@ -33,49 +33,32 @@ app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
 
-//-- Database instance URL from Parameter Store --//
-const ssm_client = new SSMClient({
-  region: "us-east-1",
-});
-let getParameter_response;
-let databaseURL;
-
-async function getDatabaseUrlFromParameterStore() {
-  try {
-    getParameter_response = await ssm_client.send(
-      new GetParameterCommand({
-        Name: "/chrt/journal/prod/rds-postgres/instance-url",
-      })
-    );
-    databaseURL = getParameter_response.Parameter.Value;
-    console.log("databaseURL: " + databaseURL); // DEV
-  } catch (error) {
-    console.error(error);
-  }
-}
-await getDatabaseUrlFromParameterStore();
-
 //-- Database password from Secrets Manager --//
 const secretsManager_client = new SecretsManagerClient({
   region: "us-east-1",
 });
-let getSecret_response;
-let databasePassword;
+let getSecretResponse;
+let db_host;
+let db_port;
+let db_dbname;
+let db_username;
+let db_password;
 
 async function getDatabasePasswordFromSecretsManager() {
   try {
-    getSecret_response = await secretsManager_client.send(
+    getSecretResponse = await secretsManager_client.send(
       new GetSecretValueCommand({
         SecretId: "/chrt/journal/prod/rds-postgres/password",
         VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
       })
     );
-    databasePassword = getSecret_response.SecretString;
-    console.log("databasePassword: " + databasePassword); // DEV
+    db_host = getSecretResponse.SecretString.host;
+    db_port = getSecretResponse.SecretString.port;
+    db_dbname = getSecretResponse.SecretString.dbname;
+    db_username = getSecretResponse.SecretString.username;
+    db_password = getSecretResponse.SecretString.password;
   } catch (error) {
     console.log(error);
-    // For a list of exceptions thrown, see: https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-    // throw error;
   }
 }
 await getDatabasePasswordFromSecretsManager();
@@ -92,11 +75,11 @@ await pgClient.end();
 
 //-- Configure pg Client to connect to RDS Instance --//
 // const client = new Client({
-//   host: `${databaseURL}`,
-//   port: 5432,
-//   user: "postgres",
-//   password: `${databasePassword}`,
-//   database: "chrtUserTradingData",
+//   host: `${db_host}`,
+//   port: `${db_port}`,
+//   database: `${db_dbname}`,
+//   user: `${db_username}`,
+//   password: `${db_password}`,
 // });
 
 // // run sample query
