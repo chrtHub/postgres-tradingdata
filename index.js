@@ -1,28 +1,28 @@
 //-- Require Secrets Manager --//
-const {
+import {
   SecretsManagerClient,
   GetSecretValueCommand,
-} = require("@aws-sdk/client-secrets-manager");
+} from "@aws-sdk/client-secrets-manager";
 
 //-- Require SSM (for Parameter Store) --//
-const { SSMClient } = require("@aws-sdk/client-ssm");
+import { SSMClient } from "@aws-sdk/client-ssm";
 
 //-- Require express --//
-const express = require("express");
+import express from "express";
 
 //-- Express server --//
 const app = express();
 const PORT = 8080;
 
-app.get("/", function (req, res) {
+app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.get("/data", function (req, res) {
+app.get("/data", (req, res) => {
   res.json({ foo: "bar" });
 });
 
-app.get("/rolling", function (req, res) {
+app.get("/rolling", (req, res) => {
   res.send("rolling update");
 });
 
@@ -52,7 +52,7 @@ async function getParams() {
 }
 await getParams();
 
-//-- Database password from secrets manager --//
+//-- Database password from Secrets Manager --//
 const secretsManager_client = new SecretsManagerClient({
   region: "us-east-1",
 });
@@ -69,7 +69,7 @@ async function getSecrets() {
     );
     database_password = getSecret_response.SecretString;
   } catch (error) {
-    console.error(error);
+    console.log(error);
     // For a list of exceptions thrown, see: https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
     // throw error;
   }
