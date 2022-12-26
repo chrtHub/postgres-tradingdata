@@ -36,34 +36,44 @@ const ssm_client = new SSMClient({
   region: "us-east-1",
 });
 let getParameter_response;
-try {
-  getParameter_response = await ssm_client.send(
-    new GetParameterCommand({
-      Name: "/chrt/journal/prod/rds-postgres/instance-url",
-    })
-  );
-} catch (error) {
-  console.error(error);
+let database_url;
+
+async function getParams() {
+  try {
+    getParameter_response = await ssm_client.send(
+      new GetParameterCommand({
+        Name: "/chrt/journal/prod/rds-postgres/instance-url",
+      })
+    );
+    database_url = getParameter_response.Parameter.Value;
+  } catch (error) {
+    console.error(error);
+  }
 }
-const database_url = getParameter_response.Parameter.Value;
+await getParams();
 
 //-- Database password from secrets manager --//
 const secretsManager_client = new SecretsManagerClient({
   region: "us-east-1",
 });
 let getSecret_response;
-try {
-  getSecret_response = await secretsManager_client.send(
-    new GetSecretValueCommand({
-      SecretId: "/chrt/journal/prod/rds-postgres/password",
-      VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
-    })
-  );
-} catch (error) {
-  console.error(error);
-  // For a list of exceptions thrown, see: https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-  // throw error;
+let database_password;
+
+async function getSecrets() {
+  try {
+    getSecret_response = await secretsManager_client.send(
+      new GetSecretValueCommand({
+        SecretId: "/chrt/journal/prod/rds-postgres/password",
+        VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
+      })
+    );
+    database_password = getSecret_response.SecretString;
+  } catch (error) {
+    console.error(error);
+    // For a list of exceptions thrown, see: https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+    // throw error;
+  }
 }
-const database_password = getSecret_response.SecretString;
+await getSecrets();
 
 // pg connect to rds instance
