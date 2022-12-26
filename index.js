@@ -1,13 +1,16 @@
-//-- Require Secrets Manager --//
+//-- Secrets Manager --//
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
 
-//-- Require SSM (for Parameter Store) --//
+//-- SSM (for Parameter Store) --//
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 
-//-- Require express --//
+//-- pg package for PosgtgreSQL queries --//
+import { Client } from "pg";
+
+//-- Express server --//
 import express from "express";
 
 //-- Express server --//
@@ -30,7 +33,6 @@ app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
 
-// // Is this needed?? or just hardcode??
 //-- Database instance URL from Parameter Store --//
 const ssm_client = new SSMClient({
   region: "us-east-1",
@@ -78,4 +80,27 @@ async function getSecrets() {
 }
 await getSecrets();
 
-// pg connect to rds instance
+//-- pg connect to RDS Instance --//
+const pgClient = new Client();
+await pgClient.connect();
+
+const res = await pgClient.query("SELECT $1::text as message", [
+  "Hello world!",
+]);
+console.log(res.rows[0].message); // Hello world!
+await pgClient.end();
+
+//-- Configure pg Client to connect to RDS Instance --//
+const client = new Client({
+  host: `${getParameter_response}`,
+  port: 5432,
+  user: "postgres",
+  password: `${database_password}`,
+  database: "chrtUserTradingData",
+});
+
+// run sample query
+await pgClient.connect();
+const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
+console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
+await pgClient.end();
