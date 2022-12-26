@@ -7,9 +7,6 @@ import {
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
 
-//-- SSM (for Parameter Store) --//
-import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
-
 //-- Allow for a CommonJS "require" statement inside this ES Modules file --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
