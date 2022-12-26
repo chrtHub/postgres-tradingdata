@@ -42,7 +42,7 @@ const ssm_client = new SSMClient({
   region: "us-east-1",
 });
 let getParameter_response;
-let database_url;
+let databaseURL;
 
 async function getDatabaseUrlFromParameterStore() {
   try {
@@ -51,8 +51,8 @@ async function getDatabaseUrlFromParameterStore() {
         Name: "/chrt/journal/prod/rds-postgres/instance-url",
       })
     );
-    database_url = getParameter_response.Parameter.Value;
-    console.log("database_url: " + database_url); // DEV
+    databaseURL = getParameter_response.Parameter.Value;
+    console.log("databaseURL: " + databaseURL); // DEV
   } catch (error) {
     console.error(error);
   }
@@ -64,7 +64,7 @@ const secretsManager_client = new SecretsManagerClient({
   region: "us-east-1",
 });
 let getSecret_response;
-let database_password;
+let databasePassword;
 
 async function getDatabasePasswordFromSecretsManager() {
   try {
@@ -74,8 +74,8 @@ async function getDatabasePasswordFromSecretsManager() {
         VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
       })
     );
-    database_password = getSecret_response.SecretString;
-    console.log("database_url: " + database_password); // DEV
+    databasePassword = getSecret_response.SecretString;
+    console.log("databasePassword: " + databasePassword); // DEV
   } catch (error) {
     console.log(error);
     // For a list of exceptions thrown, see: https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
@@ -95,16 +95,16 @@ console.log(res.rows[0].message); // Hello world!
 await pgClient.end();
 
 //-- Configure pg Client to connect to RDS Instance --//
-const client = new Client({
-  host: `${getParameter_response}`,
-  port: 5432,
-  user: "postgres",
-  password: `${database_password}`,
-  database: "chrtUserTradingData",
-});
+// const client = new Client({
+//   host: `${databaseURL}`,
+//   port: 5432,
+//   user: "postgres",
+//   password: `${databasePassword}`,
+//   database: "chrtUserTradingData",
+// });
 
-// run sample query
-await pgClient.connect();
-const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
-console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
-await pgClient.end();
+// // run sample query
+// await pgClient.connect();
+// const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
+// console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
+// await pgClient.end();
