@@ -29,10 +29,6 @@ app.get("/data", (req, res) => {
   res.json({ foo: "bar" });
 });
 
-app.get("/rolling", (req, res) => {
-  res.send("rolling update");
-});
-
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
