@@ -8,7 +8,7 @@ import {
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 
 //-- pg package for PosgtgreSQL queries --//
-import { Client } from "pg";
+const Client = require("pg");
 
 //-- Express server --//
 import express from "express";
