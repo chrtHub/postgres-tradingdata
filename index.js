@@ -5,7 +5,7 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 
 //-- Require SSM (for Parameter Store) --//
-import { SSMClient } from "@aws-sdk/client-ssm";
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 
 //-- Require express --//
 import express from "express";
@@ -46,6 +46,7 @@ async function getParams() {
       })
     );
     database_url = getParameter_response.Parameter.Value;
+    console.log("database_url: " + database_url); // DEV
   } catch (error) {
     console.error(error);
   }
@@ -68,6 +69,7 @@ async function getSecrets() {
       })
     );
     database_password = getSecret_response.SecretString;
+    console.log("database_url: " + database_password); // DEV
   } catch (error) {
     console.log(error);
     // For a list of exceptions thrown, see: https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
