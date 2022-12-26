@@ -15,7 +15,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
 //-- Use "require" statement for 'pg' package used for PosgtgreSQL queries --//
-const Client = require("pg");
+const { Client } = require("pg");
 
 //-- Express server --//
 const app = express();
