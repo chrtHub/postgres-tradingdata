@@ -12,7 +12,6 @@ const express = require("express");
 
 //-- Express server --//
 const app = express();
-
 const PORT = 8080;
 
 app.get("/", function (req, res) {
@@ -30,6 +29,23 @@ app.get("/rolling", function (req, res) {
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
+
+// // Is this needed?? or just hardcode??
+//-- Database instance URL from Parameter Store --//
+const ssm_client = new SSMClient({
+  region: "us-east-1",
+});
+let getParameter_response;
+try {
+  getParameter_response = await ssm_client.send(
+    new GetParameterCommand({
+      Name: "/chrt/journal/prod/rds-postgres/instance-url",
+    })
+  );
+} catch (error) {
+  console.error(error);
+}
+const database_url = getParameter_response.Parameter.Value;
 
 //-- Database password from secrets manager --//
 const secretsManager_client = new SecretsManagerClient({
@@ -50,19 +66,4 @@ try {
 }
 const database_password = getSecret_response.SecretString;
 
-//-- Database instance URL from Parameter Store --//
-// // Is this needed?? or just hardcode??
-const ssm_client = new SSMClient({
-  region: "us-east-1",
-});
-let getParameter_response;
-try {
-  getParameter_response = await ssm_client.send(
-    new GetParameterCommand({
-      Name: "/chrt/journal/prod/rds-postgres/instance-url",
-    })
-  );
-} catch (error) {
-  console.error(error);
-}
-const database_url = getParameter_response.Parameter.Value;
+// pg connect to rds instance
