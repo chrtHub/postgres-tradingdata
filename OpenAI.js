@@ -44,8 +44,4 @@ const completion = await openai.createCompletion({
   model: "text-davinci-002",
   prompt: "It was the best of times, it was the",
 });
-// console.log(completion);
-// console.log(completion.status);
-// console.log(completion.headers);
-// console.log(completion.config);
 console.log(completion.data.choices[0].text);
