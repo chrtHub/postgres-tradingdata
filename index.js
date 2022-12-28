@@ -1,3 +1,4 @@
+//-- *************** Imports & Secrets *************** --//
 //-- Express server --//
 import express from "express";
 
@@ -10,11 +11,41 @@ import {
 //-- Allow for a CommonJS "require" statement inside this ES Modules file --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
+const { Client } = require("pg"); //-- 'pg' for PostgreSQL --//
 
-//-- Use "require" statement for 'pg' package used for PosgtgreSQL queries --//
-const { Client } = require("pg");
+//-- Database password from Secrets Manager --//
+const secretsManager_client = new SecretsManagerClient({
+  region: "us-east-1",
+});
+let getSecretValueResponse;
+let db_host;
+let db_port;
+let db_dbname;
+let db_username;
+let db_password;
 
-//-- Express server --//
+async function getDatabasePasswordFromSecretsManager() {
+  try {
+    getSecretValueResponse = await secretsManager_client.send(
+      new GetSecretValueCommand({
+        SecretId: "/chrt/journal/prod/rds-postgres/password",
+        VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
+      })
+    );
+    //-- Parse string into JSON, store values into variables --//
+    let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
+    db_host = SecretStringJSON.host;
+    db_port = SecretStringJSON.port;
+    db_dbname = SecretStringJSON.dbname;
+    db_username = SecretStringJSON.username;
+    db_password = SecretStringJSON.password;
+  } catch (error) {
+    console.log(error);
+  }
+}
+await getDatabasePasswordFromSecretsManager();
+
+//-- *************** Express server *************** --//
 const app = express();
 const PORT = 8080;
 
@@ -30,70 +61,34 @@ app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
 
-//-- Database password from Secrets Manager --//
-const secretsManager_client = new SecretsManagerClient({
-  region: "us-east-1",
-});
-let getSecretResponse;
-let db_host;
-let db_port;
-let db_dbname;
-let db_username;
-let db_password;
-
-async function getDatabasePasswordFromSecretsManager() {
-  try {
-    getSecretResponse = await secretsManager_client.send(
-      new GetSecretValueCommand({
-        SecretId: "/chrt/journal/prod/rds-postgres/password",
-        VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
-      })
-    );
-    db_host = getSecretResponse.SecretString.host;
-    db_port = getSecretResponse.SecretString.port;
-    db_dbname = getSecretResponse.SecretString.dbname;
-    db_username = getSecretResponse.SecretString.username;
-    db_password = getSecretResponse.SecretString.password;
-    console.log(
-      "db_host: " +
-        db_host +
-        "\n" +
-        "db_port: " +
-        db_port +
-        "\n" +
-        "db_name: " +
-        db_name +
-        "\n" +
-        "db_username: " +
-        db_username
-    ); // DEV
-  } catch (error) {
-    console.log(error);
-  }
-}
-await getDatabasePasswordFromSecretsManager();
-
+//-- *************** PostgreSQL Client *************** --//
 //-- Configure pg Client to connect to RDS Instance --//
-const pgClient = new Client({
-  host: `${db_host}`,
-  port: `${db_port}`,
-  database: `${db_dbname}`,
-  user: `${db_username}`,
-  password: `${db_password}`,
-});
+let clientConfig = {
+  host: db_host,
+  port: 5433, // db_port,
+  database: db_dbname,
+  user: db_username,
+  password: db_password,
+};
+console.log(clientConfig); // DEV
 
-// run sample query
-await pgClient.connect();
-const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
-console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
-await pgClient.end();
+const pgClient = new Client(clientConfig);
 
-//-- pg connect to RDS Instance --//
-// const pgClient = new Client();
-// await pgClient.connect();
+const fetchFunction = async () => {
+  await pgClient.connect(); // currently not connecting
+  console.log("post-connect()"); // DEV
+  // run sample query without hitting database
+  const res = await pgClient.query("SELECT $1::text as message", [
+    "Hello world!",
+  ]);
+  console.log(res.rows[0].message); // Hello world!
+  console.log("post-query()"); // DEV
+  await pgClient.end();
+  console.log("post-end()"); // DEV
+};
+await fetchFunction();
 
-// const res = await pgClient.query("SELECT $1::text as message", [
-//   "Hello world!",
-// ]);
-// console.log(res.rows[0].message); // Hello world!
-// await pgClient.end();
+//----//
+// sample query that hits the database
+// const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
+// console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
