@@ -2,8 +2,8 @@ version: 0.2
 
 env:
   secrets-manager:
-    DOCKERHUB_USERNAME: "/dockerhub:username"
-    DOCKERHUB_PASSWORD: "/dockerhub:password"
+    DOCKERHUB_USERNAME: "dockerhub/aaronmaxcarver:username"
+    DOCKERHUB_PASSWORD: "dockerhub/aaronmaxcarver:password"
 phases:
   install:
     runtime-versions:
