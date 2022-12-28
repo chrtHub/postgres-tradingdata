@@ -77,18 +77,19 @@ const pgClient = new Client(clientConfig);
 const fetchFunction = async () => {
   await pgClient.connect(); // currently not connecting
   console.log("post-connect()"); // DEV
-  // run sample query without hitting database
+
+  //-- (1) Query - don't hit database --//
   const res = await pgClient.query("SELECT $1::text as message", [
     "Hello world!",
   ]);
   console.log(res.rows[0].message); // Hello world!
+
+  //-- (2) Query - hit database --//
+  const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
+  console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
+
   console.log("post-query()"); // DEV
   await pgClient.end();
   console.log("post-end()"); // DEV
 };
 await fetchFunction();
-
-//----//
-// sample query that hits the database
-// const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
-// console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
