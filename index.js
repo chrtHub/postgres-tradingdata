@@ -53,8 +53,10 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.get("/data", (req, res) => {
-  res.json({ foo: "bar" });
+app.get("/data", async (req, res) => {
+  // res.json({ foo: "bar" });
+  let rows = await fetchFunction();
+  res.json(rows);
 });
 
 app.listen(PORT, () => {
@@ -75,21 +77,15 @@ console.log(clientConfig); // DEV
 const pgClient = new Client(clientConfig);
 
 const fetchFunction = async () => {
-  await pgClient.connect(); // currently not connecting
-  console.log("post-connect()"); // DEV
+  //-- Start connection --//
+  await pgClient.connect();
 
-  //-- (1) Query - don't hit database --//
-  const res = await pgClient.query("SELECT $1::text as message", [
-    "Hello world!",
-  ]);
-  console.log(res.rows[0].message); // Hello world!
+  //-- (1) Query - hit database --//
+  const res = await pgClient.query("SELECT * FROM employees LIMIT 10;");
+  let arrayOfRows = res.rows;
 
-  //-- (2) Query - hit database --//
-  const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
-  console.log(res2.rows); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
-
-  console.log("post-query()"); // DEV
+  //-- End connection --//
   await pgClient.end();
-  console.log("post-end()"); // DEV
+  return arrayOfRows;
 };
-await fetchFunction();
+// await fetchFunction();
