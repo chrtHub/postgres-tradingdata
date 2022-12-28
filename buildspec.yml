@@ -1,11 +1,18 @@
 version: 0.2
 
+env:
+  secrets-manager:
+    DOCKERHUB_USERNAME: "/dockerhub:username"
+    DOCKERHUB_PASSWORD: "/dockerhub:password"
 phases:
   install:
     runtime-versions:
       nodejs: 16
   pre_build:
     commands:
+      # docker login to docker to prevent rate-limiting for pull from anonymous users
+      - docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
+      # docker CLI tool login to ECR in order to push to ECR
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 897621100871.dkr.ecr.us-east-1.amazonaws.com
       - aws codeartifact login --tool npm --domain-owner 897621100871 --domain chrt --repository chrt-npm-packages
       - npm install
