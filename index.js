@@ -65,7 +65,7 @@ app.listen(PORT, () => {
 //-- Configure pg Client to connect to RDS Instance --//
 let clientConfig = {
   host: db_host,
-  port: 5433, // db_port,
+  port: db_port,
   database: db_dbname,
   user: db_username,
   password: db_password,
