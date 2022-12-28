@@ -86,7 +86,7 @@ const fetchFunction = async () => {
 
   //-- (2) Query - hit database --//
   const res2 = await pgClient.query("SELECT * FROM employees LIMIT 5;");
-  console.log(res2.rows[0].message); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
+  console.log(res2.rows); // Alice, Bob, Charlie, Dave, Eve. Id, Name, Salary
 
   console.log("post-query()"); // DEV
   await pgClient.end();
