@@ -54,9 +54,8 @@ app.get("/", (req, res) => {
 });
 
 app.get("/data", async (req, res) => {
-  // res.json({ foo: "bar" });
   let rows = await fetchFunction();
-  res.json(rows);
+  res.json(rows); // array of objects
 });
 
 app.listen(PORT, () => {
@@ -65,27 +64,23 @@ app.listen(PORT, () => {
 
 //-- *************** PostgreSQL Client *************** --//
 //-- Configure pg Client to connect to RDS Instance --//
-let clientConfig = {
+const pgClient = new Client({
   host: db_host,
   port: db_port,
   database: db_dbname,
   user: db_username,
   password: db_password,
-};
-console.log(clientConfig); // DEV
-
-const pgClient = new Client(clientConfig);
+});
+//-- Start connection --//
+await pgClient.connect();
 
 const fetchFunction = async () => {
-  //-- Start connection --//
-  await pgClient.connect();
-
-  //-- (1) Query - hit database --//
+  //-- Query - hit database --//
   const res = await pgClient.query("SELECT * FROM employees LIMIT 10;");
   let arrayOfRows = res.rows;
 
-  //-- End connection --//
-  await pgClient.end();
   return arrayOfRows;
 };
-// await fetchFunction();
+
+// // When to disconnect??
+// await pgClient.end();
