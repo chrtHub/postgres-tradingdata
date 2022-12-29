@@ -41,8 +41,8 @@ async function getDatabasePasswordFromSecretsManager() {
     db_dbname = SecretStringJSON.dbname;
     db_username = SecretStringJSON.username;
     db_password = SecretStringJSON.password;
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    console.log(err);
   }
 }
 await getDatabasePasswordFromSecretsManager();
@@ -70,8 +70,13 @@ app.get("/", (req, res) => {
 });
 
 app.get("/data", async (req, res) => {
-  let rows = await fetchFunction();
-  res.json(rows); // array of objects
+  let rows = await fetchData();
+  res.json(rows);
+});
+
+app.get("/journal/sales", async (req, res) => {
+  let rows = await fetchSales();
+  res.json(rows);
 });
 
 app.listen(PORT, () => {
@@ -90,12 +95,36 @@ const pgClient = new Client({
 //-- Start connection --//
 await pgClient.connect();
 
-const fetchFunction = async () => {
+const fetchData = async () => {
   //-- Query - hit database --//
-  const res = await pgClient.query("SELECT * FROM employees LIMIT 10;");
-  let arrayOfRows = res.rows;
+  let employeesData;
+  try {
+    const res = await pgClient.query("SELECT * FROM employees LIMIT 10;");
+    employeesData = res.rows;
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Error fetching data");
+  }
 
-  return arrayOfRows;
+  console.log(employeesData); // DEV
+
+  return employeesData;
+};
+
+const fetchSales = async () => {
+  //-- Query - hit database --//
+  let salesData;
+  try {
+    const res = await pgClient.query("SELECT * FROM sales LIMIT 10;");
+    salesData = res.rows;
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Error fetching data");
+  }
+
+  console.log(salesData); // DEV
+
+  return salesData;
 };
 
 // // When to disconnect??
