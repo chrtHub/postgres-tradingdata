@@ -1,6 +1,7 @@
 //-- *************** Imports & Secrets *************** --//
 //-- Express server --//
 import express from "express";
+import cors from "cors";
 
 //-- Secrets Manager --//
 import {
@@ -11,6 +12,7 @@ import {
 //-- Allow for a CommonJS "require" statement inside this ES Modules file --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
+
 const { Client } = require("pg"); //-- 'pg' for PostgreSQL --//
 
 //-- Database password from Secrets Manager --//
@@ -46,8 +48,22 @@ async function getDatabasePasswordFromSecretsManager() {
 await getDatabasePasswordFromSecretsManager();
 
 //-- *************** Express server *************** --//
-const app = express();
 const PORT = 8080;
+const app = express();
+
+const corsConfig = {
+  allowedHeaders: ["*"],
+  allowedMethods: ["GET", "POST", "PUT", "DELETE"],
+  allowedOrigins: [
+    "https://chrt.com",
+    "https://*.chrt.com",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+  ],
+  exposedHeaders: [],
+  maxAge: 3600,
+};
+app.use(cors(corsConfig));
 
 app.get("/", (req, res) => {
   res.send("Hello World");
