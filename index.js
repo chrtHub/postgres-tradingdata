@@ -38,10 +38,12 @@ export { pgClient };
 //-- *************** Express server setup *************** --//
 const PORT = 8080;
 const app = express();
+app.disable("x-powered-by");
 const corsConfig = {
-  allowedHeaders: ["*"],
-  allowedMethods: ["GET", "POST", "PUT", "DELETE"],
-  allowedOrigins: [
+  // allowedHeaders: ["*"],
+  credentials: true, //-- allows header of 'authorization' --//
+  methods: ["GET", "POST", "DELETE"],
+  origin: [
     "https://chrt.com",
     "https://*.chrt.com",
     "http://127.0.0.1:3000",
