@@ -10,6 +10,9 @@ import cors from "cors";
 import dataRoutes from "./routes/dataRoutes.js";
 import journalRoutes from "./routes/journalRoutes.js";
 
+//-- Middleware --//
+import { authMiddleware } from "./middleware/authMiddleware.js";
+
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -47,7 +50,7 @@ const corsConfig = {
   exposedHeaders: [],
   maxAge: 3600,
 };
-app.use(cors(corsConfig));
+app.use(cors(corsConfig)); //-- CORS middlware --//
 
 //-- *************** Routes *************** --//
 //-- Health check --//
@@ -57,7 +60,7 @@ app.get("/", (req, res) => {
 
 //-- Routes --//
 app.use("/data", dataRoutes);
-app.use("/journal", journalRoutes);
+app.use("/journal", authMiddleware, journalRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
