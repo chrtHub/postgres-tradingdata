@@ -4,22 +4,28 @@ const jwtVerifier = CognitoJwtVerifier.create({
   userPoolId: "us-east-1_nGMFSXaES",
   tokenUse: "id",
   clientId: "7j7co4p1u35vbf31ahl09ihfut",
-  customJwtCheck: async ({ header, payload, jwk }) => {
-    if (!(parseInt(payload["custom:journalSubscription"]) > 1662008400)) {
-      throw new Error(
-        `valid data subscription required, but was not found in id token`
-      );
-    }
-  },
 });
 
-export const authMiddleware = async (req, res, next) => {
-  const id_token = req.headers.authorization;
+export const jwtAuthMiddleware = async (req, res, next) => {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+
+  //-- Make resilient to "Bearer <token>" or "<token>" --//
+  const authHeaderSplit = authHeader.split(" ");
+  const count = authHeaderSplit.length;
+
+  //-- Assign id_token value --//
+  let id_token;
+  if (count == 1) {
+    id_token = authHeaderSplit[0];
+  }
+  if (count == 2) {
+    id_token = authHeaderSplit[1];
+  }
 
   //-- DEVELOPMENT - SKIP AUTH IF DESIRED --//
-  if (process.env.NODE_ENV === "development") {
-    return next();
-  }
+  // if (process.env.NODE_ENV === "development") {
+  //   return next();
+  // }
 
   //-- If no token, return error --//
   if (!id_token) {

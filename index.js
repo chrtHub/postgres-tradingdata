@@ -11,7 +11,7 @@ import dataRoutes from "./routes/dataRoutes.js";
 import journalRoutes from "./routes/journalRoutes.js";
 
 //-- Middleware --//
-import { authMiddleware } from "./middleware/authMiddleware.js";
+import { journalAuthMiddleware } from "./middleware/journalAuthMiddleware.js";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
@@ -60,7 +60,7 @@ app.get("/", (req, res) => {
 
 //-- Routes --//
 app.use("/data", dataRoutes);
-app.use("/journal", authMiddleware, journalRoutes);
+app.use("/journal", journalAuthMiddleware, journalRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
