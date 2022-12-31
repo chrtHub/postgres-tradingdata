@@ -31,7 +31,9 @@ const pgClient = new Client({
   password: db_password,
 });
 //-- Start connection --//
-await pgClient.connect(); // Disconnect?? await pgClient.end();
+console.log("pgClient requesting connection...");
+await pgClient.connect();
+console.log("pgClient connected");
 //-- Export pgClient for use in controllers --//
 export { pgClient };
 
@@ -41,7 +43,7 @@ const app = express();
 app.disable("x-powered-by");
 const corsConfig = {
   // allowedHeaders: ["*"],
-  credentials: true, //-- allows header of 'authorization' --//
+  credentials: true, //-- allows header with key 'authorization' --//
   methods: ["GET", "POST", "DELETE"],
   origin: [
     "https://chrt.com",
@@ -49,10 +51,16 @@ const corsConfig = {
     "http://127.0.0.1:3000",
     "http://localhost:3000",
   ],
-  exposedHeaders: [],
+  // exposedHeaders: ['foo'],
   maxAge: 3600,
 };
 app.use(cors(corsConfig)); //-- CORS middlware --//
+
+app.use((req, res, next) => {
+  res.append("Meaning-Of-Life", 42); //-- just for fun --//
+  res.append("X-Powred-By", "Lisp (Arc)"); //-- just for fun --//
+  next();
+});
 
 //-- *************** Routes *************** --//
 //-- Health check --//
@@ -68,3 +76,5 @@ app.use("/journal", journalAuthMiddleware, journalRoutes);
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
+
+//-- NOTE - pg connection fails (crashing entire server) unless using VPN Client Endpoint --//

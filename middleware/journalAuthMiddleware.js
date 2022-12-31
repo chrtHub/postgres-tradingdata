@@ -17,16 +17,22 @@ export const journalAuthMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
   //-- Make resilient to "Bearer <token>" or "<token>" --//
-  const authHeaderSplit = authHeader.split(" ");
-  const count = authHeaderSplit.length;
-
-  //-- Assign id_token value --//
+  let count = 0;
   let id_token;
-  if (count == 1) {
-    id_token = authHeaderSplit[0];
-  }
-  if (count == 2) {
-    id_token = authHeaderSplit[1];
+  if (authHeader) {
+    //-- Split header to check for 'Bearer: token_value' syntax --//
+    const authHeaderSplit = authHeader.split(" ");
+    count = authHeaderSplit.length;
+
+    //-- Assign id_token value --//
+    if (count == 1) {
+      id_token = authHeaderSplit[0];
+    }
+    if (count == 2) {
+      id_token = authHeaderSplit[1];
+    }
+  } else {
+    id_token = null;
   }
 
   //-- DEVELOPMENT - SKIP AUTH IF DESIRED --//
