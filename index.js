@@ -22,8 +22,18 @@ const require = createRequire(import.meta.url);
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
 console.log("101"); // DEV
-let { db_host, db_port, db_username, db_password, db_dbname } =
-  await getDatabaseConfigFromSecretsManager();
+// let { db_host, db_port, db_username, db_password, db_dbname } =
+//   await getDatabaseConfigFromSecretsManager();
+
+let { db_host, db_port, db_username, db_password, db_dbname } = {
+  db_host:
+    "db-instance-chrt-user-trading-data.cmlzf31dlxgq.us-east-1.rds.amazonaws.com",
+  dbb_username: "postgres",
+  db_password: "VQ5Y3mWXjxeaUCb",
+  db_port: 5432,
+  db_dbname: "chrtUserTradingData",
+}; // DEV
+
 console.log("104"); // DEV
 //-- Knex --//
 console.log("knex requesting connection to postgres...");
