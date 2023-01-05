@@ -34,6 +34,10 @@ const knex = require("knex")({
     password: db_password,
     database: db_dbname,
   },
+  pool: {
+    min: 0,
+    max: 10,
+  },
 });
 console.log("knex connected to postgres(?)");
 //-- Export knex for use in controllers --//
