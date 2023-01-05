@@ -20,22 +20,23 @@ const { Client } = require("pg"); //-- 'pg' for PostgreSQL --//
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
-let { db_host, db_port, db_dbname, db_username, db_password } =
+let { db_host, db_port, db_username, db_password, db_dbname } =
   await getDatabaseConfigFromSecretsManager();
-//-- Configure pg Client to connect to RDS Instance --//
-const pgClient = new Client({
-  host: db_host,
-  port: db_port,
-  database: db_dbname,
-  user: db_username,
-  password: db_password,
+//-- Knex --//
+console.log("knex requesting connection to postgres...");
+const knex = require("knex")({
+  client: "pg",
+  connection: {
+    host: db_host,
+    post: db_port,
+    user: db_username,
+    password: db_password,
+    database: db_dbname,
+  },
 });
-//-- Start connection --//
-console.log("pgClient requesting connection...");
-await pgClient.connect();
-console.log("pgClient connected");
-//-- Export pgClient for use in controllers --//
-export { pgClient };
+console.log("knex connected to postgres");
+//-- Export knex for use in controllers --//
+export { knex };
 
 //-- *************** Express server setup *************** --//
 const PORT = 8080;
@@ -76,5 +77,3 @@ app.use("/journal", journalAuthMiddleware, journalRoutes);
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
-
-//-- NOTE - pg connection fails (crashing entire server) unless using VPN Client Endpoint --//
