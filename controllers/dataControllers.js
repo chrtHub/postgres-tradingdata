@@ -1,4 +1,4 @@
-//-- pg client --//
+//-- knex client --//
 import { knex } from "../index.js";
 
 //-- Fetch Data --//
