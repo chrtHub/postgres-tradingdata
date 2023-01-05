@@ -1,3 +1,5 @@
+console.log("1"); // DEV
+
 //-- *************** Imports *************** --//
 //-- Database config --//
 import { getDatabaseConfigFromSecretsManager } from "./config/dbConfig.js";
@@ -16,7 +18,6 @@ import { journalAuthMiddleware } from "./middleware/journalAuthMiddleware.js";
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const { Client } = require("pg"); //-- 'pg' for PostgreSQL --//
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
@@ -34,9 +35,11 @@ const knex = require("knex")({
     database: db_dbname,
   },
 });
-console.log("knex connected to postgres");
+console.log("knex connected to postgres(?)");
 //-- Export knex for use in controllers --//
 export { knex };
+
+console.log("2"); // DEV
 
 //-- *************** Express server setup *************** --//
 const PORT = 8080;
