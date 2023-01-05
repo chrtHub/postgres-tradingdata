@@ -9,6 +9,7 @@ const secretsManager_client = new SecretsManagerClient({
 });
 
 export const getDatabaseConfigFromSecretsManager = async () => {
+  console.log("102"); // DEV
   let db_host, db_port, db_dbname, db_username, db_password;
 
   try {
@@ -18,6 +19,8 @@ export const getDatabaseConfigFromSecretsManager = async () => {
         VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
       })
     );
+    console.log("103"); // DEV
+
     //-- Parse string into JSON, store values into variables --//
     let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
     db_host = SecretStringJSON.host;
