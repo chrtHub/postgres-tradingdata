@@ -1,3 +1,5 @@
+console.log("1"); // DEV
+
 //-- *************** Imports *************** --//
 //-- Database config --//
 import { getDatabaseConfigFromSecretsManager } from "./config/dbConfig.js";
@@ -36,6 +38,8 @@ const knex = require("knex")({
 console.log("knex connected to postgres(?)");
 //-- Export knex for use in controllers --//
 export { knex };
+
+console.log("2"); // DEV
 
 //-- *************** Express server setup *************** --//
 const PORT = 8080;
