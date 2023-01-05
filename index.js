@@ -38,6 +38,7 @@ const knex = require("knex")({
     min: 0,
     max: 10,
   },
+  debug: true,
 });
 console.log("knex connected to postgres(?)");
 //-- Export knex for use in controllers --//
