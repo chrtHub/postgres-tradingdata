@@ -39,6 +39,7 @@ export const jwtAuthMiddleware = async (req, res, next) => {
     let verified = await jwtVerifier.verify(id_token);
 
     if (verified) {
+      res.append("X-JWT-Verified", true);
       return next();
     }
   } catch (err) {

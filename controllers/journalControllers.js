@@ -1,6 +1,65 @@
 //-- knex client --//
 import { knex } from "../index.js";
 
+//-- *********** Txns *********** --//
+//-- ***** ***** ***** ***** ***** --//
+//-- txns by trade_uuid --//
+export const txnsByTradeUUID = async (req, res) => {
+  let { trade_uuid } = req.params;
+
+  try {
+    const rows = await knex
+      .select("*")
+      .from("tradingdata01")
+      .where("trade_uuid", trade_uuid)
+      .orderBy("trade_date", "desc")
+      .orderBy("execution_time", "desc");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+//-- txns by symbol and date --//
+export const txnsBySymbolAndDate = async (req, res) => {
+  let { symbol, date } = req.params;
+
+  try {
+    const rows = await knex
+      .select("*")
+      .from("tradingdata01")
+      .where("symbol", symbol)
+      .andWhere("trade_date", date)
+      .orderBy("trade_date", "desc")
+      .orderBy("execution_time", "desc");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+//-- *********** Trades *********** --//
+//-- ***** ***** ***** ***** ***** --//
+export const tradeSummaryBySymbolAndDate = async (req, res) => {
+  let { symbol, date } = req.params;
+
+  // perhaps get pre-computed summary data from a view or an index?
+  try {
+    const rows = await knex
+      .select("*")
+      .from("tradingdata01")
+      .where("symbol", symbol)
+      .andWhere("trade_date", date)
+      .orderBy("trade_date", "desc")
+      .orderBy("execution_time", "desc");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+//-- *********** Examples *********** --//
+//-- ***** ***** ***** ***** ***** --//
 //-- Fetch Sales --//
 export const fetchSales = async (req, res) => {
   try {

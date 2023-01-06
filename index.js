@@ -1,5 +1,3 @@
-console.log("100"); // DEV
-
 //-- *************** Imports *************** --//
 //-- Database config --//
 import { getDatabaseConfigFromSecretsManager } from "./config/dbConfig.js";
@@ -21,11 +19,9 @@ const require = createRequire(import.meta.url);
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
-console.log("101"); // DEV
 let { db_host, db_port, db_username, db_password, db_dbname } =
   await getDatabaseConfigFromSecretsManager();
 
-console.log("104"); // DEV
 //-- Knex --//
 console.log("knex requesting connection to postgres...");
 const knex = require("knex")({
@@ -37,11 +33,6 @@ const knex = require("knex")({
     password: db_password,
     database: db_dbname,
   },
-  pool: {
-    min: 0,
-    max: 10,
-  },
-  debug: true,
 });
 console.log("knex connected to postgres(?)");
 //-- Export knex for use in controllers --//
