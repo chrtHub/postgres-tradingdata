@@ -8,9 +8,5 @@ const router = express.Router();
 //-- Routes --//
 router.get("/", ctrl.fetchData);
 
-//-- Reference --//
-// router.post()
-// router.delete()
-
 //-- Export --//
 export default router;
