@@ -38,8 +38,6 @@ console.log("knex connected to postgres(?)");
 //-- Export knex for use in controllers --//
 export { knex };
 
-console.log("200"); // DEV
-
 //-- *************** Express server setup *************** --//
 const PORT = 8080;
 const app = express();
