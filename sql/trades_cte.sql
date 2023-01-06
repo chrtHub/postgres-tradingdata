@@ -15,6 +15,9 @@ WITH trade AS (
         trade_uuid = '1af8f550-8e49-4efe-9376-cd8ee9e1cc84' -- AND cognito_sub = 'some_cognito_sub' -- where to have this for query speed + data security? 
 )
 SELECT
+    trade_uuid,
+    trade_date,
+    symbol,
     side,
     -- -- -- -- -- 
     -- first_execution_time
@@ -34,4 +37,7 @@ SELECT
 FROM
     trade
 GROUP BY
+    trade_uuid,
+    trade_date,
+    symbol,
     side;

@@ -4,7 +4,7 @@ import { knex } from "../index.js";
 //-- Fetch Data --//
 export const fetchData = async (req, res) => {
   try {
-    const rows = await knex("sales").select().limit(10);
+    let rows = { foo: "bar" };
     res.json(rows);
   } catch (err) {
     console.log(err);

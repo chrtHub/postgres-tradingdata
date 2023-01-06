@@ -10,20 +10,18 @@ const router = express.Router();
 //-- ***** ***** ***** ***** ***** --//
 
 //-- Txns --//
-router.get("/txns_by_trade_uuid/:trade_uuid", ctrl.txnsByTradeUUID);
+// router.get("/txns_by_trade_uuid/:trade_uuid", ctrl.txnsByTradeUUID);
 router.get("/txns_by_symbol_and_date/:symbol/:date", ctrl.txnsBySymbolAndDate);
 
 //-- Trades --//
 router.get(
-  "/trade_by_symbol_and_date/:symbol/:date",
-  ctrl.tradeSummaryBySymbolAndDate
+  "/trade_summary_by_trade_uuid/:trade_uuid",
+  ctrl.tradeSummaryByTradeUUID
 );
-
-//-- examples --//
-router.get("/sales", ctrl.fetchSales);
-router.get("/first_query", ctrl.fetchFirstQuery);
-router.get("/:symbol/:date", ctrl.fetchSecondQuery);
+// router.get(
+//   "/trade_summary_by_symbol_and_date/:symbol/:date",
+//   ctrl.tradeSummaryBySymbolAndDate
+// );
 
 //-- ********** Export ********** --//
-//-- ***** ***** ***** ***** ***** --//
 export default router;
