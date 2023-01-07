@@ -1,1 +1,0 @@
-CREATE INDEX trades_uuid_idx ON tradingdata01 (trade_uuid);
