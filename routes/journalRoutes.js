@@ -9,19 +9,17 @@ const router = express.Router();
 //-- ********** Routes ********** --//
 //-- ***** ***** ***** ***** ***** --//
 
-//-- Txns --//
-// router.get("/txns_by_trade_uuid/:trade_uuid", ctrl.txnsByTradeUUID);
-router.get("/txns_by_symbol_and_date/:symbol/:date", ctrl.txnsBySymbolAndDate);
+//-- Days --//
+router.get("/trade_uuids_by_date/:date", ctrl.tradeUUIDsByDate);
 
 //-- Trades --//
 router.get(
   "/trade_summary_by_trade_uuid/:trade_uuid",
   ctrl.tradeSummaryByTradeUUID
 );
-// router.get(
-//   "/trade_summary_by_symbol_and_date/:symbol/:date",
-//   ctrl.tradeSummaryBySymbolAndDate
-// );
+
+//-- Txns --//
+router.get("/txns_by_trade_uuid/:trade_uuid", ctrl.txnsByTradeUUID);
 
 //-- ********** Export ********** --//
 export default router;

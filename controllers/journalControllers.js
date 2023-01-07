@@ -1,31 +1,23 @@
 //-- knex client --//
 import { knex } from "../index.js";
 
-//-- *********** Txns *********** --//
-//-- ***** ***** ***** ***** ***** --//
-//-- txns by trade_uuid --//
-// TODO
-
-//-- txns by symbol and date --//
-export const txnsBySymbolAndDate = async (req, res) => {
-  let { symbol, date } = req.params;
+//-- ********************* Days ********************* --//
+export const tradeUUIDsByDate = async (req, res) => {
+  let { date } = req.params;
 
   try {
-    const rows = await knex
-      .select("*")
-      .from("tradingdata01")
-      .where("symbol", symbol)
-      .andWhere("trade_date", date)
-      .orderBy("trade_date", "desc")
-      .orderBy("execution_time", "desc");
+    let rows = await knex("tradingdata01")
+      .select("trade_uuid")
+      .distinct()
+      .where("trade_date", date);
+
     res.json(rows);
   } catch (err) {
     console.log(err);
   }
 };
 
-//-- *********** Trades *********** --//
-//-- ***** ***** ***** ***** ***** --//
+//-- ********************* Trades ********************* --//
 //-- Trade summary by trade_uuid --//
 export const tradeSummaryByTradeUUID = async (req, res) => {
   let { trade_uuid } = req.params;
@@ -45,8 +37,7 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
             "net_proceeds"
           )
           .from("tradingdata01")
-          .where("trade_uuid", `${trade_uuid}`);
-        // .where('cognito_sub', 'some_cognito_sub')
+          .where("trade_uuid", trade_uuid);
       })
       .select(
         "trade_uuid",
@@ -68,7 +59,33 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
   }
 };
 
-export const tradeSummaryBySymbolAndDate = async (req, res) => {
-  let { symbol, date } = req.params;
-  // TODO
+//-- ********************* Txns ********************* --//
+//-- txns by trade_uuid --//
+export const txnsByTradeUUID = async (req, res) => {
+  let { trade_uuid } = req.params;
+
+  try {
+    const rows = await knex
+      .select(
+        "uuid",
+        "brokerage",
+        "filename",
+        "import_timestamp",
+        "import_uuid",
+        "trade_uuid",
+        "trade_date",
+        "side",
+        "symbol",
+        "quantity",
+        "price",
+        "execution_time",
+        "net_proceeds"
+      )
+      .from("tradingdata01")
+      .where("trade_uuid", trade_uuid)
+      .orderBy("execution_time", "asc");
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+  }
 };
