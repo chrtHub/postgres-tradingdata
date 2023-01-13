@@ -43,5 +43,7 @@ const openai = new OpenAIApi(configuration);
 const completion = await openai.createCompletion({
   model: "text-davinci-002",
   prompt: "It was the best of times, it was the",
+  // maxTokens: 100,
+  // temperature: 0.5,
 });
 console.log(completion.data.choices[0].text);
