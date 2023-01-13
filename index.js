@@ -22,8 +22,6 @@ const require = createRequire(import.meta.url);
 let { db_host, db_port, db_username, db_password, db_dbname } =
   await getDatabaseConfigFromSecretsManager();
 
-console.log(db_username); // DEV
-
 //-- Knex --//
 console.log("knex requesting connection to postgres...");
 const knex = require("knex")({
@@ -36,8 +34,19 @@ const knex = require("knex")({
     database: db_dbname,
   },
 });
-console.log("knex user is: " + knex.client.connectionSettings.user);
-console.log("knex connected to postgres(?)");
+
+//-- Test Knex connection --//
+try {
+  const currentTime = await knex.raw('SELECT NOW() as "current_time"');
+  console.log(
+    "knex test query succeeded at: " + currentTime.rows[0].current_time
+  );
+  console.log("knex user is: " + knex.client.connectionSettings.user);
+} catch (error) {
+  console.log("knex connection error");
+  console.log(error);
+}
+
 //-- Export knex for use in controllers --//
 export { knex };
 
