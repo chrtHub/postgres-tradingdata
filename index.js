@@ -5,6 +5,7 @@ import { getDatabaseConfigFromSecretsManager } from "./config/dbConfig.js";
 //-- Express server --//
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 
 //-- Routes --//
 import dataRoutes from "./routes/dataRoutes.js";
@@ -53,7 +54,11 @@ export { knex };
 //-- *************** Express server setup *************** --//
 const PORT = 8080;
 const app = express();
-app.disable("x-powered-by");
+
+//-- Helmet middlware for security --//
+app.use(helmet());
+
+//-- CORS middlware --//
 const corsConfig = {
   // allowedHeaders: ["*"],
   credentials: true, //-- allows header with key 'authorization' --//
@@ -67,11 +72,12 @@ const corsConfig = {
   // exposedHeaders: ['foo'],
   maxAge: 3600,
 };
-app.use(cors(corsConfig)); //-- CORS middlware --//
+app.use(cors(corsConfig));
 
+//-- Just-for-fun middleware --//
 app.use((req, res, next) => {
-  res.append("Meaning-Of-Life", 42); //-- just for fun --//
-  res.append("X-Powred-By", "Lisp (Arc)"); //-- just for fun --//
+  res.append("Meaning-Of-Life", 42);
+  res.append("X-Powred-By", "Lisp (Arc)");
   next();
 });
 
