@@ -18,6 +18,10 @@ import { journalAuthMiddleware } from "./middleware/journalAuthMiddleware.js";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
+//-- express-session and connect-redis --//
+var session = require("express-session");
+let RedisStore = require("connect-redis")(session);
+
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
 let { db_host, db_port, db_username, db_password, db_dbname } =
@@ -76,7 +80,7 @@ app.use(cors(corsConfig));
 
 //-- Just-for-fun middleware --//
 app.use((req, res, next) => {
-  res.append("Meaning-Of-Life", 42);
+  res.append("Answer-to-Life-Universe-Everything", 42);
   res.append("X-Powred-By", "Lisp (Arc)");
   next();
 });
