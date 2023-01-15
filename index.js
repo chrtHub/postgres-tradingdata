@@ -18,9 +18,15 @@ import { journalAuthMiddleware } from "./middleware/journalAuthMiddleware.js";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-//-- express-session and connect-redis --//
-var session = require("express-session");
+//-- Sessions using express-session, connect-redis, and redis --//
+let session = require("express-session");
 let RedisStore = require("connect-redis")(session);
+let redis = require("redis");
+let redisClient = redis.createClient({
+  host: "localhost", // clustercfg.chrt-us-east-1.agvpqr.memorydb.us-east-1.amazonaws.com
+  port: 6379,
+  logErrors: true,
+});
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
@@ -39,32 +45,36 @@ const knex = require("knex")({
     database: db_dbname,
   },
 });
+//-- Export knex for use in controllers --//
+export { knex };
 
 //-- Test Knex connection --//
 try {
   const currentTime = await knex.raw('SELECT NOW() as "current_time"');
+
+  //-- If query succeeds, log the current time and database user --//
   console.log(
     "knex test query succeeded at: " + currentTime.rows[0].current_time
   );
   console.log("knex user is: " + knex.client.connectionSettings.user);
 } catch (error) {
+  //-- If query fails, assume connection is in error --//
   console.log("knex connection error");
   console.log(error);
 }
 
-//-- Export knex for use in controllers --//
-export { knex };
-
-//-- *************** Express server setup *************** --//
+//-- *************** Express Server + Middleware *************** --//
 const PORT = 8080;
 const app = express();
+
+//-- Trust headers added by ALB reverse proxy --//
+app.set("trust proxy", 1);
 
 //-- Helmet middlware for security --//
 app.use(helmet());
 
-//-- CORS middlware --//
+//-- CORS middleware --//
 const corsConfig = {
-  // allowedHeaders: ["*"],
   credentials: true, //-- allows header with key 'authorization' --//
   methods: ["GET", "POST", "DELETE"],
   origin: [
@@ -73,10 +83,26 @@ const corsConfig = {
     "http://127.0.0.1:3000",
     "http://localhost:3000",
   ],
-  // exposedHeaders: ['foo'],
+
   maxAge: 3600,
 };
 app.use(cors(corsConfig));
+
+//-- Sessions middleware --//
+app.use(
+  session({
+    store: new RedisStore({ client: redisClient }),
+    secret: "TODO: get secret from secrets manager",
+    resave: false,
+    saveUninitialized: false, // WHAT TO DO HERE
+    resave: false,
+    cookie: {
+      secure: false, //-- TODO: set to true in production to force HTTPS--//
+      httpOnly: true, //-- prevent client-side JS from reading the cookie --//
+      maxAge: 1000 * 60 * 30, //-- session max age in ms --//
+    },
+  })
+);
 
 //-- Just-for-fun middleware --//
 app.use((req, res, next) => {
