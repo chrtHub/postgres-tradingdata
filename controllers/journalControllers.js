@@ -74,6 +74,7 @@ export const txnsByTradeUUID = async (req, res) => {
   let cognito_sub = req.cognito_sub;
 
   console.log("txnsByTradeUUID, user: " + cognito_sub); // DEV
+
   try {
     const rows = await knex
       .select(
