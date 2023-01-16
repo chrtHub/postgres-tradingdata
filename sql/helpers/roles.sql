@@ -7,7 +7,7 @@ SELECT
 FROM
     information_schema.role_table_grants
 WHERE
-    grantee = 'dev'
+    grantee = 'role_dev'
     AND table_name = 'tradingdata01';
 
 -- View permissions per user-schema (for multiple users)
@@ -21,9 +21,9 @@ FROM
 WHERE
     grantee IN (
         'postgres',
-        'dev',
-        'app_server_read_only',
-        'app_server_read_write'
+        'role_dev',
+        'role_app_server_read_only',
+        'role_app_server_read_write'
     )
     AND table_name = 'tradingdata01';
 
