@@ -51,6 +51,8 @@ export const journalAuthMiddleware = async (req, res, next) => {
   try {
     let verified = await jwtVerifier.verify(id_token);
 
+    // Get cognito sub here?
+
     if (verified) {
       res.append("X-JWT-Verified", true);
       return next();
