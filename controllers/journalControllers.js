@@ -22,13 +22,6 @@ export const tradeUUIDsByDate = async (req, res) => {
 export const tradeSummaryByTradeUUID = async (req, res) => {
   let { trade_uuid } = req.params;
 
-  // DEV
-  if (req.session.views) {
-    req.session.views++;
-  } else {
-    req.session.views = 1;
-  }
-
   try {
     const rows = await knex
       .with("trade", (querybuilder) => {

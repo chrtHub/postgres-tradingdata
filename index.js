@@ -70,7 +70,6 @@ const corsConfig = {
     "http://127.0.0.1:3000",
     "http://localhost:3000",
   ],
-
   maxAge: 3600,
 };
 app.use(cors(corsConfig));
