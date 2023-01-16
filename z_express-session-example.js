@@ -6,6 +6,7 @@ import { getDatabaseConfigFromSecretsManager } from "./config/dbConfig.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { createClient as createRedisClient } from "redis";
 
 //-- Routes --//
 import dataRoutes from "./routes/dataRoutes.js";
@@ -17,6 +18,31 @@ import { journalAuthMiddleware } from "./middleware/journalAuthMiddleware.js";
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
+
+//-- Sessions using express-session, connect-redis --//
+let session = require("express-session");
+let connectRedis = require("connect-redis");
+let RedisStore = connectRedis(session);
+// let RedisStore = require("connect-redis")(session);
+
+//-- redis client --//
+let redisClient = createRedisClient({
+  legacyMode: true, // TESTING
+  host: "localhost", // DEV
+  // host: "clustercfg.chrt-us-east-1.agvpqr.memorydb.us-east-1.amazonaws.com",
+  port: 6379,
+  logErrors: true,
+});
+redisClient.on("error", function (err) {
+  console.log("Could not establish a connection with redis. " + err);
+});
+redisClient.on("connect", function () {
+  console.log("redisClient connected");
+});
+redisClient.on("reconnecting", function () {
+  console.log("redisClient reconnecting");
+});
+redisClient.connect();
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
@@ -57,6 +83,9 @@ try {
 const PORT = 8080;
 const app = express();
 
+//-- Trust headers added by ALB reverse proxy --//
+app.set("trust proxy", 1);
+
 //-- Helmet middlware for security --//
 app.use(helmet());
 
@@ -70,9 +99,37 @@ const corsConfig = {
     "http://127.0.0.1:3000",
     "http://localhost:3000",
   ],
+
   maxAge: 3600,
 };
 app.use(cors(corsConfig));
+
+//-- Sessions middleware --//
+// DEV - express-session debug mode - DEBUG=express-session npm run dev
+app.use(
+  session({
+    name: "chrt-session-3", // what to do here?
+    logErrors: true,
+    store: new RedisStore({
+      client: redisClient,
+    }),
+    secret: "TODO",
+    saveUninitialized: false, // WHAT TO DO HERE??
+    resave: false,
+    cookie: {
+      secure: false, //-- Force HTTPS, to be set to 'true' in production --//
+      httpOnly: true, //-- Prevent client-side JS from reading the cookie --//
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 1, //-- 1 hour (session max age in ms) --//
+    },
+  })
+);
+
+// DEV - log session and clientId
+app.use((req, res, next) => {
+  console.log("session: " + JSON.stringify(req.session));
+  next();
+});
 
 //-- Just-for-fun middleware --//
 app.use((req, res, next) => {
@@ -84,6 +141,13 @@ app.use((req, res, next) => {
 //-- *************** Routes *************** --//
 //-- Health check --//
 app.get("/", (req, res) => {
+  // DEV
+  if (req.session.views) {
+    req.session.views++;
+  } else {
+    req.session.views = 1;
+  }
+
   res.send("Hello World");
 });
 
