@@ -1,4 +1,5 @@
 import { CognitoJwtVerifier } from "aws-jwt-verify";
+import jwtDecode from "jwt-decode";
 
 const jwtVerifier = CognitoJwtVerifier.create({
   userPoolId: "us-east-1_nGMFSXaES",
@@ -51,10 +52,14 @@ export const journalAuthMiddleware = async (req, res, next) => {
   try {
     let verified = await jwtVerifier.verify(id_token);
 
-    // Get cognito sub here?
-
     if (verified) {
+      //-- Set a header to indicate that the JWT was verified --//
       res.append("X-JWT-Verified", true);
+
+      //-- Decode JWT and add cognito_sub to the request --//
+      let idTokenDecoded = jwtDecode(id_token);
+      req.cognito_sub = idTokenDecoded.sub;
+
       return next();
     }
   } catch (err) {
