@@ -4,12 +4,16 @@ import { knex } from "../index.js";
 //-- ********************* Days ********************* --//
 export const tradeUUIDsByDate = async (req, res) => {
   let { date } = req.params;
+  let cognito_sub = req.cognito_sub;
+
+  console.log("tradeUUIDsByDate, user: " + cognito_sub); // DEV
 
   try {
     let rows = await knex("tradingdata01")
       .select("trade_uuid")
       .distinct()
-      .where("trade_date", date);
+      .where("trade_date", date)
+      .andWhere("cognito_sub", cognito_sub); // Is this good??
 
     res.json(rows);
   } catch (err) {
@@ -21,6 +25,9 @@ export const tradeUUIDsByDate = async (req, res) => {
 //-- Trade summary by trade_uuid --//
 export const tradeSummaryByTradeUUID = async (req, res) => {
   let { trade_uuid } = req.params;
+  let cognito_sub = req.cognito_sub;
+
+  console.log("tradeSummaryByTradeUUID, user: " + cognito_sub); // DEV
 
   try {
     const rows = await knex
@@ -37,7 +44,8 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
             "net_proceeds"
           )
           .from("tradingdata01")
-          .where("trade_uuid", trade_uuid);
+          .where("trade_uuid", trade_uuid)
+          .andWhere("cognito_sub", cognito_sub); // Is this good??
       })
       .select(
         "trade_uuid",
@@ -63,7 +71,9 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
 //-- txns by trade_uuid --//
 export const txnsByTradeUUID = async (req, res) => {
   let { trade_uuid } = req.params;
+  let cognito_sub = req.cognito_sub;
 
+  console.log("txnsByTradeUUID, user: " + cognito_sub); // DEV
   try {
     const rows = await knex
       .select(
@@ -83,6 +93,7 @@ export const txnsByTradeUUID = async (req, res) => {
       )
       .from("tradingdata01")
       .where("trade_uuid", trade_uuid)
+      .andWhere("cognito_sub", cognito_sub) // Is this good??
       .orderBy("execution_time", "asc");
     res.json(rows);
   } catch (err) {
