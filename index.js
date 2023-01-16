@@ -6,6 +6,7 @@ import { getDatabaseConfigFromSecretsManager } from "./config/dbConfig.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { createClient as createRedisClient } from "redis";
 
 //-- Routes --//
 import dataRoutes from "./routes/dataRoutes.js";
@@ -18,15 +19,30 @@ import { journalAuthMiddleware } from "./middleware/journalAuthMiddleware.js";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-//-- Sessions using express-session, connect-redis, and redis --//
+//-- Sessions using express-session, connect-redis --//
 let session = require("express-session");
-let RedisStore = require("connect-redis")(session);
-let redis = require("redis");
-let redisClient = redis.createClient({
-  host: "localhost", // clustercfg.chrt-us-east-1.agvpqr.memorydb.us-east-1.amazonaws.com
+let connectRedis = require("connect-redis");
+let RedisStore = connectRedis(session);
+// let RedisStore = require("connect-redis")(session);
+
+//-- redis client --//
+let redisClient = createRedisClient({
+  legacyMode: true, // TESTING
+  host: "localhost", // DEV
+  // host: "clustercfg.chrt-us-east-1.agvpqr.memorydb.us-east-1.amazonaws.com",
   port: 6379,
   logErrors: true,
 });
+redisClient.on("error", function (err) {
+  console.log("Could not establish a connection with redis. " + err);
+});
+redisClient.on("connect", function () {
+  console.log("redisClient connected");
+});
+redisClient.on("reconnecting", function () {
+  console.log("redisClient reconnecting");
+});
+redisClient.connect();
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
@@ -39,7 +55,7 @@ const knex = require("knex")({
   client: "pg",
   connection: {
     host: db_host,
-    post: db_port,
+    port: db_port,
     user: db_username,
     password: db_password,
     database: db_dbname,
@@ -89,20 +105,31 @@ const corsConfig = {
 app.use(cors(corsConfig));
 
 //-- Sessions middleware --//
+// DEV - express-session debug mode - DEBUG=express-session npm run dev
 app.use(
   session({
-    store: new RedisStore({ client: redisClient }),
-    secret: "TODO: get secret from secrets manager",
-    resave: false,
-    saveUninitialized: false, // WHAT TO DO HERE
+    name: "chrt-session-3", // what to do here?
+    logErrors: true,
+    store: new RedisStore({
+      client: redisClient,
+    }),
+    secret: "TODO",
+    saveUninitialized: false, // WHAT TO DO HERE??
     resave: false,
     cookie: {
-      secure: false, //-- TODO: set to true in production to force HTTPS--//
-      httpOnly: true, //-- prevent client-side JS from reading the cookie --//
-      maxAge: 1000 * 60 * 30, //-- session max age in ms --//
+      secure: false, //-- Force HTTPS, to be set to 'true' in production --//
+      httpOnly: true, //-- Prevent client-side JS from reading the cookie --//
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 1, //-- 1 hour (session max age in ms) --//
     },
   })
 );
+
+// DEV - log session and clientId
+app.use((req, res, next) => {
+  console.log("session: " + JSON.stringify(req.session));
+  next();
+});
 
 //-- Just-for-fun middleware --//
 app.use((req, res, next) => {
@@ -114,6 +141,13 @@ app.use((req, res, next) => {
 //-- *************** Routes *************** --//
 //-- Health check --//
 app.get("/", (req, res) => {
+  // DEV
+  if (req.session.views) {
+    req.session.views++;
+  } else {
+    req.session.views = 1;
+  }
+
   res.send("Hello World");
 });
 
@@ -123,5 +157,5 @@ app.use("/journal", journalAuthMiddleware, journalRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
-  console.log(`listening on port ${PORT}`);
+  console.log(`express listening on port ${PORT}`);
 });
