@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "NODE_ENV=development nodemon index.js",
     "start": "node index.js",
-    "migrate": "node-pg-migrate"
+    "migrate:create": "node-pg-migrate create",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down:DANGERZONE-ACK": "node-pg-migrate down"
   },
   "repository": {
     "type": "git",

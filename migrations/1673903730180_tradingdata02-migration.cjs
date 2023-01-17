@@ -1,7 +1,3 @@
-// npm run migrate create tradingdata01 migration
-
-// DATABASE_URL=postgres://USERNAME:PASSWORD@HOST:5432/DATABASE npm run migrate up
-
 /* eslint-disable camelcase */
 
 exports.shorthands = undefined;
