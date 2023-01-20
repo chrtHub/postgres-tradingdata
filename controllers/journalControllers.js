@@ -1,6 +1,24 @@
 //-- knex client --//
 import { knex } from "../index.js";
 
+//-- ********************* Dashboard ********************* --//
+export const plLast30Days = async (req, res) => {
+  let cognito_sub = req.cognito_sub;
+
+  try {
+    let rows = await knex("tradingdata02")
+      .select("trade_date", knex.raw("SUM(net_proceeds)"))
+      .whereRaw("trade_date >= NOW() - INTERVAL '30 days'")
+      .andWhere("cognito_sub", cognito_sub) //-- SECURITY --//
+      .groupBy("trade_date")
+      .orderBy("trade_date");
+
+    res.json(rows);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 //-- ********************* Days ********************* --//
 export const tradeUUIDsByDate = async (req, res) => {
   let { date } = req.params;

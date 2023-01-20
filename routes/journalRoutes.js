@@ -9,6 +9,9 @@ const router = express.Router();
 //-- ********** Routes ********** --//
 //-- ***** ***** ***** ***** ***** --//
 
+//-- Dashboard --//
+router.get("/dashboard/pl_last_30_days", ctrl.plLast30Days);
+
 //-- Days --//
 router.get("/trade_uuids_by_date/:date", ctrl.tradeUUIDsByDate);
 
