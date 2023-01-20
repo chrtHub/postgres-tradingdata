@@ -1,0 +1,6 @@
+{
+  "model": "text-davinci-002",
+  "prompt": "How to learn React.js?",
+  "max_tokens": 250,
+  "temperature": 0.5
+}

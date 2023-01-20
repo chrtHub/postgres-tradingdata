@@ -23,6 +23,15 @@ const require = createRequire(import.meta.url);
 let { db_host, db_port, db_username, db_password, db_dbname } =
   await getDatabaseConfigFromSecretsManager();
 
+// DRAFT
+// if (process.env.NODE_ENV === "development") {
+//  connect via bastion host to RDS
+// postgres://<database-user>:<database-password>@localhost:5432/<database-name>
+// //-- Note: need to have an active SSH tunnel to bastion host to RDS --//
+// } else {
+//  connect to RDS directly
+// }
+
 //-- Knex --//
 console.log("knex requesting connection to postgres...");
 const knex = require("knex")({
