@@ -7,7 +7,7 @@ export const tradeUUIDsByDate = async (req, res) => {
   let cognito_sub = req.cognito_sub;
 
   try {
-    let rows = await knex("tradingdata01")
+    let rows = await knex("tradingdata02")
       .select("trade_uuid")
       .distinct()
       .where("trade_date", date)
@@ -39,7 +39,7 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
             "execution_time",
             "net_proceeds"
           )
-          .from("tradingdata01")
+          .from("tradingdata02")
           .where("trade_uuid", trade_uuid)
           .andWhere("cognito_sub", cognito_sub); //-- SECURITY --//
       })
@@ -86,7 +86,7 @@ export const txnsByTradeUUID = async (req, res) => {
         "execution_time",
         "net_proceeds"
       )
-      .from("tradingdata01")
+      .from("tradingdata02")
       .where("trade_uuid", trade_uuid)
       .andWhere("cognito_sub", cognito_sub) //-- SECURITY --//
       .orderBy("execution_time", "asc");
