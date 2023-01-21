@@ -2,13 +2,13 @@
 import { knex } from "../index.js";
 
 //-- ********************* Dashboard ********************* --//
-export const plLast30Days = async (req, res) => {
+export const plLast45CalendarDays = async (req, res) => {
   let cognito_sub = req.cognito_sub;
 
   try {
     let rows = await knex("tradingdata02")
-      .select("trade_date", knex.raw("SUM(net_proceeds)"))
-      .whereRaw("trade_date >= NOW() - INTERVAL '30 days'")
+      .select("trade_date", knex.raw("SUM(net_proceeds) as profit"))
+      .whereRaw("trade_date >= NOW() - INTERVAL '45 days'")
       .andWhere("cognito_sub", cognito_sub) //-- SECURITY --//
       .groupBy("trade_date")
       .orderBy("trade_date");
