@@ -86,7 +86,6 @@ app.use(cors(corsConfig));
 //-- Just-for-fun middleware --//
 app.use((req, res, next) => {
   res.append("Answer-to-Life-Universe-Everything", 42);
-  res.append("X-Powred-By", "Lisp (Arc)");
   next();
 });
 
