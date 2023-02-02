@@ -12,7 +12,10 @@ import dataRoutes from "./routes/dataRoutes.js";
 import journalRoutes from "./routes/journalRoutes.js";
 
 //-- Middleware --//
-import { journalAuthMiddleware } from "./middleware/journalAuthMiddleware.js";
+
+//-- Auth0 --//
+// const { auth } = require("express-oauth2-jwt-bearer");
+import auth from "express-oauth2-jwt-bearer";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
@@ -89,6 +92,14 @@ app.use((req, res, next) => {
   next();
 });
 
+//-- Auth0 Middleware --//
+const jwtCheck = auth({
+  audience: "https://chrt.com",
+  issuerBaseURL: "https://dev-u4trvdw25pkfbgaq.us.auth0.com/",
+  tokenSigningAlg: "RS256",
+});
+app.use(jwtCheck);
+
 //-- *************** Routes *************** --//
 //-- Health check --//
 app.get("/", (req, res) => {
@@ -97,7 +108,7 @@ app.get("/", (req, res) => {
 
 //-- Routes --//
 app.use("/data", dataRoutes);
-app.use("/journal", journalAuthMiddleware, journalRoutes);
+app.use("/journal", journalRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
