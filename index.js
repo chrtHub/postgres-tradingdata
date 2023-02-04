@@ -92,6 +92,11 @@ app.use((req, res, next) => {
   next();
 });
 
+//-- Health check route --//
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+
 //-- Auth0 Middleware --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
@@ -100,11 +105,7 @@ const jwtCheck = auth({
 });
 app.use(jwtCheck);
 
-//-- *************** Routes *************** --//
-//-- Health check --//
-app.get("/", (req, res) => {
-  res.send("Hello World");
-});
+//-- *************** Routes w/ authentication *************** --//
 
 //-- Routes --//
 app.use("/data", dataRoutes);
