@@ -11,14 +11,14 @@ import helmet from "helmet";
 import dataRoutes from "./routes/dataRoutes.js";
 import journalRoutes from "./routes/journalRoutes.js";
 
-//-- Middleware --//
+//-- Auth & Middleware --//
+import { auth } from "express-oauth2-jwt-bearer";
+import { dataAuthMiddleware } from "./Auth/dataAuthMiddleware.js";
+import { journalAuthMiddleware } from "./Auth/journalAuthMiddleware.js";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-
-//-- Auth0 --//
-const { auth } = require("express-oauth2-jwt-bearer");
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get config values --//
@@ -96,19 +96,29 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-//-- Auth0 Middleware --//
+//-- Valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
   issuerBaseURL: "https://chrt-prod.us.auth0.com/",
   tokenSigningAlg: "RS256",
 });
-app.use(jwtCheck);
+app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
+
+//-- Dev utility for logging token --//
+// app.use((req, res, next) => {
+//   let { header, payload, token } = req.auth;
+
+//   console.log("header: " + JSON.stringify(header));
+//   console.log("payload: " + JSON.stringify(payload));
+//   console.log("token: " + token);
+//   next();
+// });
 
 //-- *************** Routes w/ authentication *************** --//
 
 //-- Routes --//
-app.use("/data", dataRoutes);
-app.use("/journal", journalRoutes);
+app.use("/data", dataAuthMiddleware, dataRoutes);
+app.use("/journal", journalAuthMiddleware, journalRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
