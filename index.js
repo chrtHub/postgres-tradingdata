@@ -79,8 +79,8 @@ const corsConfig = {
   origin: [
     "https://chrt.com",
     "https://*.chrt.com",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
   ],
   maxAge: 3600,
 };
@@ -98,12 +98,12 @@ app.get("/", (req, res) => {
 });
 
 //-- Auth0 Middleware --//
-const jwtCheck = auth({
-  audience: "https://chrt.com",
-  issuerBaseURL: "https://dev-u4trvdw25pkfbgaq.us.auth0.com/",
-  tokenSigningAlg: "RS256",
-});
-app.use(jwtCheck);
+// const jwtCheck = auth({
+//   audience: "https://chrt.com",
+//   issuerBaseURL: "https://dev-u4trvdw25pkfbgaq.us.auth0.com/",
+//   tokenSigningAlg: "RS256",
+// });
+// app.use(jwtCheck);
 
 //-- *************** Routes w/ authentication *************** --//
 
