@@ -12,7 +12,10 @@ import dataRoutes from "./routes/dataRoutes.js";
 import journalRoutes from "./routes/journalRoutes.js";
 
 //-- Middleware --//
-import { journalAuthMiddleware } from "./middleware/journalAuthMiddleware.js";
+
+//-- Auth0 --//
+// const { auth } = require("express-oauth2-jwt-bearer");
+import auth from "express-oauth2-jwt-bearer";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
@@ -76,8 +79,8 @@ const corsConfig = {
   origin: [
     "https://chrt.com",
     "https://*.chrt.com",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
   ],
   maxAge: 3600,
 };
@@ -86,19 +89,27 @@ app.use(cors(corsConfig));
 //-- Just-for-fun middleware --//
 app.use((req, res, next) => {
   res.append("Answer-to-Life-Universe-Everything", 42);
-  res.append("X-Powred-By", "Lisp (Arc)");
   next();
 });
 
-//-- *************** Routes *************** --//
-//-- Health check --//
+//-- Health check route --//
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
+//-- Auth0 Middleware --//
+// const jwtCheck = auth({
+//   audience: "https://chrt.com",
+//   issuerBaseURL: "https://dev-u4trvdw25pkfbgaq.us.auth0.com/",
+//   tokenSigningAlg: "RS256",
+// });
+// app.use(jwtCheck);
+
+//-- *************** Routes w/ authentication *************** --//
+
 //-- Routes --//
 app.use("/data", dataRoutes);
-app.use("/journal", journalAuthMiddleware, journalRoutes);
+app.use("/journal", journalRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
