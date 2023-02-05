@@ -11,11 +11,10 @@ import helmet from "helmet";
 import dataRoutes from "./routes/dataRoutes.js";
 import journalRoutes from "./routes/journalRoutes.js";
 
-//-- Middleware --//
-
-//-- Auth0 --//
-// const { auth } = require("express-oauth2-jwt-bearer");
-import auth from "express-oauth2-jwt-bearer";
+//-- Auth & Middleware --//
+import { auth } from "express-oauth2-jwt-bearer";
+import { dataAuthMiddleware } from "./Auth/dataAuthMiddleware.js";
+import { journalAuthMiddleware } from "./Auth/journalAuthMiddleware.js";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
@@ -97,19 +96,29 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-//-- Auth0 Middleware --//
-// const jwtCheck = auth({
-//   audience: "https://chrt.com",
-//   issuerBaseURL: "https://dev-u4trvdw25pkfbgaq.us.auth0.com/",
-//   tokenSigningAlg: "RS256",
+//-- Valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
+const jwtCheck = auth({
+  audience: "https://chrt.com",
+  issuerBaseURL: "https://chrt-prod.us.auth0.com/",
+  tokenSigningAlg: "RS256",
+});
+app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
+
+//-- Dev utility for logging token --//
+// app.use((req, res, next) => {
+//   let { header, payload, token } = req.auth;
+
+//   console.log("header: " + JSON.stringify(header));
+//   console.log("payload: " + JSON.stringify(payload));
+//   console.log("token: " + token);
+//   next();
 // });
-// app.use(jwtCheck);
 
 //-- *************** Routes w/ authentication *************** --//
 
 //-- Routes --//
-app.use("/data", dataRoutes);
-app.use("/journal", journalRoutes);
+app.use("/data", dataAuthMiddleware, dataRoutes);
+app.use("/journal", journalAuthMiddleware, journalRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
