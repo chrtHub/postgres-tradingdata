@@ -3,7 +3,7 @@ import { knex } from "../index.js";
 
 //-- ********************* Dashboard ********************* --//
 export const plLast45CalendarDays = async (req, res) => {
-  let cognito_sub = req.cognito_sub;
+  let cognito_sub = req.cognito_sub || null;
 
   try {
     let rows = await knex("tradingdata02")
@@ -22,7 +22,7 @@ export const plLast45CalendarDays = async (req, res) => {
 //-- ********************* Days ********************* --//
 export const tradeUUIDsByDate = async (req, res) => {
   let { date } = req.params;
-  let cognito_sub = req.cognito_sub;
+  let cognito_sub = req.cognito_sub || null;
 
   try {
     let rows = await knex("tradingdata02")
@@ -41,7 +41,7 @@ export const tradeUUIDsByDate = async (req, res) => {
 //-- Trade summary by trade_uuid --//
 export const tradeSummaryByTradeUUID = async (req, res) => {
   let { trade_uuid } = req.params;
-  let cognito_sub = req.cognito_sub;
+  let cognito_sub = req.cognito_sub || null;
 
   try {
     const rows = await knex
@@ -85,7 +85,7 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
 //-- txns by trade_uuid --//
 export const txnsByTradeUUID = async (req, res) => {
   let { trade_uuid } = req.params;
-  let cognito_sub = req.cognito_sub;
+  let cognito_sub = req.cognito_sub || null;
 
   try {
     const rows = await knex

@@ -12,7 +12,8 @@ export const journalAuthMiddleware = async (req, res, next) => {
     next();
   } else {
     return res.status(401).json({
-      error: "JWT received and valid, but no 'read:journal' permission round",
+      error:
+        "JWT received and valid, but did not find 'read:journal' && 'write:journal' permissions",
     });
   }
 };
