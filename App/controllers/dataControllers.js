@@ -1,5 +1,5 @@
 //-- knex client --//
-import { knex } from "../index.js";
+import { knex } from "../../index.js";
 
 //-- Fetch Data --//
 export const fetchData = async (req, res) => {

@@ -1,5 +1,5 @@
 //-- knex client --//
-import { knex } from "../index.js";
+import { knex } from "../../index.js";
 
 //-- ********************* Dashboard ********************* --//
 export const plLast45CalendarDays = async (req, res) => {
