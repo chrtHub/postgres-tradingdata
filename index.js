@@ -107,7 +107,6 @@ app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
 //-- Dev utility for logging token --//
 // app.use((req, res, next) => {
 //   let { header, payload, token } = req.auth;
-
 //   console.log("header: " + JSON.stringify(header));
 //   console.log("payload: " + JSON.stringify(payload));
 //   console.log("token: " + token);
