@@ -1,6 +1,6 @@
 //-- *************** Imports *************** --//
 //-- Database config --//
-import { getDatabaseConfigFromSecretsManager } from "./config/dbConfig.js";
+import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
 
 //-- Express server --//
 import express from "express";
@@ -8,13 +8,13 @@ import cors from "cors";
 import helmet from "helmet";
 
 //-- Routes --//
-import dataRoutes from "./routes/dataRoutes.js";
-import journalRoutes from "./routes/journalRoutes.js";
+import dataRoutes from "./App/routes/dataRoutes.js";
+import journalRoutes from "./App/routes/journalRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
-import { dataAuthMiddleware } from "./Auth/dataAuthMiddleware.js";
-import { journalAuthMiddleware } from "./Auth/journalAuthMiddleware.js";
+import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
+import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
@@ -80,6 +80,8 @@ const corsConfig = {
     "https://*.chrt.com",
     "http://127.0.0.1:5173",
     "http://localhost:5173",
+    "http://127.0.0.1:4173",
+    "http://localhost:4173",
   ],
   maxAge: 3600,
 };
@@ -107,7 +109,6 @@ app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
 //-- Dev utility for logging token --//
 // app.use((req, res, next) => {
 //   let { header, payload, token } = req.auth;
-
 //   console.log("header: " + JSON.stringify(header));
 //   console.log("payload: " + JSON.stringify(payload));
 //   console.log("token: " + token);

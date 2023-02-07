@@ -1,15 +1,16 @@
 //-- knex client --//
-import { knex } from "../index.js";
+import { knex } from "../../index.js";
 
 //-- ********************* Dashboard ********************* --//
 export const plLast45CalendarDays = async (req, res) => {
-  let cognito_sub = req.cognito_sub || null;
+  let { payload } = req.auth;
+  let user_db_id = payload.sub || null;
 
   try {
     let rows = await knex("tradingdata02")
       .select("trade_date", knex.raw("SUM(net_proceeds) as profit"))
       .whereRaw("trade_date >= NOW() - INTERVAL '45 days'")
-      .andWhere("cognito_sub", cognito_sub) //-- SECURITY --//
+      .andWhere("user_db_id", user_db_id) //-- SECURITY --//
       .groupBy("trade_date")
       .orderBy("trade_date");
 
@@ -21,15 +22,17 @@ export const plLast45CalendarDays = async (req, res) => {
 
 //-- ********************* Days ********************* --//
 export const tradeUUIDsByDate = async (req, res) => {
+  let { payload } = req.auth;
+  let user_db_id = payload.sub || null;
+
   let { date } = req.params;
-  let cognito_sub = req.cognito_sub || null;
 
   try {
     let rows = await knex("tradingdata02")
       .select("trade_uuid")
       .distinct()
       .where("trade_date", date)
-      .andWhere("cognito_sub", cognito_sub); //-- SECURITY --//
+      .andWhere("user_db_id", user_db_id); //-- SECURITY --//
 
     res.json(rows);
   } catch (err) {
@@ -40,8 +43,10 @@ export const tradeUUIDsByDate = async (req, res) => {
 //-- ********************* Trades ********************* --//
 //-- Trade summary by trade_uuid --//
 export const tradeSummaryByTradeUUID = async (req, res) => {
+  let { payload } = req.auth;
+  let user_db_id = payload.sub || null;
+
   let { trade_uuid } = req.params;
-  let cognito_sub = req.cognito_sub || null;
 
   try {
     const rows = await knex
@@ -59,7 +64,7 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
           )
           .from("tradingdata02")
           .where("trade_uuid", trade_uuid)
-          .andWhere("cognito_sub", cognito_sub); //-- SECURITY --//
+          .andWhere("user_db_id", user_db_id); //-- SECURITY --//
       })
       .select(
         "trade_uuid",
@@ -84,8 +89,10 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
 //-- ********************* Txns ********************* --//
 //-- txns by trade_uuid --//
 export const txnsByTradeUUID = async (req, res) => {
+  let { payload } = req.auth;
+  let user_db_id = payload.sub || null;
+
   let { trade_uuid } = req.params;
-  let cognito_sub = req.cognito_sub || null;
 
   try {
     const rows = await knex
@@ -106,7 +113,7 @@ export const txnsByTradeUUID = async (req, res) => {
       )
       .from("tradingdata02")
       .where("trade_uuid", trade_uuid)
-      .andWhere("cognito_sub", cognito_sub) //-- SECURITY --//
+      .andWhere("user_db_id", user_db_id) //-- SECURITY --//
       .orderBy("execution_time", "asc");
     res.json(rows);
   } catch (err) {

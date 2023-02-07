@@ -1,8 +1,11 @@
 //-- knex client --//
-import { knex } from "../index.js";
+import { knex } from "../../index.js";
 
 //-- Fetch Data --//
 export const fetchData = async (req, res) => {
+  let { payload } = req.auth;
+  let user_db_id = payload.sub || null;
+
   try {
     let rows = { foo: "bar" };
     res.json(rows);
