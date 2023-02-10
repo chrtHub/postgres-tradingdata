@@ -64,6 +64,9 @@ try {
   console.log(error);
 }
 
+//-- Print current value of process.env.NODE_ENV --//
+console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
+
 //-- *************** Express Server + Middleware *************** --//
 const PORT = 8080;
 const app = express();
@@ -97,8 +100,6 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
-
-console.log(process.env.NODE_ENV);
 
 //-- Valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
 const jwtCheck = auth({
