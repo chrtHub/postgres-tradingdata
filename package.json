@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development nodemon index.js",
-    "start": "node index.js",
+    "start": "NODE_ENV=production node index.js",
     "migrate": "node-pg-migrate",
     "migrate:up": "node-pg-migrate up",
     "migrate:down:DANGERZONE-ACK": "node-pg-migrate down"
