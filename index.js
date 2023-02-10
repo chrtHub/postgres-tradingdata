@@ -98,6 +98,8 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
+console.log(process.env.NODE_ENV);
+
 //-- Valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
