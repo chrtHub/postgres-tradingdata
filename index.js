@@ -10,6 +10,7 @@ import helmet from "helmet";
 //-- Routes --//
 import dataRoutes from "./App/routes/dataRoutes.js";
 import journalRoutes from "./App/routes/journalRoutes.js";
+import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
@@ -64,6 +65,9 @@ try {
   console.log(error);
 }
 
+//-- Print current value of process.env.NODE_ENV --//
+console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
+
 //-- *************** Express Server + Middleware *************** --//
 const PORT = 8080;
 const app = express();
@@ -98,8 +102,6 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-console.log(process.env.NODE_ENV);
-
 //-- Valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
@@ -122,6 +124,7 @@ app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
 //-- Routes --//
 app.use("/data", dataAuthMiddleware, dataRoutes);
 app.use("/journal", journalAuthMiddleware, journalRoutes);
+app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
