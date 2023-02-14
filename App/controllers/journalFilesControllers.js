@@ -1,19 +1,53 @@
-//-- user_db_id utility function --//
-import getUserDbId from "../Util/getUserDbId.js";
+//-- AWS client(s) --//
+import { S3Client } from "@aws-sdk/client-s3";
+import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 //-- knex client --//
 
-//-- AWS client(s) --//
+//-- Utility Functions --//
+import getUserDbId from "../Util/getUserDbId.js";
+
+//-- NPM Functions --//
+import { format } from "date-fns";
+
+const s3_client = new S3Client({
+  region: "us-east-1",
+});
 
 //-- ********************* List Files ********************* --//
 export const listFiles = async (req, res) => {
   let user_db_id = getUserDbId(req);
 
   try {
-    // TODO
-    console.log("TODO - get files list for: " + user_db_id);
+    let response = await s3_client.send(
+      new ListObjectsV2Command({
+        Bucket: "chrt-user-trading-data-files",
+        Prefix: `${user_db_id}`,
+      })
+    );
+
+    //-- Build files list array --//
+    let filesList = [];
+    response.Contents.forEach((x) => {
+      let brokerage = x.Key.split("/").slice(1, 2)[0] || ""; //-- penultimate item or "" --//
+      let filename = x.Key.split("/").slice(2, 3)[0] || ""; //-- last item or "" --//
+
+      //-- Only include filename and brokerage that aren't "" (those are for the S3 "folders") --//
+      if (filename.length > 0 && brokerage.length > 0) {
+        let file = {
+          id: x.Key,
+          filename: filename,
+          brokerage: brokerage,
+          last_modified: format(x.LastModified, "yyyy-MM-dd @ hh:mm:ss aaa"), //-- sortable format --//
+          size_mb: (x.Size / 1000000).toFixed(1), //-- display with 1 decimal place --//
+        };
+
+        filesList.push(file);
+      }
+    });
+
+    res.send(filesList);
   } catch (err) {
     console.log(err);
   }
-  res.send("TODO - get files list for: " + user_db_id);
 };

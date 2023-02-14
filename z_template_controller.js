@@ -1,10 +1,12 @@
-//-- user_db_id utility function --//
-import getUserDbId from "../Util/getUserDbId.js";
+//-- AWS client(s) --//
 
 //-- knex client --//
 import { knex } from "../../index.js";
 
-//-- AWS client(s) --//
+//-- Utility Functions --//
+import getUserDbId from "../Util/getUserDbId.js";
+
+//-- NPM Functions --//
 
 //-- ********************* Some Controller ********************* --//
 import getUserDbId from "../Util/getUserDbId.js";
