@@ -1,10 +1,14 @@
+//-- user_db_id utility function --//
+import getUserDbId from "../Util/getUserDbId.js";
+
 //-- knex client --//
 import { knex } from "../../index.js";
 
+//-- AWS client(s) --//
+
 //-- ********************* Dashboard ********************* --//
 export const plLast45CalendarDays = async (req, res) => {
-  let { payload } = req.auth;
-  let user_db_id = payload.sub || null;
+  let user_db_id = getUserDbId(req);
 
   try {
     let rows = await knex("tradingdata02")

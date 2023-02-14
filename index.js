@@ -10,6 +10,7 @@ import helmet from "helmet";
 //-- Routes --//
 import dataRoutes from "./App/routes/dataRoutes.js";
 import journalRoutes from "./App/routes/journalRoutes.js";
+import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
@@ -110,19 +111,20 @@ const jwtCheck = auth({
 app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
 
 //-- Dev utility for logging token --//
-// app.use((req, res, next) => {
-//   let { header, payload, token } = req.auth;
-//   console.log("header: " + JSON.stringify(header));
-//   console.log("payload: " + JSON.stringify(payload));
-//   console.log("token: " + token);
-//   next();
-// });
+app.use((req, res, next) => {
+  let { header, payload, token } = req.auth;
+  console.log("header: " + JSON.stringify(header));
+  console.log("payload: " + JSON.stringify(payload));
+  console.log("token: " + token);
+  next();
+});
 
 //-- *************** Routes w/ authentication *************** --//
 
 //-- Routes --//
 app.use("/data", dataAuthMiddleware, dataRoutes);
 app.use("/journal", journalAuthMiddleware, journalRoutes);
+app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
 
 //-- Listener --//
 app.listen(PORT, () => {
