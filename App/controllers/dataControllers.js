@@ -1,13 +1,13 @@
 //-- knex client --//
 import { knex } from "../../index.js";
+import getUserDbId from "../Util/getUserDbId.js";
 
 //-- Fetch Data --//
 export const fetchData = async (req, res) => {
-  let { payload } = req.auth;
-  let user_db_id = payload.sub || null;
+  let user_db_id = getUserDbId(req);
 
   try {
-    let rows = { foo: "bar" };
+    let rows = { foo: "bar", user_db_id: user_db_id };
     res.json(rows);
   } catch (err) {
     console.log(err);
