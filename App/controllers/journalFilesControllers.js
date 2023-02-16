@@ -122,6 +122,6 @@ export const putFile = async (req, res) => {
     res.status(200).json({ message: "File uploaded to S3" });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Error deleting file from S3" });
+    res.status(500).json({ error: "Error putting file to S3" });
   }
 };

@@ -6,7 +6,26 @@ import multer from "multer";
 
 //-- With multer, memoryStorage() stores buffer in memory for lifetime of a 'req', then buffer gets garbage collected --//
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage }); //-- Middlware functions --//
+
+//-- Multer fileFilter --//
+const fileFilter = (req, file, callback) => {
+  if (file.mimetype === "text/csv") {
+    callback(null, true);
+  } else {
+    const error = new Error(
+      `File type ${file.mimetype} not supported - .csv only`
+    );
+    error.status = 415; //-- 415: Unsupported Media Type --//
+    callback(error, false);
+  }
+};
+
+//-- Multer middlware functions --//
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter, //-- filter for .csv only --//
+  limits: { files: 1, fileSize: 10 * 1024 * 1024 }, //-- 1 file, 10 MB max --//
+});
 
 //-- Express router --//
 const router = express.Router();
