@@ -13,10 +13,11 @@ import getUserDbId from "../Util/getUserDbId.js";
 
 export const some_Function = async (req, res) => {
   let user_db_id = getUserDbId(req);
+  let { foo } = req.params; // for route like 'some_route/:foo'
 
   try {
     // TODO
   } catch (err) {
-    console.log(err);
+    res.status(500).json({ error: "Error <<>>" });
   }
 };

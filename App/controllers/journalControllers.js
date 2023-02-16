@@ -26,9 +26,7 @@ export const plLast45CalendarDays = async (req, res) => {
 
 //-- ********************* Days ********************* --//
 export const tradeUUIDsByDate = async (req, res) => {
-  let { payload } = req.auth;
-  let user_db_id = payload.sub || null;
-
+  let user_db_id = getUserDbId(req);
   let { date } = req.params;
 
   try {
@@ -47,9 +45,7 @@ export const tradeUUIDsByDate = async (req, res) => {
 //-- ********************* Trades ********************* --//
 //-- Trade summary by trade_uuid --//
 export const tradeSummaryByTradeUUID = async (req, res) => {
-  let { payload } = req.auth;
-  let user_db_id = payload.sub || null;
-
+  let user_db_id = getUserDbId(req);
   let { trade_uuid } = req.params;
 
   try {
@@ -93,9 +89,7 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
 //-- ********************* Txns ********************* --//
 //-- txns by trade_uuid --//
 export const txnsByTradeUUID = async (req, res) => {
-  let { payload } = req.auth;
-  let user_db_id = payload.sub || null;
-
+  let user_db_id = getUserDbId(req);
   let { trade_uuid } = req.params;
 
   try {
