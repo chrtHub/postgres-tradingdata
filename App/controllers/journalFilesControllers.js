@@ -7,6 +7,8 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 
+import fs from "fs";
+
 //-- knex client --//
 
 //-- Utility Functions --//
@@ -104,17 +106,20 @@ export const putFile = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { brokerage, filename } = req.params;
 
+  let file = req.file;
   let bucket = "chrt-user-trading-data-files";
   let key = `${user_db_id}/${brokerage}/${filename}`;
 
-  let body = "todo"; // DEV
-
   try {
-    let response = await s3_client.send(
-      new PutObjectCommand({ Body: body, Bucket: bucket, Key: key })
+    if (!file.buffer) {
+      res.status(500).json({ error: "No file data received" });
+    }
+
+    await s3_client.send(
+      new PutObjectCommand({ Body: file.buffer, Bucket: bucket, Key: key })
     );
-    console.log(response);
-    res.status(200).json({ message: "File deleted" });
+
+    res.status(200).json({ message: "File uploaded to S3" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Error deleting file from S3" });
