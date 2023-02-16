@@ -65,7 +65,6 @@ export const getFile = async (req, res) => {
       new GetObjectCommand({ Bucket: bucket, Key: key })
     );
     //-- Set headers --//
-    console.log(response.ContentType);
     res.setHeader("Content-Type", response.ContentType);
     res.setHeader("Content-Disposition", `attachement; filename="${filename}"`);
     //-- Pipe s3 client response into res to user --//
