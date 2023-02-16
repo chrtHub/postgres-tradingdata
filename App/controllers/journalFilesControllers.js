@@ -1,6 +1,11 @@
 //-- AWS client(s) --//
 import { S3Client } from "@aws-sdk/client-s3";
-import { ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  ListObjectsV2Command,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 
 //-- knex client --//
 
@@ -72,5 +77,47 @@ export const getFile = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Error downloading file from S3" });
+  }
+};
+
+//-- ********************* Delete File ********************* --//
+export const deleteFile = async (req, res) => {
+  let user_db_id = getUserDbId(req);
+  let { brokerage, filename } = req.params;
+
+  let bucket = "chrt-user-trading-data-files";
+  let key = `${user_db_id}/${brokerage}/${filename}`;
+
+  try {
+    let response = await s3_client.send(
+      new DeleteObjectCommand({ Bucket: bucket, Key: key })
+    );
+    console.log(response);
+    res.status(200).json({ message: "File deleted" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Error deleting file from S3" });
+  }
+};
+
+//-- ********************* Put File ********************* --//
+export const putFile = async (req, res) => {
+  let user_db_id = getUserDbId(req);
+  let { brokerage, filename } = req.params;
+
+  let bucket = "chrt-user-trading-data-files";
+  let key = `${user_db_id}/${brokerage}/${filename}`;
+
+  let body = "todo"; // DEV
+
+  try {
+    let response = await s3_client.send(
+      new PutObjectCommand({ Body: body, Bucket: bucket, Key: key })
+    );
+    console.log(response);
+    res.status(200).json({ message: "File deleted" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Error deleting file from S3" });
   }
 };

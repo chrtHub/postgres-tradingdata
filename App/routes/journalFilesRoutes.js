@@ -10,6 +10,8 @@ const router = express.Router();
 //-- ***** ***** ***** ***** ***** --//
 router.get("/list_files", ctrl.listFiles);
 router.get("/get_file/:brokerage/:filename", ctrl.getFile);
+router.delete("/delete_file/:brokerage/:filename", ctrl.deleteFile);
+router.put("/delete_file/:brokerage/:filename", ctrl.putFile);
 
 //-- ********** Export ********** --//
 export default router;
