@@ -92,7 +92,6 @@ export const deleteFile = async (req, res) => {
     let response = await s3_client.send(
       new DeleteObjectCommand({ Bucket: bucket, Key: key })
     );
-    console.log(response);
     res.status(200).json({ message: "File deleted" });
   } catch (err) {
     console.log(err);
