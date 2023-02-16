@@ -78,7 +78,7 @@ app.use(helmet());
 //-- CORS middleware --//
 const corsConfig = {
   credentials: true, //-- allows header with key 'authorization' --//
-  methods: ["GET", "POST", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
   origin: [
     "https://chrt.com",
     "https://*.chrt.com",
