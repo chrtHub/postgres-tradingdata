@@ -1,6 +1,16 @@
-## Hi, this is the readme!
+## Hi, this is the readme! :grinning: :book:
 
 - This repo is for a web server available at https://alb.chrt.com
+
+### Dev Links
+
+- [CodePipeline](https://us-east-1.console.aws.amazon.com/codesuite/codepipeline/pipelines/chrt-express-postgres-tradingdata/view?region=us-east-1)
+  - [IAM - CodeBuild service role](https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/codebuild-chrt-express-postgres-tradingdata-service-role?section=permissions)
+- [ECS Task](https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/express-postgres?region=us-east-1)
+  - [IAM - ECS task role](https://us-east-1.console.aws.amazon.com/iamv2/home#/roles/details/task-role-chrt-express-postgres-tradingdata?section=permissions)
+- [ECS Cluster](https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/node-postgres/services?region=us-east-1)
+
+---
 
 ## CHRT.com - repos and stack info
 
