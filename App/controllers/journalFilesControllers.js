@@ -16,7 +16,6 @@ import getUserDbId from "../Util/getUserDbId.js";
 import orderBy from "lodash/orderBy.js";
 
 //-- NPM Functions --//
-import { format } from "date-fns";
 
 const s3_client = new S3Client({
   region: "us-east-1",
@@ -46,11 +45,7 @@ export const listFiles = async (req, res) => {
           id: x.Key,
           filename: filename,
           brokerage: brokerage,
-          last_modified_iso8601: x.LastModified,
-          last_modified_readable: format(
-            x.LastModified,
-            "MMM dd, yyyy @ hh:mm:ss aaa"
-          ), //-- sortable format --//
+          last_modified: x.LastModified,
           size_mb: (x.Size / 1000000).toFixed(1), //-- display with 1 decimal place --//
         };
 
@@ -61,7 +56,7 @@ export const listFiles = async (req, res) => {
     //-- Order files list by last_modified_iso8601 --//
     let sortedFilesList = orderBy(
       filesList, //-- array --//
-      "last_modified_iso8601", //-- column to order by--//
+      "last_modified", //-- column to order by--//
       "desc" //-- asc or desc --//
     );
 
