@@ -4,6 +4,7 @@
 
 ### Dev Links
 
+- [GitHub Repo](https://github.com/chrtHub/postgres-tradingdata) - _(current page)_
 - [CodePipeline](https://us-east-1.console.aws.amazon.com/codesuite/codepipeline/pipelines/chrt-express-postgres-tradingdata/view?region=us-east-1)
   - [IAM - CodeBuild service role](https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/codebuild-chrt-express-postgres-tradingdata-service-role?section=permissions)
 - [ECS Task](https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/express-postgres?region=us-east-1)
@@ -17,7 +18,7 @@
 ### Repos
 
 - **[Front-end repo](https://github.com/chrtHub/chrt-vite/)**
-- **[Back-end repo](https://github.com/chrtHub/postgres-tradingdata)** _(current page)_
+- **[Back-end repo](https://github.com/chrtHub/postgres-tradingdata)** - _(current page)_
 - Lambda function(s) repo(s):
   - **[S3 .csv parse to Postgres](https://github.com/chrtHub/lambda-chrtUserTradingData-S3-to-RDS-PostgreSQL)**
 
