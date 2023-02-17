@@ -1,8 +1,8 @@
-# CHRT.com
-
-### Hi, this is the readme!
+## Hi, this is the readme!
 
 - This repo is for a web server available at https://alb.chrt.com
+
+## CHRT.com - repos and stack info
 
 ### Repos
 
