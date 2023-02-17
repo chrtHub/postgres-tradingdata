@@ -1,15 +1,31 @@
-# CHRT.com
+# :file_folder: Express Server repo
 
-### Hi, this is the readme!
+- This repo is for a server available at [alb.chrt.com](https://alb.chrt.com)
 
-- This repo is for a web server available at https://alb.chrt.com
+### Dev Links
+
+- [GitHub Repo](https://github.com/chrtHub/postgres-tradingdata) - _(current page)_
+- [CodePipeline](https://us-east-1.console.aws.amazon.com/codesuite/codepipeline/pipelines/chrt-express-postgres-tradingdata/view?region=us-east-1)
+  - [IAM - CodeBuild service role](https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/codebuild-chrt-express-postgres-tradingdata-service-role?section=permissions)
+- [ECS Task](https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/express-postgres?region=us-east-1)
+  - [IAM - ECS task role](https://us-east-1.console.aws.amazon.com/iamv2/home#/roles/details/task-role-chrt-express-postgres-tradingdata?section=permissions)
+- [ECS Cluster](https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/node-postgres/services?region=us-east-1)
+
+### Contact
+
+- Need support? support@chrt.com
+- Want to chat? aaron@chrt.com
+
+# :bar_chart: [chrt.com](https://chrt.com) repos & stack
 
 ### Repos
 
-- **[Front-end repo](https://github.com/chrtHub/chrt-vite/)**
-- **[Back-end repo](https://github.com/chrtHub/postgres-tradingdata)** _(current page)_
-- Lambda function(s) repo(s):
-  - **[S3 .csv parse to Postgres](https://github.com/chrtHub/lambda-chrtUserTradingData-S3-to-RDS-PostgreSQL)**
+- Front-end
+  - **[React SPA](https://github.com/chrtHub/chrt-vite/)**
+- Back-end
+  - **[Express Server](https://github.com/chrtHub/postgres-tradingdata)** - _(current page)_
+- Lambda functions
+  - **[Lambda for S3 to Postgres parsing](https://github.com/chrtHub/lambda-chrtUserTradingData-S3-to-RDS-PostgreSQL)**
 
 ### CI/CD Stack
 
@@ -48,9 +64,3 @@
 - [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) - serverless functions
 - [S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html) - for storing user-uploaded files
 - [DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html) - NoSQL database
-
-### Contact
-
-Need support? support@chrt.com<br />
-<br />
-Want to chat? aaron@chrt.com
