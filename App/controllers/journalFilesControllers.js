@@ -112,10 +112,12 @@ export const deleteFile = async (req, res) => {
 export const putFile = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { brokerage, filename } = req.params;
+  let file = req.file; //-- Actual data from file --//
 
-  let file = req.file;
   let bucket = "chrt-user-trading-data-files";
-  let key = `${user_db_id}/${brokerage}/${filename}`;
+
+  let file_uuid = uuidv4();
+  let key = `${user_db_id}/${brokerage}/${file_uuid}`;
 
   try {
     if (!file.buffer) {
@@ -123,7 +125,12 @@ export const putFile = async (req, res) => {
     }
 
     await s3_client.send(
-      new PutObjectCommand({ Body: file.buffer, Bucket: bucket, Key: key })
+      new PutObjectCommand({
+        Body: file.buffer,
+        Bucket: bucket,
+        Key: key,
+        Metadata: { filename: filename },
+      })
     );
 
     res.status(200).json({ message: "File uploaded to S3" });
