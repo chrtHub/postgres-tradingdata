@@ -32,13 +32,16 @@ const router = express.Router();
 
 //-- ********** Routes ********** --//
 //-- ***** ***** ***** ***** ***** --//
-router.get("/list_files", ctrl.listFiles);
-router.get("/get_file/:brokerage/:filename", ctrl.getFile);
-router.delete("/delete_file/:brokerage/:filename", ctrl.deleteFile);
 router.put(
   "/put_file/:brokerage/:filename",
   upload.single("file"), //-- Multer middleware --//
   ctrl.putFile
+);
+router.get("/list_files", ctrl.listFiles);
+router.get("/get_file/:brokerage/:file_uuid_plus_filename", ctrl.getFile);
+router.delete(
+  "/delete_file/:brokerage/:file_uuid_plus_filename",
+  ctrl.deleteFile
 );
 
 //-- ********** Export ********** --//

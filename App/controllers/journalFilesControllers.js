@@ -7,19 +7,52 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 
-import fs from "fs";
-
 //-- knex client --//
+import { knex } from "../../index.js";
 
 //-- Utility Functions --//
 import getUserDbId from "../Util/getUserDbId.js";
 import orderBy from "lodash/orderBy.js";
+import { v4 as uuidv4 } from "uuid";
 
 //-- NPM Functions --//
 
+//-- Other --//
 const s3_client = new S3Client({
   region: "us-east-1",
 });
+
+//-- ********************* Put File ********************* --//
+export const putFile = async (req, res) => {
+  let user_db_id = getUserDbId(req);
+  let { brokerage, filename } = req.params;
+  let file = req.file; //-- Actual data from file --//
+
+  let bucket = "chrt-user-trading-data-files";
+
+  //-- Generate a uuid and add it in front of the filename --//
+  let file_uuid = uuidv4();
+  let key = `${user_db_id}/${brokerage}/${file_uuid}_${filename}`;
+
+  try {
+    if (!file.buffer) {
+      res.status(500).json({ error: "No file data received" });
+    }
+
+    await s3_client.send(
+      new PutObjectCommand({
+        Body: file.buffer,
+        Bucket: bucket,
+        Key: key,
+      })
+    );
+
+    res.status(200).json({ message: "File uploaded to S3" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Error putting file to S3" });
+  }
+};
 
 //-- ********************* List Files ********************* --//
 export const listFiles = async (req, res) => {
@@ -36,13 +69,15 @@ export const listFiles = async (req, res) => {
     //-- Build files list array --//
     let filesList = [];
     response.Contents.forEach((x) => {
-      let brokerage = x.Key.split("/").slice(1, 2)[0] || ""; //-- penultimate item or "" --//
-      let filename = x.Key.split("/").slice(2, 3)[0] || ""; //-- last item or "" --//
+      const [user_db_id, brokerage = "", file_uuid_plus_filename = ""] =
+        x.Key.split("/");
+      let [file_uuid, filename] = file_uuid_plus_filename.split("_");
 
       //-- Only include filename and brokerage that aren't "" (those are for the S3 "folders") --//
-      if (filename.length > 0 && brokerage.length > 0) {
+      if (filename?.length > 0 && brokerage?.length > 0) {
         let file = {
-          id: x.Key,
+          id: file_uuid,
+          file_uuid: file_uuid,
           filename: filename,
           brokerage: brokerage,
           last_modified: x.LastModified,
@@ -69,10 +104,10 @@ export const listFiles = async (req, res) => {
 //-- ********************* Get File ********************* --//
 export const getFile = async (req, res) => {
   let user_db_id = getUserDbId(req);
-  let { brokerage, filename } = req.params;
+  let { brokerage, file_uuid_plus_filename } = req.params;
 
   let bucket = "chrt-user-trading-data-files";
-  let key = `${user_db_id}/${brokerage}/${filename}`;
+  let key = `${user_db_id}/${brokerage}/${file_uuid_plus_filename}`;
 
   try {
     let response = await s3_client.send(
@@ -80,7 +115,7 @@ export const getFile = async (req, res) => {
     );
     //-- Set headers --//
     res.setHeader("Content-Type", response.ContentType);
-    res.setHeader("Content-Disposition", `attachement; filename="${filename}"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     //-- Pipe s3 client response into res to user --//
     response.Body.pipe(res);
   } catch (err) {
@@ -92,43 +127,25 @@ export const getFile = async (req, res) => {
 //-- ********************* Delete File ********************* --//
 export const deleteFile = async (req, res) => {
   let user_db_id = getUserDbId(req);
-  let { brokerage, filename } = req.params;
+  let { brokerage, file_uuid_plus_filename } = req.params;
 
+  //-- Use file_uuid to delete rows in Postgres --//
+  let [file_uuid, filename] = file_uuid_plus_filename.split("_");
+
+  //-- Use bucket and key to delete S3 object --//
   let bucket = "chrt-user-trading-data-files";
-  let key = `${user_db_id}/${brokerage}/${filename}`;
+  let key = `${user_db_id}/${brokerage}/${file_uuid_plus_filename}`;
 
   try {
-    let response = await s3_client.send(
-      new DeleteObjectCommand({ Bucket: bucket, Key: key })
-    );
+    //-- Delete data from Postgres --//
+    await knex("tradingdata02").where({ file_uuid: file_uuid }).del();
+
+    //-- Delete file from S3 --//
+    await s3_client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+
     res.status(200).json({ message: "File deleted" });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Error deleting file from S3" });
-  }
-};
-
-//-- ********************* Put File ********************* --//
-export const putFile = async (req, res) => {
-  let user_db_id = getUserDbId(req);
-  let { brokerage, filename } = req.params;
-
-  let file = req.file;
-  let bucket = "chrt-user-trading-data-files";
-  let key = `${user_db_id}/${brokerage}/${filename}`;
-
-  try {
-    if (!file.buffer) {
-      res.status(500).json({ error: "No file data received" });
-    }
-
-    await s3_client.send(
-      new PutObjectCommand({ Body: file.buffer, Bucket: bucket, Key: key })
-    );
-
-    res.status(200).json({ message: "File uploaded to S3" });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Error putting file to S3" });
+    res.status(500).json({ error: "Error deleting file from Postgres & S3" });
   }
 };
