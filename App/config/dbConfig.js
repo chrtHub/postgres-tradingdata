@@ -15,7 +15,7 @@ export const getDatabaseConfigFromSecretsManager = async () => {
     let getSecretValueResponse = await secretsManager_client.send(
       new GetSecretValueCommand({
         SecretId:
-          "/chrt/journal/prod/rds-postgres/user_app_server_read_only/credentials",
+          "/chrt/journal/prod/rds-postgres/user_app_server_read_write/credentials",
         VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
       })
     );

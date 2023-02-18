@@ -7,16 +7,17 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 
-import fs from "fs";
-
 //-- knex client --//
+import { knex } from "../../index.js";
 
 //-- Utility Functions --//
 import getUserDbId from "../Util/getUserDbId.js";
 import orderBy from "lodash/orderBy.js";
+import { v4 as uuidv4 } from "uuid";
 
 //-- NPM Functions --//
 
+//-- Other --//
 const s3_client = new S3Client({
   region: "us-east-1",
 });
@@ -68,14 +69,14 @@ export const listFiles = async (req, res) => {
     //-- Build files list array --//
     let filesList = [];
     response.Contents.forEach((x) => {
-      let brokerage = x.Key.split("/").slice(1, 2)[0] || ""; //-- penultimate item or "" --//
-      let file_uuid_plus_filename = x.Key.split("/").slice(2, 3)[0] || ""; //-- last item or "" --//
-      let [file_uuid, filename] = file_uuid_plus_filename.split("_"); // NEW
+      const [user_db_id, brokerage = "", file_uuid_plus_filename = ""] =
+        x.Key.split("/");
+      let [file_uuid, filename] = file_uuid_plus_filename.split("_");
 
       //-- Only include filename and brokerage that aren't "" (those are for the S3 "folders") --//
-      if (filename.length > 0 && brokerage.length > 0) {
+      if (filename?.length > 0 && brokerage?.length > 0) {
         let file = {
-          id: x.Key,
+          id: file_uuid,
           file_uuid: file_uuid,
           filename: filename,
           brokerage: brokerage,
@@ -114,7 +115,7 @@ export const getFile = async (req, res) => {
     );
     //-- Set headers --//
     res.setHeader("Content-Type", response.ContentType);
-    res.setHeader("Content-Disposition", `attachement; filename="${filename}"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     //-- Pipe s3 client response into res to user --//
     response.Body.pipe(res);
   } catch (err) {
@@ -128,16 +129,23 @@ export const deleteFile = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { brokerage, file_uuid_plus_filename } = req.params;
 
+  //-- Use file_uuid to delete rows in Postgres --//
+  let [file_uuid, filename] = file_uuid_plus_filename.split("_");
+
+  //-- Use bucket and key to delete S3 object --//
   let bucket = "chrt-user-trading-data-files";
   let key = `${user_db_id}/${brokerage}/${file_uuid_plus_filename}`;
 
   try {
-    let response = await s3_client.send(
-      new DeleteObjectCommand({ Bucket: bucket, Key: key })
-    );
+    //-- Delete data from Postgres --//
+    await knex("tradingdata02").where({ file_uuid: file_uuid }).del();
+
+    //-- Delete file from S3 --//
+    await s3_client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+
     res.status(200).json({ message: "File deleted" });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Error deleting file from S3" });
+    res.status(500).json({ error: "Error deleting file from Postgres & S3" });
   }
 };
