@@ -21,6 +21,38 @@ const s3_client = new S3Client({
   region: "us-east-1",
 });
 
+//-- ********************* Put File ********************* --//
+export const putFile = async (req, res) => {
+  let user_db_id = getUserDbId(req);
+  let { brokerage, filename } = req.params;
+  let file = req.file; //-- Actual data from file --//
+
+  let bucket = "chrt-user-trading-data-files";
+
+  //-- Generate a uuid and add it in front of the filename --//
+  let file_uuid = uuidv4();
+  let key = `${user_db_id}/${brokerage}/${file_uuid}_${filename}`;
+
+  try {
+    if (!file.buffer) {
+      res.status(500).json({ error: "No file data received" });
+    }
+
+    await s3_client.send(
+      new PutObjectCommand({
+        Body: file.buffer,
+        Bucket: bucket,
+        Key: key,
+      })
+    );
+
+    res.status(200).json({ message: "File uploaded to S3" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Error putting file to S3" });
+  }
+};
+
 //-- ********************* List Files ********************* --//
 export const listFiles = async (req, res) => {
   let user_db_id = getUserDbId(req);
@@ -37,12 +69,14 @@ export const listFiles = async (req, res) => {
     let filesList = [];
     response.Contents.forEach((x) => {
       let brokerage = x.Key.split("/").slice(1, 2)[0] || ""; //-- penultimate item or "" --//
-      let filename = x.Key.split("/").slice(2, 3)[0] || ""; //-- last item or "" --//
+      let file_uuid_plus_filename = x.Key.split("/").slice(2, 3)[0] || ""; //-- last item or "" --//
+      let [file_uuid, filename] = file_uuid_plus_filename.split("_"); // NEW
 
       //-- Only include filename and brokerage that aren't "" (those are for the S3 "folders") --//
       if (filename.length > 0 && brokerage.length > 0) {
         let file = {
           id: x.Key,
+          file_uuid: file_uuid,
           filename: filename,
           brokerage: brokerage,
           last_modified: x.LastModified,
@@ -69,10 +103,10 @@ export const listFiles = async (req, res) => {
 //-- ********************* Get File ********************* --//
 export const getFile = async (req, res) => {
   let user_db_id = getUserDbId(req);
-  let { brokerage, filename } = req.params;
+  let { brokerage, file_uuid_plus_filename } = req.params;
 
   let bucket = "chrt-user-trading-data-files";
-  let key = `${user_db_id}/${brokerage}/${filename}`;
+  let key = `${user_db_id}/${brokerage}/${file_uuid_plus_filename}`;
 
   try {
     let response = await s3_client.send(
@@ -92,10 +126,10 @@ export const getFile = async (req, res) => {
 //-- ********************* Delete File ********************* --//
 export const deleteFile = async (req, res) => {
   let user_db_id = getUserDbId(req);
-  let { brokerage, filename } = req.params;
+  let { brokerage, file_uuid_plus_filename } = req.params;
 
   let bucket = "chrt-user-trading-data-files";
-  let key = `${user_db_id}/${brokerage}/${filename}`;
+  let key = `${user_db_id}/${brokerage}/${file_uuid_plus_filename}`;
 
   try {
     let response = await s3_client.send(
@@ -105,37 +139,5 @@ export const deleteFile = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Error deleting file from S3" });
-  }
-};
-
-//-- ********************* Put File ********************* --//
-export const putFile = async (req, res) => {
-  let user_db_id = getUserDbId(req);
-  let { brokerage, filename } = req.params;
-  let file = req.file; //-- Actual data from file --//
-
-  let bucket = "chrt-user-trading-data-files";
-
-  let file_uuid = uuidv4();
-  let key = `${user_db_id}/${brokerage}/${file_uuid}`;
-
-  try {
-    if (!file.buffer) {
-      res.status(500).json({ error: "No file data received" });
-    }
-
-    await s3_client.send(
-      new PutObjectCommand({
-        Body: file.buffer,
-        Bucket: bucket,
-        Key: key,
-        Metadata: { filename: filename },
-      })
-    );
-
-    res.status(200).json({ message: "File uploaded to S3" });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Error putting file to S3" });
   }
 };
