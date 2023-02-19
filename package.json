@@ -38,6 +38,7 @@
     "node-pg-migrate": "^6.2.2",
     "openai": "^3.1.0",
     "pg": "^8.8.0",
+    "ssh2": "^1.11.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
