@@ -16,8 +16,8 @@ import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
-import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
-import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
+import { dataAuthMiddleware } from "./App/auth/dataAuthMiddleware.js";
+import { journalAuthMiddleware } from "./App/auth/journalAuthMiddleware.js";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
@@ -32,7 +32,7 @@ let { db_host, db_port, db_username, db_password, db_dbname } =
   await getDatabaseConfigFromSecretsManager();
 
 //-- In development mode, connect to db via SSH tunnel --//
-//-- NOTE - must establish SSH tunnel before starting this server --//
+//-- NOTE - must establish SSH tunnel outside this server for this to work --//
 if (process.env.NODE_ENV === "development") {
   db_host = "127.0.0.1";
   db_port = 2222;
@@ -126,7 +126,13 @@ app.use("/data", dataAuthMiddleware, dataRoutes);
 app.use("/journal", journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
 
-//-- Listener --//
+//-- *************** Error Handler *************** --//
+const errorHandler = (err, req, res, next) => {
+  return res.status(500).send("Internal server error beep boop");
+};
+app.use(errorHandler);
+
+//-- *************** Listener *************** --//
 app.listen(PORT, () => {
   console.log(`express listening on port ${PORT}`);
 });

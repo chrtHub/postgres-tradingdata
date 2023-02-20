@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "ssh": "ssh -i 'chrt-1-bastion-postgres-02.pem' -N -L 2222:db-instance-chrt-user-trading-data.cmlzf31dlxgq.us-east-1.rds.amazonaws.com:5432 ec2-user@18.207.101.199",
     "dev": "NODE_ENV=development nodemon index.js",
     "start": "NODE_ENV=production node index.js",
     "migrate": "node-pg-migrate",
@@ -39,7 +40,6 @@
     "openai": "^3.1.0",
     "pg": "^8.8.0",
     "ssh2": "^1.11.0",
-    "tunnel-ssh": "^5.0.5",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

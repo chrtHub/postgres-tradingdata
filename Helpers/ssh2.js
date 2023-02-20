@@ -1,8 +1,10 @@
-import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
+// not working, just establishing ssh tunnel externally instead
+
+// import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 
 //-- SSH tunnel config values --//
 // let src_host = "127.0.0.1";
-// let src_port = 22;
+// let src_port = 2222;
 // let ec2_username = "ec2-user";
 // let ec2_host = "18.207.101.199"; //-- Subject to change --//
 // let ec2_pemFile = fs.readFileSync("./chrt-1-bastion-postgres-02.pem"); //-- Local file --//

@@ -19,8 +19,9 @@ export const plLast45CalendarDays = async (req, res) => {
       .orderBy("trade_date");
 
     res.json(rows);
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("error during knex query");
   }
 };
 
@@ -37,8 +38,9 @@ export const tradeUUIDsByDate = async (req, res) => {
       .andWhere("user_db_id", user_db_id); //-- SECURITY --//
 
     res.json(rows);
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("error during knex query");
   }
 };
 
@@ -81,8 +83,9 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
       .groupBy("trade_uuid", "trade_date", "symbol", "side");
 
     res.json(rows);
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("error during knex query");
   }
 };
 
@@ -114,7 +117,8 @@ export const txnsByTradeUUID = async (req, res) => {
       .andWhere("user_db_id", user_db_id) //-- SECURITY --//
       .orderBy("execution_time", "asc");
     res.json(rows);
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("error during knex query");
   }
 };
