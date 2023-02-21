@@ -16,8 +16,8 @@ import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
-import { dataAuthMiddleware } from "./App/auth/dataAuthMiddleware.js";
-import { journalAuthMiddleware } from "./App/auth/journalAuthMiddleware.js";
+import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
+import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";

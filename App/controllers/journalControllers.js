@@ -1,5 +1,5 @@
 //-- user_db_id utility function --//
-import getUserDbId from "../Util/getUserDbId.js";
+import getUserDbId from "../util/getUserDbId.js";
 
 //-- knex client --//
 import { knex } from "../../index.js";

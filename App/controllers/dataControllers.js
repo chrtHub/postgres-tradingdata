@@ -1,6 +1,6 @@
 //-- knex client --//
 import { knex } from "../../index.js";
-import getUserDbId from "../Util/getUserDbId.js";
+import getUserDbId from "../util/getUserDbId.js";
 
 //-- Fetch Data --//
 export const fetchData = async (req, res) => {
