@@ -128,7 +128,11 @@ app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
 
 //-- *************** Error Handler *************** --//
 const errorHandler = (err, req, res, next) => {
-  return res.status(500).send("Internal server error beep boop");
+  if (err.name === "UnauthorizedError") {
+    return res.status(401).send("Authentication failed beep boop");
+  } else {
+    return res.status(500).send("Internal server error beep boop");
+  }
 };
 app.use(errorHandler);
 
