@@ -129,7 +129,11 @@ app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
 //-- *************** Error Handler *************** --//
 const errorHandler = (err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
-    return res.status(401).send("Authentication failed beep boop");
+    return res
+      .status(401)
+      .send(
+        "Authentication failed beep boop. It's possible that the resource also does not exist beep boop. Cos we're checking tokens before all routes except '/' beep boop."
+      );
   } else {
     return res.status(500).send("Internal server error beep boop");
   }
