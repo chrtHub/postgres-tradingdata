@@ -36,7 +36,7 @@ export const putFile = async (req, res) => {
 
   try {
     if (!file.buffer) {
-      res.status(500).json({ error: "No file data received" });
+      return res.status(400).send("No file data received");
     }
 
     await s3_client.send(
@@ -47,10 +47,11 @@ export const putFile = async (req, res) => {
       })
     );
 
-    res.status(200).json({ message: "File uploaded to S3" });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Error putting file to S3" });
+    return res.status(200).send("File uploaded to S3");
+    //----//
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Error putting file to S3");
   }
 };
 
@@ -95,9 +96,10 @@ export const listFiles = async (req, res) => {
       "desc" //-- asc or desc --//
     );
 
-    res.send(sortedFilesList);
-  } catch (err) {
-    console.log(err);
+    return res.send(sortedFilesList);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Error while building files list");
   }
 };
 
@@ -105,6 +107,7 @@ export const listFiles = async (req, res) => {
 export const getFile = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { brokerage, file_uuid_plus_filename } = req.params;
+  let [file_uuid, filename] = file_uuid_plus_filename.split("_");
 
   let bucket = "chrt-user-trading-data-files";
   let key = `${user_db_id}/${brokerage}/${file_uuid_plus_filename}`;
@@ -118,9 +121,9 @@ export const getFile = async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     //-- Pipe s3 client response into res to user --//
     response.Body.pipe(res);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Error downloading file from S3" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Error downloading file from S3");
   }
 };
 
@@ -143,9 +146,11 @@ export const deleteFile = async (req, res) => {
     //-- Delete file from S3 --//
     await s3_client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 
-    res.status(200).json({ message: "File deleted" });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Error deleting file from Postgres & S3" });
+    return res
+      .status(200)
+      .send("File data deleted from Postgres and file deleted from S3");
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Error deleting file from Postgres & S3");
   }
 };

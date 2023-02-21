@@ -17,7 +17,13 @@ export const some_Function = async (req, res) => {
 
   try {
     // TODO
-  } catch (err) {
-    res.status(500).json({ error: "Error <<>>" });
+    // if (!someNecessaryCondition) {
+    // res.status(400).send("Error - did not meet some necessary condition")
+    // }
+    // let data = fetchData()
+    // return res.send(data)
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("error message while trying to beep boop");
   }
 };
