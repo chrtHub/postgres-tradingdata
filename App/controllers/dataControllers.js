@@ -9,9 +9,9 @@ export const fetchData = async (req, res) => {
   try {
     let rows = { foo: "bar", user_db_id: user_db_id };
     res.json(rows);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Error fetching data" });
+  } catch (e) {
+    console.log(e);
+    res.status(500).send("Error fetching data");
   }
 };
 

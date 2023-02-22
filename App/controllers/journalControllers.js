@@ -19,8 +19,8 @@ export const plLast45CalendarDays = async (req, res) => {
       .orderBy("trade_date");
 
     res.json(rows);
-  } catch (error) {
-    console.log(error);
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error during knex query");
   }
 };
@@ -30,6 +30,10 @@ export const tradeUUIDsByDate = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { date } = req.params;
 
+  if (!date || date === "null") {
+    return res.status(400).send("Missing 'date' param");
+  }
+
   try {
     let rows = await knex("tradingdata02")
       .select("trade_uuid")
@@ -37,9 +41,9 @@ export const tradeUUIDsByDate = async (req, res) => {
       .where("trade_date", date)
       .andWhere("user_db_id", user_db_id); //-- SECURITY --//
 
-    res.json(rows);
-  } catch (error) {
-    console.log(error);
+    return res.json(rows);
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error during knex query");
   }
 };
@@ -49,6 +53,10 @@ export const tradeUUIDsByDate = async (req, res) => {
 export const tradeSummaryByTradeUUID = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { trade_uuid } = req.params;
+
+  if (!trade_uuid || trade_uuid === "null") {
+    return res.status(400).send("Missing 'trade_uuid' param");
+  }
 
   try {
     const rows = await knex
@@ -83,8 +91,8 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
       .groupBy("trade_uuid", "trade_date", "symbol", "side");
 
     res.json(rows);
-  } catch (error) {
-    console.log(error);
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error during knex query");
   }
 };
@@ -94,6 +102,10 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
 export const txnsByTradeUUID = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { trade_uuid } = req.params;
+
+  if (!trade_uuid || trade_uuid === "null") {
+    return res.status(400).send("Missing 'trade_uuid' param");
+  }
 
   try {
     const rows = await knex
@@ -117,8 +129,8 @@ export const txnsByTradeUUID = async (req, res) => {
       .andWhere("user_db_id", user_db_id) //-- SECURITY --//
       .orderBy("execution_time", "asc");
     res.json(rows);
-  } catch (error) {
-    console.log(error);
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error during knex query");
   }
 };

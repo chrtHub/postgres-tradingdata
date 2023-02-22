@@ -15,15 +15,15 @@ export const some_Function = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { foo } = req.params; // for route like 'some_route/:foo'
 
+  if (!foo) {
+    res.status(400).send("Missing foo param");
+  }
+
   try {
-    // TODO
-    // if (!someNecessaryCondition) {
-    // res.status(400).send("Error - did not meet some necessary condition")
-    // }
     // let data = fetchData()
-    // return res.send(data)
-  } catch (error) {
-    console.log(error);
+    // return res.json(data)
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error message while trying to beep boop");
   }
 };
