@@ -1,5 +1,6 @@
-//-- user_db_id utility function --//
-import getUserDbId from "../Util/getUserDbId.js";
+//-- Utility Functions --//
+import getUserDbId from "../Util/getUserDbId";
+import getTradingDatesAndProfitsArray from "../Util/getTradingDatesAndProfitsArray";
 
 //-- knex client --//
 import { knex } from "../../index.js";
@@ -18,7 +19,29 @@ export const plLast45CalendarDays = async (req, res) => {
       .groupBy("trade_date")
       .orderBy("trade_date");
 
-    res.json(rows);
+    //-- Get array of trading dates from the past 45 calendar days --//
+    const datesArray = getTradingDatesAndProfitsArray(45);
+
+    console.log(rows);
+    console.log(datesArray);
+
+    //-- For valid trading days, use data returned from Postgres --//
+    // res.data.forEach((item) => {
+    //   const date = format(new Date(item.trade_date), "yyyy-MM-dd");
+    //   const index = datesArray.findIndex((x) => x.date === date);
+    //   if (index !== -1) {
+    //     datesArray[index].profit = item.profit;
+    //   }
+    // });
+
+    // let dates = datesArray.map((x) => {
+    //   return x.date;
+    // });
+    // let profits = datesArray.map((x) => {
+    //   return x.profit;
+    // });
+
+    // res.json(rows);
   } catch (e) {
     console.log(e);
     return res.status(500).send("error during knex query");
