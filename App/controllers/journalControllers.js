@@ -1,6 +1,9 @@
 //-- Utility Functions --//
-import getUserDbId from "../Util/getUserDbId";
-import getTradingDatesAndProfitsArray from "../Util/getTradingDatesAndProfitsArray";
+import getUserDbId from "../utils/getUserDbId.js";
+import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsArray.js";
+
+//-- NPM Functions --//
+import { format } from "date-fns";
 
 //-- knex client --//
 import { knex } from "../../index.js";
@@ -19,29 +22,22 @@ export const plLast45CalendarDays = async (req, res) => {
       .groupBy("trade_date")
       .orderBy("trade_date");
 
-    //-- Get array of trading dates from the past 45 calendar days --//
-    const datesArray = getTradingDatesAndProfitsArray(45);
+    //-- Get array of actual Market Days from the past 45 calendar days --//
+    const datesAndProfits = getTradingDatesAndProfitsArray(45);
 
-    console.log(rows);
-    console.log(datesArray);
+    //-- Write data from Postgres into the datesAndProfits --//
+    rows.forEach((row) => {
+      //-- format date --//
+      const date = format(new Date(row.trade_date), "yyyy-MM-dd");
+      //-- Get each date's index in the datesAndProfits --//
+      const index = datesAndProfits.findIndex((item) => item.date === date);
+      //-- Write the date's profit into the datesAndProfits --//
+      if (index !== -1) {
+        datesAndProfits[index].profit = row.profit;
+      }
+    });
 
-    //-- For valid trading days, use data returned from Postgres --//
-    // res.data.forEach((item) => {
-    //   const date = format(new Date(item.trade_date), "yyyy-MM-dd");
-    //   const index = datesArray.findIndex((x) => x.date === date);
-    //   if (index !== -1) {
-    //     datesArray[index].profit = item.profit;
-    //   }
-    // });
-
-    // let dates = datesArray.map((x) => {
-    //   return x.date;
-    // });
-    // let profits = datesArray.map((x) => {
-    //   return x.profit;
-    // });
-
-    // res.json(rows);
+    res.json(datesAndProfits);
   } catch (e) {
     console.log(e);
     return res.status(500).send("error during knex query");
