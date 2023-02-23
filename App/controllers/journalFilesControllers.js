@@ -11,7 +11,7 @@ import {
 import { knex } from "../../index.js";
 
 //-- Utility Functions --//
-import getUserDbId from "../Util/getUserDbId.js";
+import getUserDbId from "../utils/getUserDbId.js";
 import orderBy from "lodash/orderBy.js";
 import { v4 as uuidv4 } from "uuid";
 

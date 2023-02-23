@@ -1,5 +1,9 @@
-//-- user_db_id utility function --//
-import getUserDbId from "../Util/getUserDbId.js";
+//-- Utility Functions --//
+import getUserDbId from "../utils/getUserDbId.js";
+import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsArray.js";
+
+//-- NPM Functions --//
+import { format } from "date-fns";
 
 //-- knex client --//
 import { knex } from "../../index.js";
@@ -18,9 +22,24 @@ export const plLast45CalendarDays = async (req, res) => {
       .groupBy("trade_date")
       .orderBy("trade_date");
 
-    res.json(rows);
-  } catch (error) {
-    console.log(error);
+    //-- Get array of actual Market Days from the past 45 calendar days --//
+    const datesAndProfits = getTradingDatesAndProfitsArray(45);
+
+    //-- Write data from Postgres into the datesAndProfits --//
+    rows.forEach((row) => {
+      //-- format date --//
+      const date = format(new Date(row.trade_date), "yyyy-MM-dd");
+      //-- Get each date's index in the datesAndProfits --//
+      const index = datesAndProfits.findIndex((item) => item.date === date);
+      //-- Write the date's profit into the datesAndProfits --//
+      if (index !== -1) {
+        datesAndProfits[index].profit = row.profit;
+      }
+    });
+
+    res.json(datesAndProfits);
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error during knex query");
   }
 };
@@ -30,6 +49,10 @@ export const tradeUUIDsByDate = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { date } = req.params;
 
+  if (!date || date === "null") {
+    return res.status(400).send("Missing 'date' param");
+  }
+
   try {
     let rows = await knex("tradingdata02")
       .select("trade_uuid")
@@ -37,9 +60,9 @@ export const tradeUUIDsByDate = async (req, res) => {
       .where("trade_date", date)
       .andWhere("user_db_id", user_db_id); //-- SECURITY --//
 
-    res.json(rows);
-  } catch (error) {
-    console.log(error);
+    return res.json(rows);
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error during knex query");
   }
 };
@@ -49,6 +72,10 @@ export const tradeUUIDsByDate = async (req, res) => {
 export const tradeSummaryByTradeUUID = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { trade_uuid } = req.params;
+
+  if (!trade_uuid || trade_uuid === "null") {
+    return res.status(400).send("Missing 'trade_uuid' param");
+  }
 
   try {
     const rows = await knex
@@ -83,8 +110,8 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
       .groupBy("trade_uuid", "trade_date", "symbol", "side");
 
     res.json(rows);
-  } catch (error) {
-    console.log(error);
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error during knex query");
   }
 };
@@ -94,6 +121,10 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
 export const txnsByTradeUUID = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { trade_uuid } = req.params;
+
+  if (!trade_uuid || trade_uuid === "null") {
+    return res.status(400).send("Missing 'trade_uuid' param");
+  }
 
   try {
     const rows = await knex
@@ -117,8 +148,8 @@ export const txnsByTradeUUID = async (req, res) => {
       .andWhere("user_db_id", user_db_id) //-- SECURITY --//
       .orderBy("execution_time", "asc");
     res.json(rows);
-  } catch (error) {
-    console.log(error);
+  } catch (e) {
+    console.log(e);
     return res.status(500).send("error during knex query");
   }
 };

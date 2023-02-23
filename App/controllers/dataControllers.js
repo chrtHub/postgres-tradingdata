@@ -1,6 +1,6 @@
 //-- knex client --//
 import { knex } from "../../index.js";
-import getUserDbId from "../Util/getUserDbId.js";
+import getUserDbId from "../utils/getUserDbId.js";
 
 //-- Fetch Data --//
 export const fetchData = async (req, res) => {
@@ -9,9 +9,9 @@ export const fetchData = async (req, res) => {
   try {
     let rows = { foo: "bar", user_db_id: user_db_id };
     res.json(rows);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Error fetching data" });
+  } catch (e) {
+    console.log(e);
+    res.status(500).send("Error fetching data");
   }
 };
 
