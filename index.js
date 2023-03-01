@@ -19,6 +19,11 @@ import { auth } from "express-oauth2-jwt-bearer";
 import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
 import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
 
+//-- OpenAPI Spec --//
+// import { OpenApi } from "openapi3-ts";
+// import spec from "./Spec/openapi3-spec.js";
+// const openApi = new OpenApi(spec);
+
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -101,6 +106,9 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
+
+//-- OpenAPI Spec Validation Middleware --//
+// app.use(openApi.validate);
 
 //-- Auth - valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
 const jwtCheck = auth({
