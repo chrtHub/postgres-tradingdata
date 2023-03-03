@@ -20,9 +20,7 @@ import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
 import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
 
 //-- OpenAPI Spec --//
-// import { OpenApi } from "openapi3-ts";
-// import spec from "./Spec/openapi3-spec.js";
-// const openApi = new OpenApi(spec);
+import swaggerJsdoc from "swagger-jsdoc";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
@@ -73,7 +71,7 @@ try {
   console.log(error);
 }
 
-//-- *************** Express Server + Middleware *************** --//
+//-- *************** Express Server, Middleware, Swagger-JSDoc *************** --//
 const PORT = 8080;
 const app = express();
 
@@ -102,13 +100,44 @@ app.use((req, res, next) => {
   next();
 });
 
+const apiSpecOptions = {
+  swaggerDefinition: {
+    info: {
+      title: "CHRT API",
+      version: "1.0.0",
+      description: "CHRT API docs",
+      contact: {
+        name: "Aaron Carver",
+        email: "aaron@chrt.com",
+      },
+    },
+  },
+  apis: ["./App/routes/*.js"],
+};
+
+const apiSpec = swaggerJsdoc(apiSpecOptions);
+
+app.get("/apiSpec.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(apiSpec);
+});
+
 //-- Health check route --//
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Health check that returns "Hello World"
+ *       description: Returns "Hello World"
+ *       produces:
+ *         - text/plain
+ *       responses:
+ *         200:
+ *           description: "Hello World"
+ */
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
-
-//-- OpenAPI Spec Validation Middleware --//
-// app.use(openApi.validate);
 
 //-- Auth - valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
 const jwtCheck = auth({
