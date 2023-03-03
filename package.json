@@ -41,6 +41,7 @@
     "openapi3-ts": "^3.2.0",
     "pg": "^8.8.0",
     "ssh2": "^1.11.0",
+    "swagger-jsdoc": "^6.2.8",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
