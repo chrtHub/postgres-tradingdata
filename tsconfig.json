@@ -1,0 +1,36 @@
+//-- From: https://github.com/tsconfig/bases/blob/main/bases/node18.json --//
+
+// {
+//   "$schema": "https://json.schemastore.org/tsconfig",
+//   "display": "Node 18",
+
+//   "compilerOptions": {
+//     "lib": ["es2022"],
+//     "module": "commonjs",
+//     "target": "es2022",
+//     "strict": true,
+//     "esModuleInterop": true,
+//     "skipLibCheck": true,
+//     "forceConsistentCasingInFileNames": true,
+//     "moduleResolution": "node"
+//   }
+// }
+
+//-- Above is the 'node18' base that is extended below --//
+
+{
+  "extends": "@tsconfig/node18/tsconfig.json",
+  "ts-node": {
+    "transpileOnly": false, //-- use 'false' for ts-node typechecking, use 'true' to skip typechecking --//
+    "files": true,
+    "compilerOptions": {
+      //-- These compilerOptions are overrides only for ts-node - i.e. they won't apply to tsc --//
+    }
+  },
+  "compilerOptions": {
+    "sourceMap": true,
+    "outDir": "dist"
+  },
+  "include": ["App/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}

@@ -8,7 +8,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 //-- knex client --//
-import { knex } from "../../index.js";
+import { knex } from "../../index.ts";
 
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";

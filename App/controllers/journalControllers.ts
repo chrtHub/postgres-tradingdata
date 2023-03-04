@@ -6,7 +6,7 @@ import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsAr
 import { format } from "date-fns";
 
 //-- knex client --//
-import { knex } from "../../index.js";
+import { knex } from "../../index.ts";
 
 //-- AWS client(s) --//
 

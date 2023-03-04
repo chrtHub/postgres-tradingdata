@@ -1,7 +1,7 @@
 //-- AWS client(s) --//
 
 //-- knex client --//
-import { knex } from "../../index.js";
+import { knex } from "../../index.ts";
 
 //-- Utility Functions --//
 import getUserDbId from "../Util/getUserDbId.js";

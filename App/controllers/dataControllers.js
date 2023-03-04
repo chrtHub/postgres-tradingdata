@@ -1,5 +1,5 @@
 //-- knex client --//
-import { knex } from "../../index.js";
+import { knex } from "../../index.ts";
 import getUserDbId from "../utils/getUserDbId.js";
 
 //-- Fetch Data --//
