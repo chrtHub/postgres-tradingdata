@@ -26,6 +26,9 @@ import swaggerJsdoc from "swagger-jsdoc";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
+//-- Types --//
+import { Request, Response, NextFunction } from "express";
+
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
 
@@ -164,7 +167,7 @@ app.use("/journal", journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
 
 //-- *************** Error Handler *************** --//
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req: Request, res: Response, next: NextFunction) => {
   if (err.name === "UnauthorizedError") {
     return res
       .status(401)

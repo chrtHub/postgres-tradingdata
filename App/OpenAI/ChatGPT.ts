@@ -12,7 +12,7 @@ const secretsManager_client = new SecretsManagerClient({
   region: "us-east-1",
 });
 
-let OPENAI_API_KEY;
+let OPENAI_API_KEY: string;
 
 async function getOpenAI_API_Key() {
   try {

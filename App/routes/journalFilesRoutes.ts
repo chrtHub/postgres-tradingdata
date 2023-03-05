@@ -1,6 +1,6 @@
 //-- ********** Imports ********** --//
 //-- ***** ***** ***** ***** ***** --//
-import express from "express";
+import express, { Request } from "express";
 import * as ctrl from "../controllers/journalFilesControllers.js";
 import multer from "multer";
 
@@ -8,13 +8,17 @@ import multer from "multer";
 const storage = multer.memoryStorage();
 
 //-- Multer fileFilter --//
-const fileFilter = (req, file, callback) => {
+const fileFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  callback: Function
+) => {
   if (file.mimetype === "text/csv") {
     callback(null, true);
   } else {
     const error = new Error(
       `File type ${file.mimetype} not supported - .csv only`
-    );
+    ) as any;
     error.status = 415; //-- 415: Unsupported Media Type --//
     callback(error, false);
   }

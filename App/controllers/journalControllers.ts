@@ -1,21 +1,24 @@
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
-import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsArray.js";
+import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsArray";
 
 //-- NPM Functions --//
 import { format } from "date-fns";
 
 //-- knex client --//
-import { knex } from "../../index.ts";
+import { knex } from "../../index";
 
 //-- AWS client(s) --//
 
+//-- Types --//
+import { Request, Response } from "express";
+
 //-- ********************* Dashboard ********************* --//
-export const plLast45CalendarDays = async (req, res) => {
-  let user_db_id = getUserDbId(req);
+export const plLast45CalendarDays = async (req: Request, res: Response) => {
+  let user_db_id: string = getUserDbId(req);
 
   try {
-    let rows = await knex("tradingdata02")
+    let rows: any = await knex("tradingdata02")
       .select("trade_date", knex.raw("SUM(net_proceeds) as profit"))
       .whereRaw("trade_date >= NOW() - INTERVAL '45 days'")
       .andWhere("user_db_id", user_db_id) //-- SECURITY --//
@@ -26,7 +29,7 @@ export const plLast45CalendarDays = async (req, res) => {
     const datesAndProfits = getTradingDatesAndProfitsArray(45);
 
     //-- Write data from Postgres into the datesAndProfits --//
-    rows.forEach((row) => {
+    rows.forEach((row: any) => {
       //-- format date --//
       const date = format(new Date(row.trade_date), "yyyy-MM-dd");
       //-- Get each date's index in the datesAndProfits --//
@@ -45,8 +48,8 @@ export const plLast45CalendarDays = async (req, res) => {
 };
 
 //-- ********************* Days ********************* --//
-export const tradeUUIDsByDate = async (req, res) => {
-  let user_db_id = getUserDbId(req);
+export const tradeUUIDsByDate = async (req: Request, res: Response) => {
+  let user_db_id: string = getUserDbId(req);
   let { date } = req.params;
 
   if (!date || date === "null") {
@@ -54,7 +57,7 @@ export const tradeUUIDsByDate = async (req, res) => {
   }
 
   try {
-    let rows = await knex("tradingdata02")
+    let rows: any = await knex("tradingdata02")
       .select("trade_uuid")
       .distinct()
       .where("trade_date", date)
@@ -69,8 +72,8 @@ export const tradeUUIDsByDate = async (req, res) => {
 
 //-- ********************* Trades ********************* --//
 //-- Trade summary by trade_uuid --//
-export const tradeSummaryByTradeUUID = async (req, res) => {
-  let user_db_id = getUserDbId(req);
+export const tradeSummaryByTradeUUID = async (req: Request, res: Response) => {
+  let user_db_id: string = getUserDbId(req);
   let { trade_uuid } = req.params;
 
   if (!trade_uuid || trade_uuid === "null") {
@@ -79,7 +82,7 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
 
   try {
     const rows = await knex
-      .with("trade", (querybuilder) => {
+      .with("trade", (querybuilder: any) => {
         querybuilder
           .select(
             "trade_uuid",
@@ -118,8 +121,8 @@ export const tradeSummaryByTradeUUID = async (req, res) => {
 
 //-- ********************* Txns ********************* --//
 //-- txns by trade_uuid --//
-export const txnsByTradeUUID = async (req, res) => {
-  let user_db_id = getUserDbId(req);
+export const txnsByTradeUUID = async (req: Request, res: Response) => {
+  let user_db_id: string = getUserDbId(req);
   let { trade_uuid } = req.params;
 
   if (!trade_uuid || trade_uuid === "null") {

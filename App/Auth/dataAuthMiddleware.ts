@@ -1,4 +1,10 @@
-export const dataAuthMiddleware = async (req, res, next) => {
+import { Request, Response, NextFunction } from "express";
+
+export const dataAuthMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let { payload } = req.auth;
 
   //-- Check for necessary permissions to access route(s) guarded by this middleware --//
