@@ -11,5 +11,17 @@ module.exports = {
     sourceType: "module",
   },
   plugins: ["@typescript-eslint"],
-  rules: {},
+  //-- testing
+  rules: {
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        ts: "never",
+        tsx: "never",
+        js: "never",
+        jsx: "never",
+      },
+    ],
+  },
 };
