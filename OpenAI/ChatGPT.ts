@@ -24,9 +24,11 @@ async function getOpenAI_API_Key() {
       })
     );
     //-- Parse Secret String in res as JSON --//
-    const SecretStringJSON = JSON.parse(res.SecretString);
-    //-- Set Open API Key value --//
-    OPENAI_API_KEY = SecretStringJSON.OPENAI_API_KEY;
+    if (res.SecretString) {
+      const SecretStringJSON = JSON.parse(res.SecretString);
+      //-- Set Open API Key value --//
+      OPENAI_API_KEY = SecretStringJSON.OPENAI_API_KEY;
+    }
     //----//
   } catch (error) {
     console.log(error);

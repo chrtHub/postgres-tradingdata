@@ -1,6 +1,6 @@
 //-- *************** Imports *************** --//
 //-- Database config --//
-import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
+import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig";
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 import fs from "fs";
 
@@ -10,14 +10,16 @@ import cors from "cors";
 import helmet from "helmet";
 
 //-- Routes --//
-import dataRoutes from "./App/routes/dataRoutes.js";
-import journalRoutes from "./App/routes/journalRoutes.js";
-import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
+import dataRoutes from "./App/routes/dataRoutes";
+import journalRoutes from "./App/routes/journalRoutes";
+import journalFilesRoutes from "./App/routes/journalFilesRoutes";
+import llmRoutes from "./App/routes/llmRoutes";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
-import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
-import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
+import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware";
+import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware";
+import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware";
 
 //-- OpenAPI Spec --//
 import swaggerJsdoc from "swagger-jsdoc";
@@ -167,6 +169,7 @@ app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
 app.use("/data", dataAuthMiddleware, dataRoutes);
 app.use("/journal", journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
+app.use("/llm", llmAuthMiddleware, llmRoutes);
 
 //-- *************** Error Handler *************** --//
 const errorHandler = (

@@ -138,7 +138,7 @@ export const getFile = async (req: IRequestWithAuth, res: Response) => {
     //-- Transform to string and send to user --//
     if (response?.Body) {
       let fileBody = await response.Body.transformToString();
-      return fileBody;
+      return res.send(fileBody);
     }
   } catch (error) {
     console.log(error);
