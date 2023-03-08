@@ -135,9 +135,10 @@ export const getFile = async (req: IRequestWithAuth, res: Response) => {
     //-- Set headers --//
     res.setHeader("Content-Type", response.ContentType || "");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    //-- Pipe s3 client response into res to user --//
-    if (response?.Body && response.Body instanceof ReadableStream) {
-      response.Body.pipe(res);
+    //-- Transform to string and send to user --//
+    if (response?.Body) {
+      let fileBody = await response.Body.transformToString();
+      return fileBody;
     }
   } catch (error) {
     console.log(error);
