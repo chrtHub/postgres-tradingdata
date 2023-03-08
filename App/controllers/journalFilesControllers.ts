@@ -8,11 +8,11 @@ import {
 } from "@aws-sdk/client-s3";
 
 //-- knex client --//
-import { knex } from "../../index";
+import { knex } from "../../index.js";
 
 //-- Utility Functions --//
-import getUserDbId from "../utils/getUserDbId";
-import orderBy from "lodash/orderBy";
+import getUserDbId from "../utils/getUserDbId.js";
+import orderBy from "lodash/orderBy.js";
 import { v4 as uuidv4 } from "uuid";
 
 //-- NPM Functions --//

@@ -1,6 +1,6 @@
 //-- *************** Imports *************** --//
 //-- Database config --//
-import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig";
+import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 import fs from "fs";
 
@@ -10,16 +10,16 @@ import cors from "cors";
 import helmet from "helmet";
 
 //-- Routes --//
-import dataRoutes from "./App/routes/dataRoutes";
-import journalRoutes from "./App/routes/journalRoutes";
-import journalFilesRoutes from "./App/routes/journalFilesRoutes";
-import llmRoutes from "./App/routes/llmRoutes";
+import dataRoutes from "./App/routes/dataRoutes.js";
+import journalRoutes from "./App/routes/journalRoutes.js";
+import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
+import llmRoutes from "./App/routes/llmRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
-import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware";
-import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware";
-import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware";
+import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
+import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
+import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware.js";
 
 //-- OpenAPI Spec --//
 import swaggerJsdoc from "swagger-jsdoc";

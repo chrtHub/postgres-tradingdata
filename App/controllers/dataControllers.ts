@@ -1,6 +1,6 @@
 //-- knex client --//
 // import { knex } from "../../index";
-import getUserDbId from "../utils/getUserDbId";
+import getUserDbId from "../utils/getUserDbId.js";
 
 //-- Types --//
 import { Response } from "express";

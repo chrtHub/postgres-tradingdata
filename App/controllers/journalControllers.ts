@@ -1,12 +1,12 @@
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
-import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsArray";
+import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsArray.js";
 
 //-- NPM Functions --//
 import { format } from "date-fns";
 
 //-- knex client --//
-import { knex } from "../../index";
+import { knex } from "../../index.js";
 
 //-- AWS client(s) --//
 
