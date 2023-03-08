@@ -3,10 +3,11 @@
 import getUserDbId from "../utils/getUserDbId";
 
 //-- Types --//
-import { Request, Response } from "express";
+import { Response } from "express";
+import { IRequestWithAuth } from "../../index.d";
 
 //-- Fetch Data --//
-export const fetchData = async (req: Request, res: Response) => {
+export const fetchData = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
 
   try {

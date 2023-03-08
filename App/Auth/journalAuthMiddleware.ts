@@ -1,9 +1,20 @@
-export const journalAuthMiddleware = async (req, res, next) => {
-  let { payload } = req.auth;
+import { Response, NextFunction } from "express";
+import { IRequestWithAuth } from "../../index.d";
+
+export const journalAuthMiddleware = async (
+  req: IRequestWithAuth,
+  res: Response,
+  next: NextFunction
+) => {
+  let payload = req?.auth?.payload;
+  let read_journal: boolean = false;
+  let write_journal: boolean = false;
 
   //-- Check for necessary permissions to access route(s) guarded by this middleware --//
-  let read_journal = payload.permissions.includes("read:journal");
-  let write_journal = payload.permissions.includes("write:journal");
+  if (payload && payload.permissions) {
+    read_journal = payload.permissions.includes("read:journal");
+    write_journal = payload.permissions.includes("write:journal");
+  }
 
   //-- Only proceed via 'next()' if necessary permissions are present, otherwise send 401 --//
   if (read_journal && write_journal) {

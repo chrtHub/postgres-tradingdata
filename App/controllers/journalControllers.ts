@@ -11,11 +11,15 @@ import { knex } from "../../index";
 //-- AWS client(s) --//
 
 //-- Types --//
-import { Request, Response } from "express";
+import { Response } from "express";
+import { IRequestWithAuth } from "../../index.d";
 
 //-- ********************* Dashboard ********************* --//
-export const plLast45CalendarDays = async (req: Request, res: Response) => {
-  let user_db_id: string = getUserDbId(req);
+export const plLast45CalendarDays = async (
+  req: IRequestWithAuth,
+  res: Response
+) => {
+  let user_db_id = getUserDbId(req);
 
   try {
     let rows: any = await knex("tradingdata02")
@@ -48,8 +52,11 @@ export const plLast45CalendarDays = async (req: Request, res: Response) => {
 };
 
 //-- ********************* Days ********************* --//
-export const tradeUUIDsByDate = async (req: Request, res: Response) => {
-  let user_db_id: string = getUserDbId(req);
+export const tradeUUIDsByDate = async (
+  req: IRequestWithAuth,
+  res: Response
+) => {
+  let user_db_id = getUserDbId(req);
   let { date } = req.params;
 
   if (!date || date === "null") {
@@ -72,8 +79,11 @@ export const tradeUUIDsByDate = async (req: Request, res: Response) => {
 
 //-- ********************* Trades ********************* --//
 //-- Trade summary by trade_uuid --//
-export const tradeSummaryByTradeUUID = async (req: Request, res: Response) => {
-  let user_db_id: string = getUserDbId(req);
+export const tradeSummaryByTradeUUID = async (
+  req: IRequestWithAuth,
+  res: Response
+) => {
+  let user_db_id = getUserDbId(req);
   let { trade_uuid } = req.params;
 
   if (!trade_uuid || trade_uuid === "null") {
@@ -121,8 +131,8 @@ export const tradeSummaryByTradeUUID = async (req: Request, res: Response) => {
 
 //-- ********************* Txns ********************* --//
 //-- txns by trade_uuid --//
-export const txnsByTradeUUID = async (req: Request, res: Response) => {
-  let user_db_id: string = getUserDbId(req);
+export const txnsByTradeUUID = async (req: IRequestWithAuth, res: Response) => {
+  let user_db_id = getUserDbId(req);
   let { trade_uuid } = req.params;
 
   if (!trade_uuid || trade_uuid === "null") {

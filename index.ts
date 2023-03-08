@@ -28,6 +28,7 @@ const require = createRequire(import.meta.url);
 
 //-- Types --//
 import { Request, Response, NextFunction } from "express";
+import { IRequestWithAuth } from "./index.d";
 
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
@@ -120,7 +121,7 @@ const apiSpecOptions: swaggerJsdoc.Options = {
 
 const apiSpec = swaggerJsdoc(apiSpecOptions);
 
-app.get("/spec", (req, res) => {
+app.get("/spec", (req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
   res.send(apiSpec);
 });
@@ -138,11 +139,12 @@ app.get("/spec", (req, res) => {
  *         200:
  *           description: "Hello World"
  */
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
 
-//-- Auth - valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
+//-- Emits 'Request' with shape 'IRequestWithAuth' by adding: --//
+//-- Request.auth.header, Request.auth.payload --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
   issuerBaseURL: "https://chrt-prod.us.auth0.com/",
@@ -167,7 +169,12 @@ app.use("/journal", journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
 
 //-- *************** Error Handler *************** --//
-const errorHandler = (err, req: Request, res: Response, next: NextFunction) => {
+const errorHandler = (
+  err: any,
+  req: Request | IRequestWithAuth,
+  res: Response,
+  next: NextFunction
+) => {
   if (err.name === "UnauthorizedError") {
     return res
       .status(401)
