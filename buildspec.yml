@@ -7,7 +7,7 @@ env:
 phases:
   install:
     runtime-versions:
-      nodejs: 16
+      nodejs: latest
   pre_build:
     commands:
       # docker login to docker to prevent rate-limiting for pull from anonymous users
