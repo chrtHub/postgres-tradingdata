@@ -1,6 +1,6 @@
 //-- *************** Imports *************** --//
 //-- Database config --//
-import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
+import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig";
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 import fs from "fs";
 
@@ -10,18 +10,27 @@ import cors from "cors";
 import helmet from "helmet";
 
 //-- Routes --//
-import dataRoutes from "./App/routes/dataRoutes.js";
-import journalRoutes from "./App/routes/journalRoutes.js";
-import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
+import dataRoutes from "./App/routes/dataRoutes";
+import journalRoutes from "./App/routes/journalRoutes";
+import journalFilesRoutes from "./App/routes/journalFilesRoutes";
+import llmRoutes from "./App/routes/llmRoutes";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
-import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
-import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
+import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware";
+import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware";
+import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware";
+
+//-- OpenAPI Spec --//
+import swaggerJsdoc from "swagger-jsdoc";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
+
+//-- Types --//
+import { Request, Response, NextFunction } from "express";
+import { IRequestWithAuth } from "./index.d";
 
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
@@ -68,7 +77,7 @@ try {
   console.log(error);
 }
 
-//-- *************** Express Server + Middleware *************** --//
+//-- *************** Express Server, Middleware, Swagger-JSDoc *************** --//
 const PORT = 8080;
 const app = express();
 
@@ -93,16 +102,51 @@ app.use(cors(corsConfig));
 
 //-- Just-for-fun middleware --//
 app.use((req, res, next) => {
-  res.append("Answer-to-Life-Universe-Everything", 42);
+  res.append("Answer-to-Life-Universe-Everything", "42");
   next();
 });
 
+const apiSpecOptions: swaggerJsdoc.Options = {
+  swaggerDefinition: {
+    info: {
+      title: "CHRT API",
+      version: "1.0.0",
+      description: "CHRT API docs",
+      contact: {
+        name: "Aaron Carver",
+        email: "aaron@chrt.com",
+      },
+    },
+  },
+  apis: ["./App/routes/*.js"],
+};
+
+const apiSpec = swaggerJsdoc(apiSpecOptions);
+
+app.get("/spec", (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(apiSpec);
+});
+
 //-- Health check route --//
-app.get("/", (req, res) => {
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Health check that returns "Hello World"
+ *       description: Returns "Hello World"
+ *       produces:
+ *         - text/plain
+ *       responses:
+ *         200:
+ *           description: "Hello World"
+ */
+app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
 
-//-- Auth - valid JWTs have 3 properties added: auth.header, auth.payload, auth.token --//
+//-- Emits 'Request' with shape 'IRequestWithAuth' by adding: --//
+//-- Request.auth.header, Request.auth.payload --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
   issuerBaseURL: "https://chrt-prod.us.auth0.com/",
@@ -125,14 +169,20 @@ app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
 app.use("/data", dataAuthMiddleware, dataRoutes);
 app.use("/journal", journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
+app.use("/llm", llmAuthMiddleware, llmRoutes);
 
 //-- *************** Error Handler *************** --//
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (
+  err: any,
+  req: Request | IRequestWithAuth,
+  res: Response,
+  next: NextFunction
+) => {
   if (err.name === "UnauthorizedError") {
     return res
       .status(401)
       .send(
-        "Authentication failed beep boop. It's possible that the resource also does not exist beep boop. Cos we're checking tokens before all routes except '/' beep boop."
+        "Authentication failed OR resource not found beep boop. Everything except '/' and '/spec' requires a Bearer token."
       );
   } else {
     return res.status(500).send("Internal server error beep boop");
@@ -142,5 +192,6 @@ app.use(errorHandler);
 
 //-- *************** Listener *************** --//
 app.listen(PORT, () => {
-  console.log(`express listening on port ${PORT}`);
+  console.log(`express listening at http://localhost:${PORT}`);
+  console.log(`api spec at http://localhost:${PORT}/spec`);
 });

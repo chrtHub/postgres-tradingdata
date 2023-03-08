@@ -2,12 +2,12 @@
   "name": "postgres-tradingdata",
   "version": "1.0.0",
   "description": "protected main branch",
-  "main": "index.js",
+  "main": "index.ts",
   "type": "module",
   "scripts": {
-    "ssh": "ssh -i 'chrt-1-bastion-postgres-02.pem' -N -L 2222:db-instance-chrt-user-trading-data.cmlzf31dlxgq.us-east-1.rds.amazonaws.com:5432 ec2-user@18.207.101.199",
-    "dev": "NODE_ENV=development nodemon index.js",
-    "start": "NODE_ENV=production node index.js",
+    "dev": "NODE_ENV=development nodemon --exec 'ts-node --esm' index.ts",
+    "start": "NODE_ENV=production tsc",
+    "ssh": "ssh -i 'chrt-1-bastion-postgres-02.pem' -N -o 'ServerAliveInterval=60' -o 'ServerAliveCountMax=3' -L 2222:db-instance-chrt-user-trading-data.cmlzf31dlxgq.us-east-1.rds.amazonaws.com:5432 ec2-user@18.207.101.199",
     "migrate": "node-pg-migrate",
     "migrate:up": "node-pg-migrate up",
     "migrate:down:DANGERZONE-ACK": "node-pg-migrate down"
@@ -26,7 +26,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.271.0",
     "@aws-sdk/client-secrets-manager": "^3.238.0",
-    "@types/pg": "^8.6.6",
     "cors": "^2.8.5",
     "date-fns": "^2.29.3",
     "express": "^4.18.2",
@@ -40,9 +39,24 @@
     "openai": "^3.1.0",
     "pg": "^8.8.0",
     "ssh2": "^1.11.0",
+    "swagger-jsdoc": "^6.2.8",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "@tsconfig/node18": "^1.0.1",
+    "@types/cors": "^2.8.13",
+    "@types/express": "^4.17.17",
+    "@types/lodash": "^4.14.191",
+    "@types/multer": "^1.4.7",
+    "@types/node": "^18.14.6",
+    "@types/pg": "^8.6.6",
+    "@types/ssh2": "^1.11.7",
+    "@types/swagger-jsdoc": "^6.0.1",
+    "@types/uuid": "^9.0.1",
+    "nodemon": "^2.0.20",
+    "prettier": "2.8.4",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.5.0",
+    "typescript": "^4.9.5"
   }
 }

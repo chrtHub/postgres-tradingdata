@@ -8,14 +8,16 @@ import {
 } from "@aws-sdk/client-s3";
 
 //-- knex client --//
-import { knex } from "../../index.js";
+import { knex } from "../../index";
 
 //-- Utility Functions --//
-import getUserDbId from "../utils/getUserDbId.js";
-import orderBy from "lodash/orderBy.js";
+import getUserDbId from "../utils/getUserDbId";
+import orderBy from "lodash/orderBy";
 import { v4 as uuidv4 } from "uuid";
 
 //-- NPM Functions --//
+import { IRequestWithAuth } from "../../index.d";
+import { Response } from "express";
 
 //-- Other --//
 const s3_client = new S3Client({
@@ -23,7 +25,7 @@ const s3_client = new S3Client({
 });
 
 //-- ********************* Put File ********************* --//
-export const putFile = async (req, res) => {
+export const putFile = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
   let { brokerage, filename } = req.params;
   let file = req.file; //-- Actual data from file --//
@@ -34,11 +36,14 @@ export const putFile = async (req, res) => {
   let file_uuid = uuidv4();
   let key = `${user_db_id}/${brokerage}/${file_uuid}_${filename}`;
 
-  try {
-    if (!file.buffer) {
-      return res.status(400).send("No file data received");
-    }
+  if (!file) {
+    return res.status(400).send("No file received");
+  }
+  if (!file.buffer) {
+    return res.status(400).send("No file data (buffer) received");
+  }
 
+  try {
     await s3_client.send(
       new PutObjectCommand({
         Body: file.buffer,
@@ -56,7 +61,7 @@ export const putFile = async (req, res) => {
 };
 
 //-- ********************* List Files ********************* --//
-export const listFiles = async (req, res) => {
+export const listFiles = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
 
   try {
@@ -68,24 +73,35 @@ export const listFiles = async (req, res) => {
     );
 
     //-- Build files list array --//
-    let filesList = [];
-    response.Contents.forEach((x) => {
-      const [user_db_id, brokerage = "", file_uuid_plus_filename = ""] =
-        x.Key.split("/");
-      let [file_uuid, filename] = file_uuid_plus_filename.split("_");
+    interface IFileInList {
+      id?: string;
+      file_uuid?: string;
+      filename?: string;
+      brokerage?: string;
+      last_modified?: Date | undefined;
+      size_mb?: string;
+    }
+    let filesList: IFileInList[] = [];
 
-      //-- Only include filename and brokerage that aren't "" (those are for the S3 "folders") --//
-      if (filename?.length > 0 && brokerage?.length > 0) {
-        let file = {
-          id: file_uuid,
-          file_uuid: file_uuid,
-          filename: filename,
-          brokerage: brokerage,
-          last_modified: x.LastModified,
-          size_mb: (x.Size / 1000000).toFixed(1), //-- display with 1 decimal place --//
-        };
+    response.Contents?.forEach((x) => {
+      if (x.Key && x.Size) {
+        const [user_db_id, brokerage = "", file_uuid_plus_filename = ""] =
+          x.Key.split("/");
+        let [file_uuid, filename] = file_uuid_plus_filename.split("_");
 
-        filesList.push(file);
+        //-- Only include filename and brokerage that aren't "" (those are for the S3 "folders") --//
+        if (filename?.length > 0 && brokerage?.length > 0) {
+          let file = {
+            id: file_uuid,
+            file_uuid: file_uuid,
+            filename: filename,
+            brokerage: brokerage,
+            last_modified: x.LastModified,
+            size_mb: (x.Size / 1000000).toFixed(1), //-- display with 1 decimal place --//
+          };
+
+          filesList.push(file);
+        }
       }
     });
 
@@ -104,7 +120,7 @@ export const listFiles = async (req, res) => {
 };
 
 //-- ********************* Get File ********************* --//
-export const getFile = async (req, res) => {
+export const getFile = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
   let { brokerage, file_uuid_plus_filename } = req.params;
   let [file_uuid, filename] = file_uuid_plus_filename.split("_");
@@ -117,10 +133,13 @@ export const getFile = async (req, res) => {
       new GetObjectCommand({ Bucket: bucket, Key: key })
     );
     //-- Set headers --//
-    res.setHeader("Content-Type", response.ContentType);
+    res.setHeader("Content-Type", response.ContentType || "");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    //-- Pipe s3 client response into res to user --//
-    response.Body.pipe(res);
+    //-- Transform to string and send to user --//
+    if (response?.Body) {
+      let fileBody = await response.Body.transformToString();
+      return res.send(fileBody);
+    }
   } catch (error) {
     console.log(error);
     return res.status(500).send("Error downloading file from S3");
@@ -128,7 +147,7 @@ export const getFile = async (req, res) => {
 };
 
 //-- ********************* Delete File ********************* --//
-export const deleteFile = async (req, res) => {
+export const deleteFile = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
   let { brokerage, file_uuid_plus_filename } = req.params;
 

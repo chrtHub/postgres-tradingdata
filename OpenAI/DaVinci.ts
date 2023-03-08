@@ -39,9 +39,12 @@ const openai = new OpenAIApi(configuration);
 
 //-- ***** ***** ***** ***** ***** --//
 
+const DAVINCI_2 = "text-davinci-002";
+const DAVINCI_3 = "text-davinci-003";
+
 // -- Complete text --//
 const completion = await openai.createCompletion({
-  model: "text-davinci-002",
+  model: DAVINCI_3,
   prompt: "How to learn React.js?",
   max_tokens: 250,
   temperature: 0.5,

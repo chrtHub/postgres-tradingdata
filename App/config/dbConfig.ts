@@ -21,12 +21,16 @@ export const getDatabaseConfigFromSecretsManager = async () => {
     );
 
     //-- Parse string into JSON, store values into variables --//
-    let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
-    db_host = SecretStringJSON.host;
-    db_port = SecretStringJSON.port;
-    db_dbname = SecretStringJSON.dbname;
-    db_username = SecretStringJSON.username;
-    db_password = SecretStringJSON.password;
+    if (getSecretValueResponse.SecretString) {
+      let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
+      db_host = SecretStringJSON.host;
+      db_port = SecretStringJSON.port;
+      db_dbname = SecretStringJSON.dbname;
+      db_username = SecretStringJSON.username;
+      db_password = SecretStringJSON.password;
+    } else {
+      throw new Error("SecretString is empty");
+    }
   } catch (err) {
     console.log(err);
   }

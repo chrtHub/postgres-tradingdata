@@ -1,8 +1,18 @@
-export const dataAuthMiddleware = async (req, res, next) => {
-  let { payload } = req.auth;
+import { Response, NextFunction } from "express";
+import { IRequestWithAuth } from "../../index.d";
+
+export const dataAuthMiddleware = async (
+  req: IRequestWithAuth,
+  res: Response,
+  next: NextFunction
+) => {
+  let payload = req?.auth?.payload;
+  let read_data: boolean = false;
 
   //-- Check for necessary permissions to access route(s) guarded by this middleware --//
-  let read_data = payload.permissions.includes("read:data");
+  if (payload && payload.permissions) {
+    read_data = payload.permissions.includes("read:data");
+  }
 
   //-- Only proceed via 'next()' if necessary permissions are present, otherwise send 401 --//
   if (read_data) {

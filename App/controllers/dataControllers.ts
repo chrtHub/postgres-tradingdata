@@ -1,9 +1,13 @@
 //-- knex client --//
-import { knex } from "../../index.js";
-import getUserDbId from "../utils/getUserDbId.js";
+// import { knex } from "../../index";
+import getUserDbId from "../utils/getUserDbId";
+
+//-- Types --//
+import { Response } from "express";
+import { IRequestWithAuth } from "../../index.d";
 
 //-- Fetch Data --//
-export const fetchData = async (req, res) => {
+export const fetchData = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
 
   try {

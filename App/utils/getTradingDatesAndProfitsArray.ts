@@ -1,9 +1,17 @@
 import { addDays, format, isWeekend } from "date-fns";
 
+interface DateAndProfitRow {
+  date: string;
+  profit: number;
+}
+
 //-- Build array of trading dates from the past number of calendar days --//
-export default function getTradingDatesAndProfitsArray(numberOfCalendarDays) {
+export default function getTradingDatesAndProfitsArray(
+  numberOfCalendarDays: number
+) {
   const now = new Date();
-  const dateArray = [];
+
+  const dateArray: DateAndProfitRow[] = [];
 
   //-- 2023 to 2025 market holidays --//
   //-- https://www.nyse.com/markets/hours-calendars --//
@@ -43,9 +51,9 @@ export default function getTradingDatesAndProfitsArray(numberOfCalendarDays) {
   for (let i = 0; i < numberOfCalendarDays; i++) {
     const date = format(addDays(now, -i), "yyyy-MM-dd");
 
-    let yyyy = date.substring(0, 4);
-    let MM = date.substring(5, 7) - 1; //-- Months are 0 indexed --//
-    let dd = date.substring(8, 10);
+    let yyyy = parseInt(date.substring(0, 4));
+    let MM = parseInt(date.substring(5, 7)) - 1; //-- Months are 0 indexed --//
+    let dd = parseInt(date.substring(8, 10));
 
     //-- Skip weekends and trading holidays --//
     if (isWeekend(new Date(yyyy, MM, dd)) || tradingHolidays.includes(date)) {
