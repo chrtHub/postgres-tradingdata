@@ -29,7 +29,7 @@ export const getDatabaseConfigFromSecretsManager = async () => {
       db_username = SecretStringJSON.username;
       db_password = SecretStringJSON.password;
     } else {
-      throw new Error("SecretString is empty");
+      throw new Error("rds-postgres SecretString is empty");
     }
   } catch (err) {
     console.log(err);

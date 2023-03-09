@@ -2,12 +2,15 @@
 //-- Database config --//
 import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
-import fs from "fs";
 
 //-- Express server --//
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+
+//-- OpenAI --//
+import { getOpenAI_API_Key_FromSecretsManager } from "./App/config/OpenAIConfig.js";
+import { Configuration, OpenAIApi } from "openai";
 
 //-- Routes --//
 import dataRoutes from "./App/routes/dataRoutes.js";
@@ -37,8 +40,9 @@ console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get database config values --//
-let { db_host, db_port, db_username, db_password, db_dbname } =
-  await getDatabaseConfigFromSecretsManager();
+const dbConfig = await getDatabaseConfigFromSecretsManager();
+const { db_username, db_password, db_dbname } = dbConfig;
+let { db_host, db_port } = dbConfig;
 
 //-- In development mode, connect to db via SSH tunnel --//
 //-- NOTE - must establish SSH tunnel outside this server for this to work --//
@@ -77,6 +81,13 @@ try {
   console.log(error);
 }
 
+//-- OpenAI --//
+let OPENAI_API_KEY: string = await getOpenAI_API_Key_FromSecretsManager();
+const configuration = new Configuration({
+  apiKey: OPENAI_API_KEY,
+});
+export const openai = new OpenAIApi(configuration); // Does this expire / timeout?
+
 //-- *************** Express Server, Middleware, Swagger-JSDoc *************** --//
 const PORT = 8080;
 const app = express();
@@ -106,6 +117,7 @@ app.use((req, res, next) => {
   next();
 });
 
+//-- API Spec --//
 const apiSpecOptions: swaggerJsdoc.Options = {
   swaggerDefinition: {
     info: {
@@ -172,12 +184,8 @@ app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
 app.use("/llm", llmAuthMiddleware, llmRoutes);
 
 //-- *************** Error Handler *************** --//
-const errorHandler = (
-  err: any,
-  req: Request | IRequestWithAuth,
-  res: Response,
-  next: NextFunction
-) => {
+/* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+const errorHandler = (err: any, res: Response) => {
   if (err.name === "UnauthorizedError") {
     return res
       .status(401)
