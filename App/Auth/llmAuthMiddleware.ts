@@ -16,7 +16,7 @@ export const llmAuthMiddleware = async (
 
   //-- Only proceed via 'next()' if necessary permissions are present, otherwise send 401 --//
   if (chat_llm) {
-    res.append("X-JWT-permission-chat:llm", "verified");
+    res.append("X-JWT-permission-chat-llm", "verified");
     next();
   } else {
     return res.status(401).json({
