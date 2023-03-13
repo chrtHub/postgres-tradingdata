@@ -5,7 +5,7 @@
   "main": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "cd docs-vite && npm run build && cd .. && NODE_ENV=development nodemon --ignore docs-vite --ignore App/docs-vite-dist --exec 'ts-node --esm' index.ts",
+    "dev": "NODE_ENV=development nodemon --exec 'ts-node --esm' index.ts",
     "start": "tsc && NODE_ENV=production node dist/index.js",
     "ssh": "ssh -i 'chrt-1-bastion-postgres-02.pem' -N -o 'ServerAliveInterval=60' -o 'ServerAliveCountMax=3' -L 2222:db-instance-chrt-user-trading-data.cmlzf31dlxgq.us-east-1.rds.amazonaws.com:5432 ec2-user@18.207.101.199",
     "migrate": "node-pg-migrate",
