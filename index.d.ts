@@ -1,6 +1,7 @@
 import { JwtHeader, JwtPayload } from "jwt-decode";
 import { Request } from "express";
 
+//-- Strangely, the Auth0 types for JwtPayload don't cover the properties returned within tokens, so this interface extends JwtPayload --//
 interface IExtendedJwtPayload extends JwtPayload {
   azp?: string;
   scope?: string;

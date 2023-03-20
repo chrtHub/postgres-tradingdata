@@ -1,4 +1,6 @@
 //-- *************** Imports *************** --//
+import fs from "fs";
+
 //-- Database config --//
 import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
@@ -119,22 +121,35 @@ app.use((req, res, next) => {
 
 //-- API Spec --//
 const apiSpecOptions: swaggerJsdoc.Options = {
-  swaggerDefinition: {
+  definition: {
+    openapi: "3.0.0",
     info: {
       title: "CHRT API",
       version: "1.0.0",
-      description: "CHRT API docs",
       contact: {
-        name: "Aaron Carver",
-        email: "aaron@chrt.com",
+        name: "CHRT Support",
+        email: "support@chrt.com",
       },
     },
   },
-  apis: ["./App/routes/*.js"],
+  apis: ["./index.ts", "./App/routes/*.ts"],
 };
-
 const apiSpec = swaggerJsdoc(apiSpecOptions);
+fs.writeFileSync("./spec.json", JSON.stringify(apiSpec, null, 2));
 
+/**
+ * @swagger
+ * /spec:
+ *   get:
+ *     summary: Get OpenAPI Specification
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ */
 app.get("/spec", (req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
   res.send(apiSpec);
@@ -142,16 +157,13 @@ app.get("/spec", (req: Request, res: Response) => {
 
 //-- Health check route --//
 /**
- * @swagger
+ * @openapi
  * /:
  *   get:
- *     summary: Health check that returns "Hello World"
- *       description: Returns "Hello World"
- *       produces:
- *         - text/plain
- *       responses:
- *         200:
- *           description: "Hello World"
+ *     description: Health check route
+ *     responses:
+ *       200:
+ *         description: Returns a Hello World message
  */
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
@@ -164,7 +176,6 @@ const jwtCheck = auth({
   issuerBaseURL: "https://chrt-prod.us.auth0.com/",
   tokenSigningAlg: "RS256",
 });
-app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
 
 //-- Dev utility for logging token --//
 // app.use((req, res, next) => {
@@ -176,12 +187,11 @@ app.use(jwtCheck); //-- returns 401 if token invalid or not found --//
 // });
 
 //-- *************** Routes w/ authentication *************** --//
-
 //-- Routes --//
-app.use("/data", dataAuthMiddleware, dataRoutes);
-app.use("/journal", journalAuthMiddleware, journalRoutes);
-app.use("/journal_files", journalAuthMiddleware, journalFilesRoutes);
-app.use("/llm", llmAuthMiddleware, llmRoutes);
+app.use("/data", jwtCheck, dataAuthMiddleware, dataRoutes);
+app.use("/journal", jwtCheck, journalAuthMiddleware, journalRoutes);
+app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
+app.use("/llm", jwtCheck, llmAuthMiddleware, llmRoutes);
 
 //-- *************** Error Handler *************** --//
 /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
@@ -190,7 +200,7 @@ const errorHandler = (err: any, res: Response) => {
     return res
       .status(401)
       .send(
-        "Authentication failed OR resource not found beep boop. Everything except '/' and '/spec' requires a Bearer token."
+        "Authentication failed OR resource not found beep boop. Everything except '/', '/spec', and '/docs' requires a Bearer token."
       );
   } else {
     return res.status(500).send("Internal server error beep boop");
