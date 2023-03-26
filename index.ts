@@ -9,6 +9,7 @@ import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import bodyParser from "body-parser";
 
 //-- OpenAI --//
 import { getOpenAI_API_Key_FromSecretsManager } from "./App/config/OpenAIConfig.js";
@@ -93,6 +94,9 @@ export const openai = new OpenAIApi(configuration); // Does this expire / timeou
 //-- *************** Express Server, Middleware, Swagger-JSDoc *************** --//
 const PORT = 8080;
 const app = express();
+
+//-- Body parser for handling POST request body JSON objects --//
+app.use(bodyParser.json());
 
 //-- Helmet middlware for security --//
 app.use(helmet());
