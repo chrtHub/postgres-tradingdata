@@ -45,9 +45,7 @@ export const gpt35turboController = async (
       model: model,
       messages: chatRequestMessages,
     });
-
     console.log("llm response received", Date.now()); // DEV
-
     return res.status(200).json(response.data); // DEV
   } catch (err) {
     console.log(err);
