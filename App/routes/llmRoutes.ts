@@ -12,7 +12,7 @@ const router = express.Router();
 //-- Send prompt --//
 router.get("/:prompt", ctrl.promptController);
 
-router.post("/gpt-3.5-turbo", ctrl.gpt35turboController);
+router.post("/openai", ctrl.gpt35turboController);
 
 //-- ********** Export ********** --//
 export default router;
