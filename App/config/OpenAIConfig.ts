@@ -11,10 +11,13 @@ const secretsManager_client = new SecretsManagerClient({
 let OPENAI_API_KEY: string;
 
 //-- Get OpenAPI API Key from AWS Secrets Manager --//
-export const getOpenAI_API_Key_FromSecretsManager = async () => {
-  let db_host, db_port, db_dbname, db_username, db_password;
+export const getOpenAI_API_Key = async () => {
+  if (OPENAI_API_KEY) {
+    return OPENAI_API_KEY;
+  }
 
   try {
+    console.log("fetching OpenAI API Key from AWS Secrets Manager");
     let res = await secretsManager_client.send(
       new GetSecretValueCommand({
         SecretId: "OpenAI/APIKey/0tRy",

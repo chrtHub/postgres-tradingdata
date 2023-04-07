@@ -12,7 +12,7 @@ import helmet from "helmet";
 import bodyParser from "body-parser";
 
 //-- OpenAI --//
-import { getOpenAI_API_Key_FromSecretsManager } from "./App/config/OpenAIConfig.js";
+import { getOpenAI_API_Key } from "./App/config/OpenAIConfig.js";
 import { Configuration, OpenAIApi } from "openai";
 
 //-- Routes --//
@@ -85,7 +85,7 @@ try {
 }
 
 //-- OpenAI --//
-let OPENAI_API_KEY: string = await getOpenAI_API_Key_FromSecretsManager();
+let OPENAI_API_KEY: string = await getOpenAI_API_Key();
 const configuration = new Configuration({
   apiKey: OPENAI_API_KEY,
 });

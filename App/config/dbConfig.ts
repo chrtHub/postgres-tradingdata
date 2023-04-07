@@ -12,6 +12,7 @@ export const getDatabaseConfigFromSecretsManager = async () => {
   let db_host, db_port, db_dbname, db_username, db_password;
 
   try {
+    console.log("fetching rds-postgres config from AWS Secrets Manager");
     let getSecretValueResponse = await secretsManager_client.send(
       new GetSecretValueCommand({
         SecretId:

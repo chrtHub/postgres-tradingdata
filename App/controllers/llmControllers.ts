@@ -4,6 +4,8 @@ import { createParser } from "eventsource-parser";
 import { Readable } from "stream";
 import axios from "axios";
 
+import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
+
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../index.d";
@@ -84,6 +86,9 @@ export const gpt35turboStreamController = async (
   }
   const parser = createParser(onParse);
   try {
+    //-- Get API Key --//
+    let OPENAI_API_KEY = await getOpenAI_API_Key();
+
     //-- Axios POST request to OpenAI --//
     let response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
