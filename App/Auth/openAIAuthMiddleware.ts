@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import { IRequestWithAuth } from "../../index.d";
 
-export const llmAuthMiddleware = async (
+export const openAIAuthMiddleware = async (
   req: IRequestWithAuth,
   res: Response,
   next: NextFunction
