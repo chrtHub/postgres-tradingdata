@@ -28,8 +28,8 @@ export const gpt35turboStreamController = async (
   //-- Set headers needed for SSE --//
   res.set({
     "Cache-Control": "no-cache",
-    "Content-Type": "text/event-stream",
     Connection: "keep-alive",
+    "Content-Type": "text/event-stream",
   });
   res.flushHeaders(); //-- Send headers immediately (don't wait for first chunk or message end) --//
 
