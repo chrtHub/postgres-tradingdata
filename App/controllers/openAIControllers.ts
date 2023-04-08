@@ -82,16 +82,16 @@ export const gpt35TurboSSEController = async (
         if (event.data !== "[DONE]") {
           let data = JSON.parse(event.data).choices[0].delta?.content || "";
           res.write(`data: ${data}\n\n`); //-- Send data to the client --//
+          console.log(data);
         } else if (event.data === "[DONE]") {
-          // TESTING - Prepare and send metadata --//
-          // const metadata = {
-          //   eventType: "metadata",
-          //   timestamp: new Date(),
-          //   tokens: 420,
-          // };
-          // const metadataString = JSON.stringify(metadata);
-          // res.write(`data: ${metadataString}\n\n`);
-          res.write(`data: FOO_BAR_BAZ\n\n`); // DEV
+          //-- Prepare and send metadata --//
+          const metadata = {
+            eventType: "metadata",
+            timestamp: new Date(),
+            tokens: 420,
+          };
+          const metadataString = JSON.stringify(metadata);
+          res.write(`id: CHRT_METADATA\ndata: ${metadataString}\n\n`); // DEV
 
           //-- Close connection --//
           res.end();
