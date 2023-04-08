@@ -9,17 +9,18 @@ import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../index.d";
-import { CreateChatCompletionResponse } from "openai";
 
 //-- OpenAI Client --//
 import { openai } from "../../index.js";
 
-//-- Stream --//
-export const gpt35turboStreamController = async (
+//-- ***** ***** ***** GPT-3.5 Turbo SSE ***** ***** ***** //
+export const gpt35TurboSSEController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
   console.log("gpt35turboStreamController() called"); // DEV
+
+  // if headers don't include text/event-stream, use the non-stream controller?
 
   //-- Get model and messages from request --//
   let model = req.body.model;
@@ -54,10 +55,12 @@ export const gpt35turboStreamController = async (
       }
     );
 
-    //-- Create readable stream from response.data --//
+    //-- Create readable stream --//
     const readableStream = new Readable({
       read() {},
     });
+
+    //-- Feed response.data to readableStream --//
     response.data.on("data", (chunk: any) => readableStream.push(chunk));
     response.data.on("end", () => readableStream.push(null));
 
@@ -73,14 +76,25 @@ export const gpt35turboStreamController = async (
     //-- Create parser --//
     const parser = createParser(onParse);
 
+    //-- Inside parser, send each chunk to the client, then close the connection --//
     function onParse(event: any) {
       if (event.type === "event") {
         if (event.data !== "[DONE]") {
           let data = JSON.parse(event.data).choices[0].delta?.content || "";
-          res.write(`data: ${data}\n\n`); //-- Send data to client --//
-          // console.log(data); // DEV
+          res.write(`data: ${data}\n\n`); //-- Send data to the client --//
         } else if (event.data === "[DONE]") {
-          res.end(); //-- Close connection --//
+          // TESTING - Prepare and send metadata --//
+          // const metadata = {
+          //   eventType: "metadata",
+          //   timestamp: new Date(),
+          //   tokens: 420,
+          // };
+          // const metadataString = JSON.stringify(metadata);
+          // res.write(`data: ${metadataString}\n\n`);
+          res.write(`data: FOO_BAR_BAZ\n\n`); // DEV
+
+          //-- Close connection --//
+          res.end();
         }
       } else if (event.type === "reconnect-interval") {
         console.log("%d milliseconds reconnect interval", event.value);
@@ -93,26 +107,26 @@ export const gpt35turboStreamController = async (
   }
 };
 
-//-- Non-streaming (sends whole response) --//
-// export const gpt35turboController = async (
-//   req: IRequestWithAuth,
-//   res: Response
-// ) => {
-//   /** get prompt from request */
-//   let model = req.body.model;
-//   let chatRequestMessages = req.body.chatRequestMessages;
+//-- ***** ***** ***** GPT-3.5 Turbo (non-SSE) ***** ***** ***** --//
+export const gpt35TurboController = async (
+  req: IRequestWithAuth,
+  res: Response
+) => {
+  /** get prompt from request */
+  let model = req.body.model;
+  let chatRequestMessages = req.body.chatRequestMessages;
 
-//   /** send prompt to OpenAI API */
-//   try {
-//     const response = await openai.createChatCompletion({
-//       model: model,
-//       messages: chatRequestMessages,
-//     });
-//     console.log("llm response received", Date.now()); // DEV
-//     console.log(response.data.model); // DEV
-//     return res.status(200).json(response.data); // DEV
-//   } catch (err) {
-//     console.log(err);
-//     return res.status(500).send("error during gpt35turboController llm query");
-//   }
-// };
+  /** send prompt to OpenAI API */
+  try {
+    const response = await openai.createChatCompletion({
+      model: model,
+      messages: chatRequestMessages,
+    });
+    console.log("llm response received", Date.now()); // DEV
+    console.log(response.data.model); // DEV
+    return res.status(200).json(response.data); // DEV
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send("error during gpt35turboController llm query");
+  }
+};
