@@ -86,7 +86,6 @@ export const gpt35TurboSSEController = async (
         } else if (event.data === "[DONE]") {
           //-- Prepare and send metadata --//
           const metadata = {
-            eventType: "metadata",
             timestamp: new Date(),
             tokens: 420,
           };
