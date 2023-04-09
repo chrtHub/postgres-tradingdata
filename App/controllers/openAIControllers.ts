@@ -4,7 +4,7 @@ import { createParser } from "eventsource-parser";
 import { Readable } from "stream";
 import axios from "axios";
 import { getUnixTime } from "date-fns";
-
+import { v4 as uuidv4 } from "uuid";
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
 
 //-- Types --//
@@ -36,6 +36,8 @@ export const gpt35TurboSSEController = async (
   // (1) load conversation from EFS
   // (2) Add new message content and metadata to the conversation object
   // (3) use tiktoken and conversation json to package up to 3k tokens worth of messages into chatRequestMessages to be sent to the LLM
+  // // store all message_uuids in an array
+  // // const chatRequestMessages_message_uuids = ["TODO"];
   // (4) set variable as the token count for this api call, use that in the api_call_metadata reponse
   // // let prompt_tokens = tiktoken(chatRequestMessages)
 
@@ -106,16 +108,19 @@ export const gpt35TurboSSEController = async (
         } else if (event.data === "[DONE]") {
           //-- Build completion_message string and count its tokens --//
           const completion_message = response_chunks.join("");
+          const completion_message_uuid = uuidv4();
           const completion_tokens = tiktoken(completion_message.toString());
 
           //-- Build metadata object --//
           const apiResponseMetadata = {
             user: user_db_id,
             model: model,
-            created: getUnixTime(new Date()).toString(),
+            completed_timestamp: getUnixTime(new Date()).toString(),
             // prompt_tokens: prompt_tokens,
             completion_tokens: completion_tokens,
             // total_tokens: prompt_tokens + completion_tokens,
+            temp_completion_message_uuid: completion_message_uuid,
+            // message_uuids: [...chatRequestMessages_message_uuids, completion_message_uuid],
           };
           const apiResponseMetadataString = JSON.stringify(apiResponseMetadata);
 
