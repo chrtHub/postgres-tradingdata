@@ -26,17 +26,17 @@ export const gpt35TurboSSEController = async (
 
   //-- Get model and messages from request --//
   let model = req.body.model;
-  let chatRequestMessages = req.body.chatRequestMessages; // TO BE DEPRACATED
-  // let message = req.body.message;
+  let chat_request_messages = req.body.chat_request_messages; // TO BE DEPRACATED
+  // let prompt = req.body.prompt;
   // let conversation_uuid = req.body.conversation_uuid;
 
-  //-- Get conversation from EFS and bundle --//
+  //-- Get conversation from EFS and bundle chatRequestMessages --//
   // (0) if request has a conversation_uuid
   // // else create a new conversation object + uuid and save it to EFS
   // (1) load conversation from EFS
-  // (2) Add new message content and metadata to the conversation object
+  // (2) Add prompt content and metadata to the conversation object
   // (3) use tiktoken and conversation json to package up to 3k tokens worth of messages into chatRequestMessages to be sent to the LLM
-  // // store all message_uuids in an array
+  // // from chatRequestMessages, store each message_uuid in an array chatRequestMessagesUUIDs to be stored in apiResponseMetadata.message_uuids array
   // // const chatRequestMessages_message_uuids = ["TODO"];
   // (4) set variable as the token count for this api call, use that in the api_call_metadata reponse
   // // let prompt_tokens = tiktoken(chatRequestMessages)
@@ -58,7 +58,7 @@ export const gpt35TurboSSEController = async (
       "https://api.openai.com/v1/chat/completions",
       {
         model: model,
-        messages: chatRequestMessages,
+        messages: chat_request_messages,
         stream: true,
       },
       {
@@ -75,9 +75,6 @@ export const gpt35TurboSSEController = async (
       read() {},
     });
 
-    //
-    const response_chunks: string[] = []; // NEW
-
     //-- Feed response.data to readableStream --//
     response.data.on("data", (chunk: any) => readableStream.push(chunk));
     response.data.on("end", () => readableStream.push(null));
@@ -93,6 +90,9 @@ export const gpt35TurboSSEController = async (
     readableStream.on("data", (chunk) => {
       parser.feed(textDecoder.decode(chunk));
     });
+
+    //-- Use array to save response to EFS when streaming finishes --//
+    const response_chunks: string[] = [];
 
     //-- Inside parser, send each chunk to the client, then close the connection --//
     function onParse(event: any) {
@@ -116,11 +116,12 @@ export const gpt35TurboSSEController = async (
             user: user_db_id,
             model: model,
             completed_timestamp: getUnixTime(new Date()).toString(),
-            // prompt_tokens: prompt_tokens,
             completion_tokens: completion_tokens,
+            // prompt_tokens: prompt_tokens,
             // total_tokens: prompt_tokens + completion_tokens,
-            temp_completion_message_uuid: completion_message_uuid,
-            // message_uuids: [...chatRequestMessages_message_uuids, completion_message_uuid],
+            completion_message: completion_message,
+            completion_message_uuid: completion_message_uuid,
+            // message_uuids: [...chatRequestMessagesUUIDs, completion_message_uuid],
           };
           const apiResponseMetadataString = JSON.stringify(apiResponseMetadata);
 
