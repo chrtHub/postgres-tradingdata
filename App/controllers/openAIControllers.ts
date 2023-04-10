@@ -26,7 +26,7 @@ export const gpt35TurboSSEController = async (
 
   //-- Get model and messages from request --//
   let model = req.body.model;
-  let chat_request_messages = req.body.chat_request_messages; // TO BE DEPRACATED
+  let request_messages = req.body.request_messages; // TO BE DEPRACATED
   // let prompt = req.body.prompt;
   // let conversation_uuid = req.body.conversation_uuid;
 
@@ -58,7 +58,7 @@ export const gpt35TurboSSEController = async (
       "https://api.openai.com/v1/chat/completions",
       {
         model: model,
-        messages: chat_request_messages,
+        messages: request_messages,
         stream: true,
       },
       {
