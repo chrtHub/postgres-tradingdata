@@ -16,7 +16,7 @@ export const dataAuthMiddleware = async (
 
   //-- Only proceed via 'next()' if necessary permissions are present, otherwise send 401 --//
   if (read_data) {
-    res.append("X-JWT-permission-read_data", "verified");
+    res.append("CHRT-JWT-permission-read_data", "verified");
     next();
   } else {
     return res.status(401).json({

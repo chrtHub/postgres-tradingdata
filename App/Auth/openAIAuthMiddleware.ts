@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import { IRequestWithAuth } from "../../index.d";
 
-export const llmAuthMiddleware = async (
+export const openAIAuthMiddleware = async (
   req: IRequestWithAuth,
   res: Response,
   next: NextFunction
@@ -16,7 +16,7 @@ export const llmAuthMiddleware = async (
 
   //-- Only proceed via 'next()' if necessary permissions are present, otherwise send 401 --//
   if (chat_llm) {
-    res.append("X-JWT-permission-chat-llm", "verified");
+    res.append("CHRT-JWT-permission-chat-llm", "verified");
     next();
   } else {
     return res.status(401).json({

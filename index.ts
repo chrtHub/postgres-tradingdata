@@ -12,20 +12,20 @@ import helmet from "helmet";
 import bodyParser from "body-parser";
 
 //-- OpenAI --//
-import { getOpenAI_API_Key_FromSecretsManager } from "./App/config/OpenAIConfig.js";
+import { getOpenAI_API_Key } from "./App/config/OpenAIConfig.js";
 import { Configuration, OpenAIApi } from "openai";
 
 //-- Routes --//
 import dataRoutes from "./App/routes/dataRoutes.js";
 import journalRoutes from "./App/routes/journalRoutes.js";
 import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
-import llmRoutes from "./App/routes/llmRoutes.js";
+import openAIRoutes from "./App/routes/openAIRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
 import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
 import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
-import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware.js";
+import { openAIAuthMiddleware } from "./App/Auth/openAIAuthMiddleware.js";
 
 //-- OpenAPI Spec --//
 import swaggerJsdoc from "swagger-jsdoc";
@@ -85,7 +85,7 @@ try {
 }
 
 //-- OpenAI --//
-let OPENAI_API_KEY: string = await getOpenAI_API_Key_FromSecretsManager();
+let OPENAI_API_KEY: string = await getOpenAI_API_Key();
 const configuration = new Configuration({
   apiKey: OPENAI_API_KEY,
 });
@@ -195,7 +195,7 @@ const jwtCheck = auth({
 app.use("/data", jwtCheck, dataAuthMiddleware, dataRoutes);
 app.use("/journal", jwtCheck, journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
-app.use("/llm", jwtCheck, llmAuthMiddleware, llmRoutes);
+app.use("/openai", jwtCheck, openAIAuthMiddleware, openAIRoutes);
 
 //-- *************** Error Handler *************** --//
 /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
