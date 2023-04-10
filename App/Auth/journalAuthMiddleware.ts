@@ -18,8 +18,8 @@ export const journalAuthMiddleware = async (
 
   //-- Only proceed via 'next()' if necessary permissions are present, otherwise send 401 --//
   if (read_journal && write_journal) {
-    res.append("X-JWT-permission-read_journal", "verified");
-    res.append("X-JWT-permission-write_journal", "verified");
+    res.append("CHRT-JWT-permission-read_journal", "verified");
+    res.append("CHRT-JWT-permission-write_journal", "verified");
     next();
   } else {
     return res.status(401).json({
