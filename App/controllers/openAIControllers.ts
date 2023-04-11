@@ -112,8 +112,12 @@ export const gpt35TurboSSEController = async (
           //-- Add chunk to response chunks (to be accessed post-stream) --//
           response_chunks.push(data);
 
+          //-- URI Encode to avoid content and delimeter `\n\n` collisions --//
+          const uriEncodedData = encodeURI(data);
+
           //-- Send data to the client --//
-          res.write(`data: ${data}\n\n`);
+          res.write(`data: ${uriEncodedData}\n\n`);
+          //----//
         } else if (event.data === "[DONE]") {
           //-- Build completion_message_content and count its tokens --//
           const completion_message_content = response_chunks.join("");
