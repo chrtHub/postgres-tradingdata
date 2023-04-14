@@ -52,7 +52,7 @@ const dbConfig = await getDatabaseConfigFromSecretsManager();
 const { db_username, db_password, db_dbname } = dbConfig;
 let { db_host, db_port } = dbConfig;
 
-//-- Get DocDB MongoDB database config values --//
+//-- Get DocumentDB-MongoDB database config values --//
 const docDBConfig = await getDocDBDatabaseConfigFromSecretsManager();
 const { docDB_username, docDB_password, docDB_dbname } = docDBConfig;
 let { docDB_host, docDB_port } = docDBConfig;
