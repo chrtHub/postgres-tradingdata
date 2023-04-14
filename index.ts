@@ -2,7 +2,12 @@
 import fs from "fs";
 
 //-- Database config --//
-import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
+import {
+  getDatabaseConfigFromSecretsManager,
+  getDocDBDatabaseConfigFromSecretsManager,
+} from "./App/config/dbConfig.js";
+import { MongoClient } from "mongodb";
+
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 
 //-- Express server --//
@@ -42,19 +47,27 @@ import { IRequestWithAuth } from "./index.d";
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
 
 //-- *************** PostgreSQL Client connection *************** --//
-//-- Get database config values --//
+//-- Get RDS PostgreSQL database config values --//
 const dbConfig = await getDatabaseConfigFromSecretsManager();
 const { db_username, db_password, db_dbname } = dbConfig;
 let { db_host, db_port } = dbConfig;
 
-//-- In development mode, connect to db via SSH tunnel --//
+//-- Get DocDB MongoDB database config values --//
+const docDBConfig = await getDocDBDatabaseConfigFromSecretsManager();
+const { docDB_username, docDB_password, docDB_dbname } = docDBConfig;
+let { docDB_host, docDB_port } = docDBConfig;
+
+//-- In development mode, connect to rds and docdb via SSH tunnel --//
 //-- NOTE - must establish SSH tunnel outside this server for this to work --//
+//-- NOTE - Currently using `npm run ssh` script to establish ssh tunnel --//
 if (process.env.NODE_ENV === "development") {
   db_host = "127.0.0.1";
   db_port = 2222;
+  docDB_host = "127.0.0.1";
+  docDB_port = 22222;
 }
 
-//-- Knex --//
+//-- Establish RDS-PostgreSQL connection using Knex --//
 console.log(`knex requesting connection to postgres at ${db_host}:${db_port}`);
 const knex = require("knex")({
   client: "pg",
@@ -66,21 +79,39 @@ const knex = require("knex")({
     database: db_dbname,
   },
 });
-//-- Export knex for use in controllers --//
 export { knex };
 
-//-- Test Knex connection --//
 try {
-  const currentTime = await knex.raw('SELECT NOW() as "current_time"');
+  const res = await knex.raw('SELECT NOW() as "current_time"');
+  const currentTime = res.rows[0].current_time;
 
-  //-- If query succeeds, log the current time and database user --//
-  console.log(
-    "knex test query succeeded at: " + currentTime.rows[0].current_time
-  );
-  console.log("knex user is: " + knex.client.connectionSettings.user);
+  console.log("knex test query succeeded at:", currentTime);
+  console.log("knex user is:", knex.client.connectionSettings.user);
 } catch (error) {
-  //-- If query fails, assume connection is in error --//
   console.log("knex connection error");
+  console.log(error);
+}
+
+//-- Establish DocDB-MongoDB connection using MongoClient --//
+console.log(
+  `requesting connection to DocumentDB-MongoDB at ${docDB_host}:${docDB_port}`
+);
+const mongo_connection_options =
+  "ssl=true&replicaSet=rs0&retryWrites=false&w=majority&readPreference=secondaryPreferred"; // TODO - evaluate these options
+const mongo_uri = `mongodb://${docDB_username}:${docDB_password}@${docDB_host}:${docDB_port}/${db_dbname}?${mongo_connection_options}`;
+const mongoClient = new MongoClient(mongo_uri);
+
+export { mongoClient }; // TODO - is this good?
+
+try {
+  await mongoClient.connect();
+  const res = await mongoClient.db().command({ serverStatus: 1 });
+  const currentTime = res.localTime;
+
+  console.log("DocumentDB-MongoDB test query succeeded at:", currentTime);
+  console.log("DocumentDB-MongoDB user is:", docDB_username);
+} catch (error) {
+  console.log("DocumentDB-MongoDB connection error");
   console.log(error);
 }
 

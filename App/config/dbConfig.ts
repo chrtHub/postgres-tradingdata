@@ -37,3 +37,38 @@ export const getDatabaseConfigFromSecretsManager = async () => {
   }
   return { db_host, db_port, db_dbname, db_username, db_password };
 };
+
+export const getDocDBDatabaseConfigFromSecretsManager = async () => {
+  let docDB_host, docDB_port, docDB_dbname, docDB_username, docDB_password;
+
+  try {
+    console.log("fetching docdb-mongodb config from AWS Secrets Manager");
+    let getSecretValueResponse = await secretsManager_client.send(
+      new GetSecretValueCommand({
+        SecretId: "/chrt/prod/docdb/user_chrtDocDB", // TODO - instead of using admin role, use a limited-permisssions server role
+        VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
+      })
+    );
+
+    //-- Parse string into JSON, store values into variables --//
+    if (getSecretValueResponse.SecretString) {
+      let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
+      docDB_host = SecretStringJSON.host;
+      docDB_port = SecretStringJSON.port;
+      docDB_dbname = SecretStringJSON.dbname;
+      docDB_username = SecretStringJSON.username;
+      docDB_password = SecretStringJSON.password;
+    } else {
+      throw new Error("docdb-mongodb SecretString is empty");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+  return {
+    docDB_host,
+    docDB_port,
+    docDB_dbname,
+    docDB_username,
+    docDB_password,
+  };
+};

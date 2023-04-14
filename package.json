@@ -8,6 +8,7 @@
     "dev": "NODE_ENV=development nodemon --exec 'ts-node --esm' index.ts --ignore 'spec.json'",
     "start": "tsc && NODE_ENV=production node dist/index.js",
     "ssh": "ssh -i 'chrt-1-bastion-postgres-02.pem' -N -o 'ServerAliveInterval=60' -o 'ServerAliveCountMax=3' -L 2222:db-instance-chrt-user-trading-data.cmlzf31dlxgq.us-east-1.rds.amazonaws.com:5432 ec2-user@18.207.101.199",
+    "ssh2": "ssh -i 'chrt-1-bastion-postgres-02.pem' -N -o 'ServerAliveInterval=60' -o 'ServerAliveCountMax=3' -L 27017:TODO-INSTANCE-FOR-DOCDB:27017 -L 2222:db-instance-chrt-user-trading-data.cmlzf31dlxgq.us-east-1.rds.amazonaws.com:5432 ec2-user@18.207.101.199",
     "migrate": "node-pg-migrate",
     "migrate:up": "node-pg-migrate up",
     "migrate:down:DANGERZONE-ACK": "node-pg-migrate down"
@@ -38,6 +39,7 @@
     "jwt-decode": "^3.1.2",
     "knex": "^2.3.0",
     "lodash": "^4.17.21",
+    "mongodb": "^5.2.0",
     "multer": "^1.4.5-lts.1",
     "node-pg-migrate": "^6.2.2",
     "openai": "^3.1.0",
