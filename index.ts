@@ -60,6 +60,9 @@ let { docDB_host, docDB_port } = docDBConfig;
 //-- `true` will allow use of `127.0.0.1:PORT` for dev mode --//
 let tlsAllowInvalidHostnames = false;
 
+//-- In prod, use the filepath for the docker container --//
+let tlsCAFilepath = "/app/PUBLIC-rds-ca-bundle.pem";
+
 //-- In development mode, connect to rds and docdb via SSH tunnel --//
 //-- NOTE - must establish SSH tunnel outside this server for this to work --//
 //-- NOTE - Currently using `npm run ssh` script to establish ssh tunnel --//
@@ -69,6 +72,7 @@ if (process.env.NODE_ENV === "development") {
   docDB_host = "127.0.0.1";
   docDB_port = 22222;
   tlsAllowInvalidHostnames = true;
+  tlsCAFilepath = "./PUBLIC-rds-ca-bundle.pem";
 }
 
 //-- Establish RDS-PostgreSQL connection using Knex --//
@@ -107,7 +111,7 @@ console.log(
 );
 const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   tls: true,
-  tlsCAFile: "./rds-combined-ca-bundle.pem",
+  tlsCAFile: tlsCAFilepath,
   tlsAllowInvalidHostnames: tlsAllowInvalidHostnames,
   auth: {
     username: docDB_username,
