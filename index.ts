@@ -122,7 +122,6 @@ try {
   const currentTime = res.localTime;
   console.log("DocumentDB-MongoDB test query succeeded at:", currentTime);
   console.log("DocumentDB-MongoDB user is:", docDB_username);
-  console.log("DocumentDB-MongoDB datbase is:", docDB_dbname);
 } catch (error) {
   console.log("DocumentDB-MongoDB connection error");
   console.log(error);
