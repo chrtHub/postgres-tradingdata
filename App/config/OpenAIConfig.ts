@@ -17,7 +17,7 @@ export const getOpenAI_API_Key = async () => {
   }
 
   try {
-    console.log("fetching OpenAI API Key from AWS Secrets Manager");
+    console.log("AWS Secrets Manager - fetching OpenAI API Key");
     let res = await secretsManager_client.send(
       new GetSecretValueCommand({
         SecretId: "OpenAI/APIKey/0tRy",

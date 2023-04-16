@@ -2,7 +2,12 @@
 import fs from "fs";
 
 //-- Database config --//
-import { getDatabaseConfigFromSecretsManager } from "./App/config/dbConfig.js";
+import {
+  getRDSDatabaseConfigFromSecretsManager,
+  getDocDBDatabaseConfigFromSecretsManager,
+} from "./App/config/dbConfig.js";
+import { MongoClient, ReadPreference } from "mongodb";
+
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 
 //-- Express server --//
@@ -42,45 +47,83 @@ import { IRequestWithAuth } from "./index.d";
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
 
 //-- *************** PostgreSQL Client connection *************** --//
-//-- Get database config values --//
-const dbConfig = await getDatabaseConfigFromSecretsManager();
-const { db_username, db_password, db_dbname } = dbConfig;
-let { db_host, db_port } = dbConfig;
+//-- Get RDS PostgreSQL database config values --//
+const rdsDBConfig = await getRDSDatabaseConfigFromSecretsManager();
+const { rdsDB_username, rdsDB_password, rdsDB_dbname } = rdsDBConfig;
+let { rdsDB_host, rdsDB_port } = rdsDBConfig;
 
-//-- In development mode, connect to db via SSH tunnel --//
+//-- Get DocumentDB-MongoDB database config values --//
+const docDBConfig = await getDocDBDatabaseConfigFromSecretsManager();
+const { docDB_username, docDB_password, docDB_dbname } = docDBConfig;
+let { docDB_host, docDB_port } = docDBConfig;
+
+//-- `true` will allow use of `127.0.0.1:PORT` for dev mode --//
+let tlsAllowInvalidHostnames = false;
+
+//-- In development mode, connect to rds and docdb via SSH tunnel --//
 //-- NOTE - must establish SSH tunnel outside this server for this to work --//
+//-- NOTE - Currently using `npm run ssh` script to establish ssh tunnel --//
 if (process.env.NODE_ENV === "development") {
-  db_host = "127.0.0.1";
-  db_port = 2222;
+  rdsDB_host = "127.0.0.1";
+  rdsDB_port = 2222;
+  docDB_host = "127.0.0.1";
+  docDB_port = 22222;
+  tlsAllowInvalidHostnames = true;
 }
 
-//-- Knex --//
-console.log(`knex requesting connection to postgres at ${db_host}:${db_port}`);
+//-- Establish RDS-PostgreSQL connection using Knex --//
+console.log(
+  `PostgreSQL-knex requesting connection to postgres at ${rdsDB_host}:${rdsDB_port}`
+);
 const knex = require("knex")({
   client: "pg",
   connection: {
-    host: db_host,
-    port: db_port,
-    user: db_username,
-    password: db_password,
-    database: db_dbname,
+    host: rdsDB_host,
+    port: rdsDB_port,
+    user: rdsDB_username,
+    password: rdsDB_password,
+    database: rdsDB_dbname,
   },
 });
-//-- Export knex for use in controllers --//
 export { knex };
-
-//-- Test Knex connection --//
 try {
-  const currentTime = await knex.raw('SELECT NOW() as "current_time"');
-
-  //-- If query succeeds, log the current time and database user --//
-  console.log(
-    "knex test query succeeded at: " + currentTime.rows[0].current_time
-  );
-  console.log("knex user is: " + knex.client.connectionSettings.user);
+  const res = await knex.raw('SELECT NOW() as "current_time"');
+  const currentTime = res.rows[0].current_time;
+  console.log("PostgreSQL-knex test query succeeded at:", currentTime);
+  console.log("PostgreSQL-knex user is:", knex.client.connectionSettings.user);
+  console.log("PostgreSQL-knex using database:", rdsDB_dbname);
 } catch (error) {
-  //-- If query fails, assume connection is in error --//
-  console.log("knex connection error");
+  console.log("PostgreSQL-knex connection error");
+  console.log(error);
+}
+
+//-- Establish DocDB-MongoDB connection using MongoClient --//
+console.log(
+  "DocumentDB-MongoDB tlsAllowInvalidHostnames:",
+  tlsAllowInvalidHostnames
+);
+console.log(
+  `DocumentDB-MongoDB requesting connection at ${docDB_host}:${docDB_port}`
+);
+const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
+  tls: true,
+  tlsCAFile: "./rds-combined-ca-bundle.pem",
+  tlsAllowInvalidHostnames: tlsAllowInvalidHostnames,
+  auth: {
+    username: docDB_username,
+    password: docDB_password,
+  },
+  directConnection: true, // NOTE - will this be unnecessary once a replica set is being used?
+});
+export { mongoClient }; // TODO - is this good?
+try {
+  await mongoClient.connect();
+  const res = await mongoClient.db().command({ serverStatus: 1 });
+  const currentTime = res.localTime;
+  console.log("DocumentDB-MongoDB test query succeeded at:", currentTime);
+  console.log("DocumentDB-MongoDB user is:", docDB_username);
+} catch (error) {
+  console.log("DocumentDB-MongoDB connection error");
   console.log(error);
 }
 
