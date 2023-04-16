@@ -1,17 +1,25 @@
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
 import { createParser } from "eventsource-parser";
+import produce from "immer";
 import { Readable } from "stream";
 import axios from "axios";
 import { getUnixTime } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
 import { MongoClient } from "../../index.js";
+import sortBy from "lodash/sortBy.js";
+import reverse from "lodash/reverse.js";
 
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../index.d";
-import { IAPIResponse, IMessage, IModel } from "./openAIControllersTypes.js";
+import {
+  IAPIResponse,
+  IMessage,
+  IModel,
+  IConversation,
+} from "./openAIControllersTypes.js";
 
 //-- OpenAI Client --//
 import { openai } from "../../index.js";
@@ -26,15 +34,75 @@ export const gpt35TurboSSEController = async (
   let user_db_id = getUserDbId(req);
 
   //-- Get model and messages from request --//
+  // TODO - write type interface for fetchEventSource req.body
   let model: IModel = req.body.model;
-  let request_messages = req.body.request_messages; // TO BE DEPRACATED
-  // let prompt = req.body.prompt;
-  // let conversation_uuid = req.body.conversation_uuid;
+  let conversation_uuid: string = req.body.conversation_uuid; // NEW
+  let newMessage: IMessage = req.body.newMessage;
 
-  //-- Get conversation from EFS and bundle chatRequestMessages --//
-  // (0) if request has a conversation_uuid
-  // // else create a new conversation object + uuid and save it to EFS
-  // (1) load conversation from EFS
+  // TODO - if order specified, message will become the next version (possibly 1) for that order
+  let new_message_order: number | null = req.body.order;
+
+  let request_messages = req.body.request_messages; // TO BE DEPRACATED
+
+  //-- Start new conversation --//
+  if ((conversation_uuid = "00000000-0000-0000-0000-000000000000")) {
+    conversation_uuid = uuidv4();
+    const system_message_uuid = uuidv4();
+    const timestamp = getUnixTime(new Date()).toString();
+
+    let conversation: IConversation = {
+      conversation_uuid: conversation_uuid,
+      message_order: {
+        1: {
+          1: system_message_uuid,
+        },
+      },
+      messages: {
+        [system_message_uuid]: {
+          message_uuid: system_message_uuid,
+          author: "chrt",
+          model: model,
+          timestamp: timestamp,
+          role: "system",
+          message:
+            "Your name is ChrtGPT. Refer to yourself as ChrtGPT. You are ChrtGPT, a helpful assistant that helps power a day trading performance journal. You sometimes make jokes and say silly things on purpose.",
+        },
+      },
+      api_responses: [],
+    };
+
+    //- Add new_message to conversation --//
+    conversation = produce(conversation, (draft) => {
+      draft.messages[newMessage.message_uuid] = newMessage;
+    });
+
+    //-- Use descending 'order' value to build request_messages array --//
+    const message_order_keys = Object.keys(conversation.message_order).map(
+      Number
+    );
+    const message_order_keys_descending = reverse(sortBy(message_order_keys));
+    // TODO - if new_message_order specified, use that instead of maxOrder
+    let insert_order =
+      new_message_order || message_order_keys_descending[0] + 1;
+    let order_counter = message_order_keys_descending[0];
+
+    //-- Update conversation message_order --//
+    conversation = produce(conversation, (draft) => {
+      draft.message_order[insert_order] = {
+        1: newMessage.message_uuid, // TODO - also insert versions when order specified
+      };
+    });
+
+    console.log(JSON.stringify(conversation, null, 2)); // DEV
+    // save to mongodb
+  } else {
+    //-- Continue conversation --//
+    // mongo - get conversation with uuid === conversation_uuid
+    console.log(
+      "TODO - mongo - get conversation with uuid === conversation_uuid"
+    );
+  }
+
   // (2) Add prompt content and metadata to the conversation object
   // (3) use tiktoken and conversation json to package up to 3k tokens worth of messages into chatRequestMessages to be sent to the LLM
   // // from chatRequestMessages, store each message_uuid in an array chatRequestMessagesUUIDs to be stored in apiResponseMetadata.message_uuids array
