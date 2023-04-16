@@ -12,7 +12,7 @@ export const getRDSDatabaseConfigFromSecretsManager = async () => {
   let rdsDB_host, rdsDB_port, rdsDB_dbname, rdsDB_username, rdsDB_password;
 
   try {
-    console.log("fetching rds-postgres config from AWS Secrets Manager");
+    console.log("AWS Secrets Manager - fetching rds-postgres config");
     let getSecretValueResponse = await secretsManager_client.send(
       new GetSecretValueCommand({
         SecretId:
@@ -48,7 +48,7 @@ export const getDocDBDatabaseConfigFromSecretsManager = async () => {
   let docDB_host, docDB_port, docDB_dbname, docDB_username, docDB_password;
 
   try {
-    console.log("fetching docdb-mongodb config from AWS Secrets Manager");
+    console.log("AWS Secrets Manager - fetching docdb-mongodb config");
     let getSecretValueResponse = await secretsManager_client.send(
       new GetSecretValueCommand({
         SecretId: "/chrt/prod/docdb/user_chrtDocDB", // TODO - instead of using admin role, use a limited-permisssions server role

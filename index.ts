@@ -73,7 +73,7 @@ if (process.env.NODE_ENV === "development") {
 
 //-- Establish RDS-PostgreSQL connection using Knex --//
 console.log(
-  `knex requesting connection to postgres at ${rdsDB_host}:${rdsDB_port}`
+  `PostgreSQL-knex requesting connection to postgres at ${rdsDB_host}:${rdsDB_port}`
 );
 const knex = require("knex")({
   client: "pg",
@@ -91,11 +91,11 @@ try {
   const res = await knex.raw('SELECT NOW() as "current_time"');
   const currentTime = res.rows[0].current_time;
 
-  console.log("knex test query succeeded at:", currentTime);
-  console.log("knex user is:", knex.client.connectionSettings.user);
-  console.log("knex using database:", rdsDB_dbname);
+  console.log("PostgreSQL-knex test query succeeded at:", currentTime);
+  console.log("PostgreSQL-knex user is:", knex.client.connectionSettings.user);
+  console.log("PostgreSQL-knex using database:", rdsDB_dbname);
 } catch (error) {
-  console.log("knex connection error");
+  console.log("PostgreSQL-knex connection error");
   console.log(error);
 }
 
@@ -116,8 +116,8 @@ const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
     username: docDB_username,
     password: docDB_password,
   },
+  directConnection: true, // will this be unnecessary once a replica set is being used?
   readPreference: "secondaryPreferred",
-  directConnection: true, // is this needed in prod?
 });
 
 export { mongoClient }; // TODO - is this good?
