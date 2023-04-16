@@ -19,6 +19,7 @@ import {
   IMessage,
   IModel,
   IConversation,
+  IChatCompletionRequestBody,
 } from "./openAIControllersTypes.js";
 
 //-- OpenAI Client --//
@@ -33,11 +34,13 @@ export const gpt35TurboSSEController = async (
   //-- Get user_db_id --//
   let user_db_id = getUserDbId(req);
 
-  //-- Get model and messages from request --//
-  // TODO - write type interface for fetchEventSource req.body
-  let model: IModel = req.body.model;
-  let conversation_uuid: string = req.body.conversation_uuid; // NEW
-  let newMessage: IMessage = req.body.newMessage;
+  //-- Get request body --//
+  let body: IChatCompletionRequestBody = req.body;
+
+  //-- Get model and messages from body --//
+  let model: IModel = body.model;
+  let conversation_uuid: string = body.conversation_uuid; // NEW
+  let new_message: IMessage = body.new_message;
 
   // TODO - if order specified, message will become the next version (possibly 1) for that order
   let new_message_order: number | null = req.body.order;
@@ -73,7 +76,7 @@ export const gpt35TurboSSEController = async (
 
     //- Add new_message to conversation --//
     conversation = produce(conversation, (draft) => {
-      draft.messages[newMessage.message_uuid] = newMessage;
+      draft.messages[new_message.message_uuid] = new_message;
     });
 
     //-- Use descending 'order' value to build request_messages array --//
@@ -89,7 +92,7 @@ export const gpt35TurboSSEController = async (
     //-- Update conversation message_order --//
     conversation = produce(conversation, (draft) => {
       draft.message_order[insert_order] = {
-        1: newMessage.message_uuid, // TODO - also insert versions when order specified
+        1: new_message.message_uuid, // TODO - also insert versions when order specified
       };
     });
 
