@@ -2,7 +2,10 @@ node_modules
 node_modules/*
 npm-debug.log
 
+# Ignore all pem files except PUBLIC ones
 *.pem
+!PUBLIC-rds-ca-bundle.pem
+
 .env
 local.js
 CHRT Client VPN_ins-00133a3dde6387ec.xml
