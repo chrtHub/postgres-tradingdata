@@ -3,10 +3,10 @@ import fs from "fs";
 
 //-- Database config --//
 import {
-  getDatabaseConfigFromSecretsManager,
+  getRDSDatabaseConfigFromSecretsManager,
   getDocDBDatabaseConfigFromSecretsManager,
 } from "./App/config/dbConfig.js";
-import { MongoClient } from "mongodb";
+import { MongoClient, ReadPreference } from "mongodb";
 
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 
@@ -48,35 +48,41 @@ console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
 
 //-- *************** PostgreSQL Client connection *************** --//
 //-- Get RDS PostgreSQL database config values --//
-const dbConfig = await getDatabaseConfigFromSecretsManager();
-const { db_username, db_password, db_dbname } = dbConfig;
-let { db_host, db_port } = dbConfig;
+const rdsDBConfig = await getRDSDatabaseConfigFromSecretsManager();
+const { rdsDB_username, rdsDB_password, rdsDB_dbname } = rdsDBConfig;
+let { rdsDB_host, rdsDB_port } = rdsDBConfig;
 
 //-- Get DocumentDB-MongoDB database config values --//
 const docDBConfig = await getDocDBDatabaseConfigFromSecretsManager();
 const { docDB_username, docDB_password, docDB_dbname } = docDBConfig;
 let { docDB_host, docDB_port } = docDBConfig;
 
+//-- `true` will allow use of `127.0.0.1:PORT` for dev mode --//
+let tlsAllowInvalidHostnames = false;
+
 //-- In development mode, connect to rds and docdb via SSH tunnel --//
 //-- NOTE - must establish SSH tunnel outside this server for this to work --//
 //-- NOTE - Currently using `npm run ssh` script to establish ssh tunnel --//
 if (process.env.NODE_ENV === "development") {
-  db_host = "127.0.0.1";
-  db_port = 2222;
+  rdsDB_host = "127.0.0.1";
+  rdsDB_port = 2222;
   docDB_host = "127.0.0.1";
   docDB_port = 22222;
+  tlsAllowInvalidHostnames = true;
 }
 
 //-- Establish RDS-PostgreSQL connection using Knex --//
-console.log(`knex requesting connection to postgres at ${db_host}:${db_port}`);
+console.log(
+  `knex requesting connection to postgres at ${rdsDB_host}:${rdsDB_port}`
+);
 const knex = require("knex")({
   client: "pg",
   connection: {
-    host: db_host,
-    port: db_port,
-    user: db_username,
-    password: db_password,
-    database: db_dbname,
+    host: rdsDB_host,
+    port: rdsDB_port,
+    user: rdsDB_username,
+    password: rdsDB_password,
+    database: rdsDB_dbname,
   },
 });
 export { knex };
@@ -87,6 +93,7 @@ try {
 
   console.log("knex test query succeeded at:", currentTime);
   console.log("knex user is:", knex.client.connectionSettings.user);
+  console.log("knex using database:", rdsDB_dbname);
 } catch (error) {
   console.log("knex connection error");
   console.log(error);
@@ -94,15 +101,37 @@ try {
 
 //-- Establish DocDB-MongoDB connection using MongoClient --//
 console.log(
-  `requesting connection to DocumentDB-MongoDB at ${docDB_host}:${docDB_port}`
+  "DocumentDB-MongoDB tlsAllowInvalidHostnames:",
+  tlsAllowInvalidHostnames
 );
-const mongo_connection_options =
-  "ssl=true&replicaSet=rs0&retryWrites=false&w=majority&readPreference=secondaryPreferred"; // TODO - evaluate these options
-const mongo_uri = `mongodb://${docDB_username}:${docDB_password}@${docDB_host}:${docDB_port}/${db_dbname}?${mongo_connection_options}`;
-const mongoClient = new MongoClient(mongo_uri);
+console.log(
+  `DocumentDB-MongoDB requesting connection at ${docDB_host}:${docDB_port}`
+);
+
+const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
+  tls: true,
+  tlsCAFile: "./rds-combined-ca-bundle.pem",
+  tlsAllowInvalidHostnames: tlsAllowInvalidHostnames,
+  auth: {
+    username: docDB_username,
+    password: docDB_password,
+  },
+  readPreference: "secondaryPreferred",
+  directConnection: true, // is this needed in prod?
+});
 
 export { mongoClient }; // TODO - is this good?
 
+// TODO - evaluate these options
+const mongo_connection_options =
+  "tls=true&tlsAllowInvalidHostnames=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false&directConnection=true";
+// "readPreference=secondaryPreferred&retryWrites=false";
+
+// "?tls=true&tlsAllowInvalidHostnames=true&tlsCAFile=%2FUsers%2Faaroncarver%2FRepos%2FchrtHub%2Fpostgres-tradingdata%2Frds-combined-ca-bundle.pem&directConnection=true"
+
+// const mongo_uri = `mongodb://${docDB_username}:${docDB_password}@${docDB_host}:${docDB_port}/${docDB_dbname}?${mongo_connection_options}`;
+
+//--
 try {
   await mongoClient.connect();
   const res = await mongoClient.db().command({ serverStatus: 1 });
@@ -110,6 +139,7 @@ try {
 
   console.log("DocumentDB-MongoDB test query succeeded at:", currentTime);
   console.log("DocumentDB-MongoDB user is:", docDB_username);
+  console.log("DocumentDB-MongoDB datbase is:", docDB_dbname);
 } catch (error) {
   console.log("DocumentDB-MongoDB connection error");
   console.log(error);

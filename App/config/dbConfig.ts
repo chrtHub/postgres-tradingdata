@@ -8,8 +8,8 @@ const secretsManager_client = new SecretsManagerClient({
   region: "us-east-1",
 });
 
-export const getDatabaseConfigFromSecretsManager = async () => {
-  let db_host, db_port, db_dbname, db_username, db_password;
+export const getRDSDatabaseConfigFromSecretsManager = async () => {
+  let rdsDB_host, rdsDB_port, rdsDB_dbname, rdsDB_username, rdsDB_password;
 
   try {
     console.log("fetching rds-postgres config from AWS Secrets Manager");
@@ -24,18 +24,24 @@ export const getDatabaseConfigFromSecretsManager = async () => {
     //-- Parse string into JSON, store values into variables --//
     if (getSecretValueResponse.SecretString) {
       let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
-      db_host = SecretStringJSON.host;
-      db_port = SecretStringJSON.port;
-      db_dbname = SecretStringJSON.dbname;
-      db_username = SecretStringJSON.username;
-      db_password = SecretStringJSON.password;
+      rdsDB_host = SecretStringJSON.host;
+      rdsDB_port = SecretStringJSON.port;
+      rdsDB_dbname = SecretStringJSON.dbname;
+      rdsDB_username = SecretStringJSON.username;
+      rdsDB_password = SecretStringJSON.password;
     } else {
       throw new Error("rds-postgres SecretString is empty");
     }
   } catch (err) {
     console.log(err);
   }
-  return { db_host, db_port, db_dbname, db_username, db_password };
+  return {
+    rdsDB_host,
+    rdsDB_port,
+    rdsDB_dbname,
+    rdsDB_username,
+    rdsDB_password,
+  };
 };
 
 export const getDocDBDatabaseConfigFromSecretsManager = async () => {
@@ -55,7 +61,7 @@ export const getDocDBDatabaseConfigFromSecretsManager = async () => {
       let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
       docDB_host = SecretStringJSON.host;
       docDB_port = SecretStringJSON.port;
-      docDB_dbname = SecretStringJSON.dbname;
+      docDB_dbname = SecretStringJSON.dbname || "";
       docDB_username = SecretStringJSON.username;
       docDB_password = SecretStringJSON.password;
     } else {
