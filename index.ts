@@ -86,11 +86,9 @@ const knex = require("knex")({
   },
 });
 export { knex };
-
 try {
   const res = await knex.raw('SELECT NOW() as "current_time"');
   const currentTime = res.rows[0].current_time;
-
   console.log("PostgreSQL-knex test query succeeded at:", currentTime);
   console.log("PostgreSQL-knex user is:", knex.client.connectionSettings.user);
   console.log("PostgreSQL-knex using database:", rdsDB_dbname);
@@ -107,7 +105,6 @@ console.log(
 console.log(
   `DocumentDB-MongoDB requesting connection at ${docDB_host}:${docDB_port}`
 );
-
 const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   tls: true,
   tlsCAFile: "./rds-combined-ca-bundle.pem",
@@ -116,27 +113,13 @@ const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
     username: docDB_username,
     password: docDB_password,
   },
-  directConnection: true, // will this be unnecessary once a replica set is being used?
-  readPreference: "secondaryPreferred",
+  directConnection: true, // NOTE - will this be unnecessary once a replica set is being used?
 });
-
 export { mongoClient }; // TODO - is this good?
-
-// TODO - evaluate these options
-const mongo_connection_options =
-  "tls=true&tlsAllowInvalidHostnames=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false&directConnection=true";
-// "readPreference=secondaryPreferred&retryWrites=false";
-
-// "?tls=true&tlsAllowInvalidHostnames=true&tlsCAFile=%2FUsers%2Faaroncarver%2FRepos%2FchrtHub%2Fpostgres-tradingdata%2Frds-combined-ca-bundle.pem&directConnection=true"
-
-// const mongo_uri = `mongodb://${docDB_username}:${docDB_password}@${docDB_host}:${docDB_port}/${docDB_dbname}?${mongo_connection_options}`;
-
-//--
 try {
   await mongoClient.connect();
   const res = await mongoClient.db().command({ serverStatus: 1 });
   const currentTime = res.localTime;
-
   console.log("DocumentDB-MongoDB test query succeeded at:", currentTime);
   console.log("DocumentDB-MongoDB user is:", docDB_username);
   console.log("DocumentDB-MongoDB datbase is:", docDB_dbname);
