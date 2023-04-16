@@ -6,6 +6,7 @@ import axios from "axios";
 import { getUnixTime } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
+import { MongoClient } from "../../index.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -21,7 +22,6 @@ export const gpt35TurboSSEController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  console.log("gpt35turboStreamController() called"); // DEV
   //-- Get user_db_id --//
   let user_db_id = getUserDbId(req);
 
@@ -41,6 +41,14 @@ export const gpt35TurboSSEController = async (
   // // const chatRequestMessages_message_uuids = ["TODO"];
   // (4) set variable as the token count for this api call, use that in the api_call_metadata reponse
   // // let prompt_tokens = tiktoken(chatRequestMessages)
+
+  //-- DEV - MongoDB Sandbox--//
+
+  const databaseList = await MongoClient.db().admin().listDatabases();
+  console.log("Databases: ");
+  databaseList.databases.forEach((db) => console.log(` - ${db.name}`));
+
+  //----//
 
   //-- Create completion_message_uuid and send to client one time --//
   const completion_message_uuid = uuidv4();

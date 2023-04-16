@@ -6,7 +6,7 @@ import {
   getRDSDatabaseConfigFromSecretsManager,
   getDocDBDatabaseConfigFromSecretsManager,
 } from "./App/config/dbConfig.js";
-import { MongoClient, ReadPreference } from "mongodb";
+import { MongoClient as _MongoClient } from "mongodb";
 
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 
@@ -109,7 +109,7 @@ console.log(
 console.log(
   `DocumentDB-MongoDB requesting connection at ${docDB_host}:${docDB_port}`
 );
-const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
+const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   tls: true,
   tlsCAFile: tlsCAFilepath,
   tlsAllowInvalidHostnames: tlsAllowInvalidHostnames,
@@ -119,10 +119,10 @@ const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   },
   directConnection: true, // NOTE - will this be unnecessary once a replica set is being used?
 });
-export { mongoClient }; // TODO - is this good?
+export { MongoClient }; // TODO - is this good?
 try {
-  await mongoClient.connect();
-  const res = await mongoClient.db().command({ serverStatus: 1 });
+  await MongoClient.connect();
+  const res = await MongoClient.db().command({ serverStatus: 1 });
   const currentTime = res.localTime;
   console.log("DocumentDB-MongoDB test query succeeded at:", currentTime);
   console.log("DocumentDB-MongoDB user is:", docDB_username);
