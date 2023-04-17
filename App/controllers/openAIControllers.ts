@@ -5,11 +5,11 @@ import produce from "immer";
 import { Readable } from "stream";
 import axios from "axios";
 import { getUnixTime } from "date-fns";
-import { v4 as uuidv4 } from "uuid";
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
 import { MongoClient } from "../../index.js";
 import sortBy from "lodash/sortBy.js";
 import reverse from "lodash/reverse.js";
+import { getUUIDV4 } from "../utils/getUUIDV4.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -34,23 +34,18 @@ export const gpt35TurboSSEController = async (
   //-- Get user_db_id --//
   let user_db_id = getUserDbId(req);
 
-  //-- Get request body --//
+  //-- Get params from req.body --//
   let body: IChatCompletionRequestBody = req.body;
+  let conversation_uuid = body.conversation_uuid; // NEW
+  let request_messages = body.request_messages; // TO BE DEPRACATED
+  let new_message = body.new_message;
+  let new_message_order = body.new_message_order; // TO ADD - if order specified, message will become the next version (possibly 1) for that order
+  let model = body.model;
 
-  //-- Get model and messages from body --//
-  let model: IModel = body.model;
-  let conversation_uuid: string = body.conversation_uuid; // NEW
-  let new_message: IMessage = body.new_message;
-
-  // TODO - if order specified, message will become the next version (possibly 1) for that order
-  let new_message_order: number | null = req.body.order;
-
-  let request_messages = req.body.request_messages; // TO BE DEPRACATED
-
-  //-- Start new conversation --//
-  if ((conversation_uuid = "00000000-0000-0000-0000-000000000000")) {
-    conversation_uuid = uuidv4();
-    const system_message_uuid = uuidv4();
+  //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
+  if (conversation_uuid === getUUIDV4("dummy")) {
+    conversation_uuid = getUUIDV4();
+    const system_message_uuid = getUUIDV4();
     const timestamp = getUnixTime(new Date()).toString();
 
     let conversation: IConversation = {
@@ -80,16 +75,23 @@ export const gpt35TurboSSEController = async (
     });
 
     //-- Use descending 'order' value to build request_messages array --//
-    const message_order_keys = Object.keys(conversation.message_order).map(
-      Number
+    const message_order_keys: number[] = Object.keys(
+      conversation.message_order
+    ).map(Number);
+    const message_order_keys_descending: number[] = reverse(
+      sortBy(message_order_keys)
     );
-    const message_order_keys_descending = reverse(sortBy(message_order_keys));
-    // TODO - if new_message_order specified, use that instead of maxOrder
-    let insert_order =
-      new_message_order || message_order_keys_descending[0] + 1;
-    let order_counter = message_order_keys_descending[0];
+    let insert_order: number = message_order_keys_descending[0] + 1;
+    let order_counter: number = message_order_keys_descending[0];
 
-    //-- Update conversation message_order --//
+    //-- If new_message_order specified, overwrite insert_order and compute version --//
+    if (new_message_order) {
+      insert_order = new_message_order;
+      // find current highest version for conversation.message_order[insert_order], increment by 1
+      // version
+    }
+
+    //-- Update conversation message_order and version --//
     conversation = produce(conversation, (draft) => {
       draft.message_order[insert_order] = {
         1: new_message.message_uuid, // TODO - also insert versions when order specified
@@ -122,7 +124,7 @@ export const gpt35TurboSSEController = async (
   //----//
 
   //-- Create completion_message_uuid and send to client one time --//
-  const completion_message_uuid = uuidv4();
+  const completion_message_uuid = getUUIDV4();
   const completion_timestamp = getUnixTime(new Date()).toString();
 
   //-- Set headers needed for SSE and to initialize IMessage object client-side --//

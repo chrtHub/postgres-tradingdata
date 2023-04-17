@@ -13,7 +13,7 @@ import { knex } from "../../index.js";
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
 import orderBy from "lodash/orderBy.js";
-import { v4 as uuidv4 } from "uuid";
+import { getUUIDV4 } from "../utils/getUUIDV4.js";
 
 //-- NPM Functions --//
 import { IRequestWithAuth } from "../../index.d";
@@ -33,7 +33,7 @@ export const putFile = async (req: IRequestWithAuth, res: Response) => {
   let bucket = "chrt-user-trading-data-files";
 
   //-- Generate a uuid and add it in front of the filename --//
-  let file_uuid = uuidv4();
+  let file_uuid = getUUIDV4();
   let key = `${user_db_id}/${brokerage}/${file_uuid}_${filename}`;
 
   if (!file) {
