@@ -25,6 +25,7 @@ import {
 //-- OpenAI Client --//
 import { openai } from "../../index.js";
 import { tiktoken } from "./tiktoken.js";
+import { getNewConversation } from "./getNewConversation.js";
 
 //-- ***** ***** ***** GPT-3.5 Turbo SSE ***** ***** ***** //
 export const gpt35TurboSSEController = async (
@@ -43,75 +44,63 @@ export const gpt35TurboSSEController = async (
   let model = body.model;
 
   //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
+  let conversation: IConversation;
   if (conversation_uuid === getUUIDV4("dummy")) {
-    conversation_uuid = getUUIDV4();
-    const system_message_uuid = getUUIDV4();
-    const timestamp = getUnixTime(new Date()).toString();
-
-    let conversation: IConversation = {
-      conversation_uuid: conversation_uuid,
-      message_order: {
-        1: {
-          1: system_message_uuid,
-        },
-      },
-      messages: {
-        [system_message_uuid]: {
-          message_uuid: system_message_uuid,
-          author: "chrt",
-          model: model,
-          timestamp: timestamp,
-          role: "system",
-          message:
-            "Your name is ChrtGPT. Refer to yourself as ChrtGPT. You are ChrtGPT, a helpful assistant that helps power a day trading performance journal. You sometimes make jokes and say silly things on purpose.",
-        },
-      },
-      api_responses: [],
-    };
-
-    //- Add new_message to conversation --//
-    conversation = produce(conversation, (draft) => {
-      draft.messages[new_message.message_uuid] = new_message;
-    });
-
-    //-- Use descending 'order' value to build request_messages array --//
-    const message_order_keys: number[] = Object.keys(
-      conversation.message_order
-    ).map(Number);
-    const message_order_keys_descending: number[] = reverse(
-      sortBy(message_order_keys)
-    );
-    let insert_order: number = message_order_keys_descending[0] + 1;
-    let order_counter: number = message_order_keys_descending[0];
-
-    //-- If new_message_order specified, overwrite insert_order and compute version --//
-    if (new_message_order) {
-      insert_order = new_message_order;
-      // find current highest version for conversation.message_order[insert_order], increment by 1
-      // version
-    }
-
-    //-- Update conversation message_order and version --//
-    conversation = produce(conversation, (draft) => {
-      draft.message_order[insert_order] = {
-        1: new_message.message_uuid, // TODO - also insert versions when order specified
-      };
-    });
-
-    console.log(JSON.stringify(conversation, null, 2)); // DEV
-    // save to mongodb
+    conversation = getNewConversation(model);
   } else {
-    //-- Continue conversation --//
-    // mongo - get conversation with uuid === conversation_uuid
-    console.log(
-      "TODO - mongo - get conversation with uuid === conversation_uuid"
-    );
+    //-- Else continue conversation --//
+    // TODO - get conversation from mongodb where uuid === conversation_uuid
+    conversation = getNewConversation(model); // DEV
   }
+
+  //- Add 'new_message' to 'conversation.messages' --//
+  conversation = produce(conversation, (draft) => {
+    draft.messages[new_message.message_uuid] = new_message;
+  });
+
+  //-- Determine correct insert_order and insert_version --//
+  let insert_order: number;
+  let insert_version: number;
+  const order_keys_desc: number[] = reverse(
+    sortBy(Object.keys(conversation.message_order).map(Number))
+  );
+
+  if (!new_message_order) {
+    insert_order = order_keys_desc[0] + 1; //-- By default, increment order by 1 --//
+    insert_version = 1; //-- By default, version = 1 --//
+  } else {
+    insert_order = new_message_order; //-- Use specified order --//
+
+    const version_keys_desc: number[] = reverse(
+      sortBy(
+        Object.keys(conversation.message_order[new_message_order]).map(Number)
+      )
+    ); // TODO - what happens here in the case of no existing versions for new_message_order?
+    insert_version = version_keys_desc[0] + 1; //-- Increment version --//
+  }
+
+  //-- Add 'order' and 'version' of 'new_message' to 'conversation.message_order' --//
+  conversation = produce(conversation, (draft) => {
+    draft.message_order[insert_order] = {
+      [insert_version]: new_message.message_uuid,
+    };
+  });
+
+  console.log(JSON.stringify(conversation, null, 2)); // DEV
+
+  // TODO - save updated to mongodb
+  // pseudocode:
+  // // MongoClient.db().ChrtGPT().updateOne(conversation)
+  // // MongoClient.db().ChrtGPT().insertOne(conversation)
 
   // (2) Add prompt content and metadata to the conversation object
   // (3) use tiktoken and conversation json to package up to 3k tokens worth of messages into chatRequestMessages to be sent to the LLM
   // // from chatRequestMessages, store each message_uuid in an array chatRequestMessagesUUIDs to be stored in apiResponseMetadata.message_uuids array
   // // const chatRequestMessages_message_uuids = ["TODO"];
+
+  //-- Starts counter at max order--//
+  let order_counter: number = order_keys_desc[0];
+
   // (4) set variable as the token count for this api call, use that in the api_call_metadata reponse
   // // let prompt_tokens = tiktoken(chatRequestMessages)
 

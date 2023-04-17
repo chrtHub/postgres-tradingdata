@@ -117,7 +117,8 @@ const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
     username: docDB_username,
     password: docDB_password,
   },
-  directConnection: true, // NOTE - will this be unnecessary once a replica set is being used?
+  retryWrites: false,
+  directConnection: true, // NOTE - will this be unnecessary once >1 instance is in use?
 });
 export { MongoClient }; // TODO - is this good?
 try {
