@@ -1,3 +1,5 @@
+// TODO - clean up imports
+
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
 import { createParser } from "eventsource-parser";
@@ -10,6 +12,7 @@ import { MongoClient } from "../../index.js";
 import sortBy from "lodash/sortBy.js";
 import reverse from "lodash/reverse.js";
 import { getUUIDV4 } from "../utils/getUUIDV4.js";
+import { ObjectId } from "mongodb";
 
 //-- Types --//
 import { Response } from "express";
@@ -25,7 +28,7 @@ import {
 //-- OpenAI Client --//
 import { openai } from "../../index.js";
 import { tiktoken } from "./tiktoken.js";
-import { getNewConversation } from "./getNewConversation.js";
+import { getNewConversation } from "../utils/getNewConversation.js";
 
 //-- ***** ***** ***** GPT-3.5 Turbo SSE ***** ***** ***** //
 export const gpt35TurboSSEController = async (
@@ -46,11 +49,11 @@ export const gpt35TurboSSEController = async (
   //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
   let conversation: IConversation;
   if (conversation_uuid === getUUIDV4("dummy")) {
-    conversation = getNewConversation(model);
+    conversation = getNewConversation(model, null);
   } else {
     //-- Else continue conversation --//
     // TODO - get conversation from mongodb where uuid === conversation_uuid
-    conversation = getNewConversation(model); // DEV
+    conversation = getNewConversation(model, null); // DEV
   }
 
   //- Add 'new_message' to 'conversation.messages' --//
@@ -92,8 +95,17 @@ export const gpt35TurboSSEController = async (
   // pseudocode:
   // // MongoClient.db().ChrtGPT().updateOne(conversation)
   // // MongoClient.db().ChrtGPT().insertOne(conversation)
+  try {
+    let foo = MongoClient.db().collection("books").findOne({});
+    // ObjectId(some_id)
+    // ObjectId.isValid()
+    console.log(foo);
+  } catch (err) {
+    console.log(err);
+  }
 
   // (2) Add prompt content and metadata to the conversation object
+
   // (3) use tiktoken and conversation json to package up to 3k tokens worth of messages into chatRequestMessages to be sent to the LLM
   // // from chatRequestMessages, store each message_uuid in an array chatRequestMessagesUUIDs to be stored in apiResponseMetadata.message_uuids array
   // // const chatRequestMessages_message_uuids = ["TODO"];
@@ -109,6 +121,19 @@ export const gpt35TurboSSEController = async (
   const databaseList = await MongoClient.db().admin().listDatabases();
   console.log("Databases: ");
   databaseList.databases.forEach((db) => console.log(` - ${db.name}`));
+
+  // let books = [];
+  // MongoClient.db()
+  //   .collection("books")
+  //   .find()
+  //   .sort({ author: 1 })
+  //   .forEach((book) => books.push(book))
+  //   .then(() => {
+  //     console.log(books);
+  //   })
+  //   .catch(() => {
+  //     console.log("error");
+  //   });
 
   //----//
 

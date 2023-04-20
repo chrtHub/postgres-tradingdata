@@ -1,8 +1,16 @@
-import { getUUIDV4 } from "../utils/getUUIDV4.js";
+import { getUUIDV4 } from "./getUUIDV4.js";
 import { getUnixTime } from "date-fns";
-import { IConversation, IModel } from "./openAIControllersTypes.js";
+import {
+  IConversation,
+  IModel,
+} from "../controllers/openAIControllersTypes.js";
 
-export function getNewConversation(model: IModel) {
+const CURRENT_SCHEMA_VERSION = 1;
+
+export function getNewConversation(
+  model: IModel,
+  schema_version: number | null
+) {
   let conversation_uuid = getUUIDV4();
   const system_message_uuid = getUUIDV4();
   const timestamp = getUnixTime(new Date()).toString();
@@ -26,6 +34,7 @@ export function getNewConversation(model: IModel) {
       },
     },
     api_responses: [],
+    schema_version: schema_version || CURRENT_SCHEMA_VERSION,
   };
 
   return new_conversation;

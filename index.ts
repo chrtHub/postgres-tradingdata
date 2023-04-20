@@ -89,7 +89,6 @@ const knex = require("knex")({
     database: rdsDB_dbname,
   },
 });
-export { knex };
 try {
   const res = await knex.raw('SELECT NOW() as "current_time"');
   const currentTime = res.rows[0].current_time;
@@ -100,6 +99,7 @@ try {
   console.log("PostgreSQL-knex connection error");
   console.log(error);
 }
+export { knex };
 
 //-- Establish DocDB-MongoDB connection using MongoClient --//
 console.log(
@@ -120,7 +120,6 @@ const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   retryWrites: false,
   directConnection: true, // NOTE - will this be unnecessary once >1 instance is in use?
 });
-export { MongoClient }; // TODO - is this good?
 try {
   await MongoClient.connect();
   const res = await MongoClient.db().command({ serverStatus: 1 });
@@ -131,6 +130,7 @@ try {
   console.log("DocumentDB-MongoDB connection error");
   console.log(error);
 }
+export { MongoClient }; // TODO - is this good?
 
 //-- OpenAI --//
 let OPENAI_API_KEY: string = await getOpenAI_API_Key();
