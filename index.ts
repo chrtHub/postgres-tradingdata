@@ -109,6 +109,7 @@ console.log(
 console.log(
   `DocumentDB-MongoDB requesting connection at ${docDB_host}:${docDB_port}`
 );
+console.log(docDB_username, docDB_password);
 const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   tls: true,
   tlsCAFile: tlsCAFilepath,
@@ -118,13 +119,12 @@ const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
     password: docDB_password,
   },
   retryWrites: false,
-  directConnection: true, // NOTE - will this be unnecessary once >1 instance is in use?
+  directConnection: true,
 });
 try {
   await MongoClient.connect();
   const res = await MongoClient.db().command({ serverStatus: 1 });
-  const currentTime = res.localTime;
-  console.log("DocumentDB-MongoDB test query succeeded at:", currentTime);
+  console.log("DocumentDB-MongoDB test query succeeded at:", res.localTime);
   console.log("DocumentDB-MongoDB user is:", docDB_username);
 } catch (error) {
   console.log("DocumentDB-MongoDB connection error");

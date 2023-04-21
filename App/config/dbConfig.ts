@@ -51,7 +51,7 @@ export const getDocDBDatabaseConfigFromSecretsManager = async () => {
     console.log("AWS Secrets Manager - fetching docdb-mongodb config");
     let getSecretValueResponse = await secretsManager_client.send(
       new GetSecretValueCommand({
-        SecretId: "/chrt/prod/docdb/user_chrtDocDB", // TODO - instead of using admin role, use a limited-permisssions server role
+        SecretId: "/chrt/docdb/prod/custom-app-server",
         VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
       })
     );
