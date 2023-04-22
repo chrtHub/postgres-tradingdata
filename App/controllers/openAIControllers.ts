@@ -98,6 +98,7 @@ export const gpt35TurboSSEController = async (
   // console.log(JSON.stringify(conversation, null, 2)); // DEV
 
   // TODO - save updated to mongodb
+  // save conversation_uuid as _id
   // pseudocode:
   // // MongoClient.db().ChrtGPT().updateOne(conversation)
   // // MongoClient.db().ChrtGPT().insertOne(conversation)
@@ -118,17 +119,15 @@ export const gpt35TurboSSEController = async (
 
   //-- Create completion_message_uuid and send to client one time --//
   const completion_message_uuid = getUUIDV4();
-  const completion_timestamp = getUnixTime(new Date()).toString();
+  const completion_created_at = new Date();
 
   //-- Set headers needed for SSE and to initialize IMessage object client-side --//
   res.set({
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
     "Content-Type": "text/event-stream",
-    "Access-Control-Expose-Headers":
-      "CHRT-completion-message-uuid, CHRT-timestamp",
+    "Access-Control-Expose-Headers": "CHRT-completion-message-uuid",
     "CHRT-completion-message-uuid": completion_message_uuid,
-    "CHRT-timestamp": completion_timestamp,
   });
   res.flushHeaders(); //-- Send headers immediately (don't wait for first chunk or message end) --//
 
@@ -174,7 +173,7 @@ export const gpt35TurboSSEController = async (
       parser.feed(textDecoder.decode(chunk));
     });
 
-    //-- Use array to save response to EFS when streaming finishes --//
+    //-- Use array to save response to MongoDB when streaming finishes --//
     const response_chunks: string[] = [];
 
     //-- Inside parser, send each chunk to the client, then close the connection --//
@@ -204,7 +203,7 @@ export const gpt35TurboSSEController = async (
             message_uuid: completion_message_uuid,
             author: model.api_name,
             model: model,
-            timestamp: completion_timestamp,
+            created_at: completion_created_at,
             role: "assistant",
             message: completion_message_content,
           };
@@ -217,7 +216,7 @@ export const gpt35TurboSSEController = async (
           const api_response_metadata: IAPIResponse = {
             user: user_db_id || "user_db_id_not_found",
             model_api_name: model.api_name,
-            completion_timestamp: completion_timestamp,
+            created_at: completion_created_at,
             completion_tokens: completion_tokens,
             prompt_tokens: 100, // TODO - implement tiktoken(prompt)
             total_tokens: 100 + completion_tokens, // TODO - implement tiktoken(prompt)
@@ -234,13 +233,13 @@ export const gpt35TurboSSEController = async (
           //-- Close connection --//
           res.end();
 
-          //-- Save entire response to conversation object in EFS --//
+          //-- Save entire response to conversation object in MongoDB --//
           // console.log(
-          //   "TODO - save to EFS - completion_message: ",
+          //   "TODO - save to MongoDB - completion_message: ",
           //   completion_message
           // );
           // console.log(
-          //   "save to EFS - api_response_metadata: ",
+          //   "save to MongoDB - api_response_metadata: ",
           //   JSON.stringify(api_response_metadata, null, 2)
           // );
         }
