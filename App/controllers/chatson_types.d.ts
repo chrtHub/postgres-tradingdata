@@ -1,12 +1,10 @@
-//-- ***** ***** ***** ***** ***** ***** ***** ***** ***** --//
-//-- New type interfaces --//
-
+//-- Chatson Type Interfaces --//
 export interface IConversation {
   conversation_uuid: UUIDV4;
   message_order: IMessageOrder;
   messages: IMessages;
   api_responses: IAPIResponse[];
-  schema_version: number;
+  schema_version: string;
 }
 
 type UUIDV4 = string & {

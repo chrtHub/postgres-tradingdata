@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 
-import { UUIDV4 } from "../controllers/openAIControllersTypes";
+import { UUIDV4 } from "../controllers/chatson_types";
 
 //-- Regex test and format ---//
 function isUUIDV4(uuid: string): uuid is UUIDV4 {

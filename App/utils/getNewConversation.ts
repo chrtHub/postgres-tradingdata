@@ -1,15 +1,12 @@
 import { getUUIDV4 } from "./getUUIDV4.js";
 import { getUnixTime } from "date-fns";
-import {
-  IConversation,
-  IModel,
-} from "../controllers/openAIControllersTypes.js";
+import { IConversation, IModel } from "../controllers/chatson_types.js";
 
-const CURRENT_SCHEMA_VERSION = 1;
+const CURRENT_SCHEMA_VERSION = "2023-04-20";
 
 export function getNewConversation(
   model: IModel,
-  schema_version: number | null
+  schema_version: string | null
 ) {
   let conversation_uuid = getUUIDV4();
   const system_message_uuid = getUUIDV4();

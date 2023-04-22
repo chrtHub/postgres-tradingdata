@@ -23,7 +23,7 @@ import {
   IModel,
   IConversation,
   IChatCompletionRequestBody,
-} from "./openAIControllersTypes.js";
+} from "./chatson_types.js";
 
 //-- OpenAI Client --//
 import { openai } from "../../index.js";
@@ -35,6 +35,7 @@ export const gpt35TurboSSEController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
+  console.log("gpt35TurboSSEController"); // DEV
   //-- Get user_db_id --//
   let user_db_id = getUserDbId(req);
 
@@ -53,6 +54,11 @@ export const gpt35TurboSSEController = async (
   } else {
     //-- Else continue conversation --//
     // TODO - get conversation from mongodb where uuid === conversation_uuid
+    // TODO - replace with mongoose ODM (Object Data Modeling) code
+    // let res = await MongoClient.db("chrtgpt-journal")
+    //   .collection("conversations")
+    //   .findOne({ conversation_uuid: conversation_uuid });
+
     conversation = getNewConversation(model, null); // DEV
   }
 
@@ -95,14 +101,6 @@ export const gpt35TurboSSEController = async (
   // pseudocode:
   // // MongoClient.db().ChrtGPT().updateOne(conversation)
   // // MongoClient.db().ChrtGPT().insertOne(conversation)
-  try {
-    let foo = MongoClient.db().collection("books").findOne({});
-    // ObjectId(some_id)
-    // ObjectId.isValid()
-    console.log(foo);
-  } catch (err) {
-    console.log(err);
-  }
 
   // (2) Add prompt content and metadata to the conversation object
 
