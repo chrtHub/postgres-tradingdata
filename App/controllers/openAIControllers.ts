@@ -50,8 +50,10 @@ export const gpt35TurboSSEController = async (
 
   //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
   let conversation: IConversation;
+  let is_new_conversation: boolean = false;
   if (conversation_uuid === getUUIDV4("dummy")) {
     conversation = getNewConversation(model, null);
+    is_new_conversation = true;
   } else {
     //-- Else continue conversation --//
     // TODO - get conversation from mongodb where uuid === conversation_uuid
@@ -98,12 +100,21 @@ export const gpt35TurboSSEController = async (
 
   // console.log(JSON.stringify(conversation, null, 2)); // DEV
 
-  // TODO - save updated to mongodb
+  //-- Validate and save to MongoDB via insert or update --//
   // let valid = validator_2023_04_20(conversation);
   // if (valid) {
-  //   // pseudocode:
-  //   // // MongoClient.db().ChrtGPT().updateOne(conversation)
-  //   // // MongoClient.db().ChrtGPT().insertOne(conversation)
+  if (is_new_conversation) {
+    MongoClient.db("chrtgpt-journal")
+      .collection("conversations")
+      .insertOne(conversation);
+  } else {
+    MongoClient.db("chrtgpt-journal")
+      .collection("conversations")
+      .updateOne(
+        { conversation_uuid: conversation.conversation_uuid },
+        { $set: conversation }
+      );
+  }
   // } else {
   //   console.log("invalid conversation object", conversation);
   //   throw new Error("invalid conversation object");

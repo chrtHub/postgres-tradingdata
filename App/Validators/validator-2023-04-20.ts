@@ -1,5 +1,8 @@
 import Ajv from "ajv";
 
+const uuidv4Regex =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
 const conversationSchema = {
   $schema: "http://json-schema.org/draft-07/schema#",
   $id: "http://alb.chrt.com/conversation-schema-2023-04-20.json",
@@ -17,9 +20,14 @@ const conversationSchema = {
     "user_tags",
   ],
   properties: {
+    _id: {
+      type: "string",
+      pattern: uuidv4Regex,
+    },
     conversation_uuid: {
       type: "string",
-      format: "uuid",
+      format: uuidv4Regex,
+      const: { $data: "_id" },
     },
     schema_version: {
       type: "string",
@@ -34,7 +42,7 @@ const conversationSchema = {
         type: "object",
         additionalProperties: {
           type: "string",
-          format: "uuid",
+          format: uuidv4Regex,
         },
       },
     },
@@ -45,7 +53,7 @@ const conversationSchema = {
         properties: {
           message_uuid: {
             type: "string",
-            format: "uuid",
+            format: uuidv4Regex,
           },
           author: {
             type: "string",

@@ -1,5 +1,6 @@
 import { getUUIDV4 } from "./getUUIDV4.js";
 import { IConversation, IModel } from "../controllers/chatson_types.js";
+import { ObjectId } from "mongodb";
 
 const CURRENT_SCHEMA_VERSION = "2023-04-20";
 
@@ -12,6 +13,7 @@ export function getNewConversation(
   let created_at = new Date();
 
   const new_conversation: IConversation = {
+    _id: new ObjectId(),
     conversation_uuid: conversation_uuid,
     schema_version: CURRENT_SCHEMA_VERSION,
     created_at: created_at,
