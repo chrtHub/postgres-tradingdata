@@ -8,13 +8,11 @@ export function getNewConversation(
   model: IModel,
   schema_version: string | null
 ) {
-  let conversation_uuid = getUUIDV4();
   const system_message_uuid = getUUIDV4();
   let created_at = new Date();
 
   const new_conversation: IConversation = {
     _id: new ObjectId(),
-    conversation_uuid: conversation_uuid,
     schema_version: CURRENT_SCHEMA_VERSION,
     created_at: created_at,
     message_order: {

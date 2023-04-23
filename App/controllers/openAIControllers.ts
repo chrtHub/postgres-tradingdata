@@ -10,7 +10,7 @@ import { MongoClient } from "../../index.js";
 import sortBy from "lodash/sortBy.js";
 import reverse from "lodash/reverse.js";
 import { getUUIDV4 } from "../utils/getUUIDV4.js";
-
+import { ObjectId } from "mongodb";
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../index.d";
@@ -38,7 +38,7 @@ export const gpt35TurboSSEController = async (
 
   //-- Get params from req.body --//
   let body: IChatCompletionRequestBody = req.body;
-  let conversation_uuid = body.conversation_uuid; // NEW
+  let _id = body._id; // NEW
   let request_messages = body.request_messages; // TO BE DEPRACATED
   let new_message = body.new_message;
   let new_message_order = body.new_message_order; // TO ADD - if order specified, message will become the next version (possibly 1) for that order
@@ -47,16 +47,16 @@ export const gpt35TurboSSEController = async (
   //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
   let conversation: IConversation;
   let is_new_conversation: boolean = false;
-  if (conversation_uuid === getUUIDV4("dummy")) {
+  if (_id === new ObjectId("000000000000000000000000")) {
     conversation = getNewConversation(model, null);
     is_new_conversation = true;
   } else {
     //-- Else continue conversation --//
-    // TODO - get conversation from mongodb where uuid === conversation_uuid
+    // TODO - get conversation from mongodb where _id === _id
     // TODO - replace with mongoose ODM (Object Data Modeling) code
     // let res = await MongoClient.db("chrtgpt-journal")
     //   .collection("conversations")
-    //   .findOne({ conversation_uuid: conversation_uuid });
+    //   .findOne({ _id: _id });
 
     conversation = getNewConversation(model, null); // DEV
   }
@@ -104,10 +104,7 @@ export const gpt35TurboSSEController = async (
   } else {
     MongoClient.db("chrtgpt-journal")
       .collection("conversations")
-      .updateOne(
-        { conversation_uuid: conversation.conversation_uuid },
-        { $set: conversation }
-      );
+      .updateOne({ _id: conversation._id }, { $set: conversation });
   }
 
   // (2) Add prompt content and metadata to the conversation object
@@ -240,17 +237,21 @@ export const gpt35TurboSSEController = async (
           //-- Close connection --//
           res.end();
 
+          //-- Update conversation --//
+
           //-- Save entire response to conversation object in MongoDB --//
-          // TODO - validate JSON schema
-          // let valid = validator_2023_04_20(conversation)
-          // console.log(
-          //   "TODO - save to MongoDB - completion_message: ",
-          //   completion_message
-          // );
-          // console.log(
-          //   "save to MongoDB - api_response_metadata: ",
-          //   JSON.stringify(api_response_metadata, null, 2)
-          // );
+          MongoClient.db("chrtgpt-journal")
+            .collection("conversations")
+            .updateOne({ _id: conversation._id }, { $set: conversation });
+
+          console.log(
+            "TODO - save to MongoDB - completion_message: ",
+            completion_message
+          );
+          console.log(
+            "save to MongoDB - api_response_metadata: ",
+            JSON.stringify(api_response_metadata, null, 2)
+          );
         }
       } else if (event.type === "reconnect-interval") {
         console.log("%d milliseconds reconnect interval", event.value);
