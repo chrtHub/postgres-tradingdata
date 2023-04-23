@@ -1,19 +1,15 @@
 // TODO - clean up imports
-
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
 import { createParser } from "eventsource-parser";
 import produce from "immer";
 import { Readable } from "stream";
 import axios from "axios";
-import { getUnixTime } from "date-fns";
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
 import { MongoClient } from "../../index.js";
 import sortBy from "lodash/sortBy.js";
 import reverse from "lodash/reverse.js";
 import { getUUIDV4 } from "../utils/getUUIDV4.js";
-import { ObjectId } from "mongodb";
-import { validator_2023_04_20 } from "../Validators/validator-2023-04-20.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -100,9 +96,7 @@ export const gpt35TurboSSEController = async (
 
   // console.log(JSON.stringify(conversation, null, 2)); // DEV
 
-  //-- Validate and save to MongoDB via insert or update --//
-  // let valid = validator_2023_04_20(conversation);
-  // if (valid) {
+  //-- Save to MongoDB via insert or update --//
   if (is_new_conversation) {
     MongoClient.db("chrtgpt-journal")
       .collection("conversations")
@@ -115,10 +109,6 @@ export const gpt35TurboSSEController = async (
         { $set: conversation }
       );
   }
-  // } else {
-  //   console.log("invalid conversation object", conversation);
-  //   throw new Error("invalid conversation object");
-  // }
 
   // (2) Add prompt content and metadata to the conversation object
 
