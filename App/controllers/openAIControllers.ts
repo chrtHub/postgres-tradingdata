@@ -32,7 +32,7 @@ export const gpt35TurboSSEController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  console.log("gpt35TurboSSEController"); // DEV
+  console.log(" ----- gpt35TurboSSEController -----"); // DEV
   //-- Get user_db_id --//
   let user_db_id = getUserDbId(req);
 
@@ -41,13 +41,13 @@ export const gpt35TurboSSEController = async (
   let _id = body._id; // NEW
   let request_messages = body.request_messages; // TO BE DEPRACATED
   let new_message = body.new_message;
-  let new_message_order = body.new_message_order; // TO ADD - if order specified, message will become the next version (possibly 1) for that order
+  let new_message_order: number = body.new_message_order || 0; // TO ADD - if order specified, message will become the next version (possibly 1) for that order
   let model = body.model;
 
   //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
   let conversation: IConversation;
   let is_new_conversation: boolean = false;
-  if (_id === new ObjectId("000000000000000000000000")) {
+  if (_id == new ObjectId("000000000000000000000000")) {
     conversation = getNewConversation(model, null);
     is_new_conversation = true;
   } else {
@@ -61,50 +61,69 @@ export const gpt35TurboSSEController = async (
     conversation = getNewConversation(model, null); // DEV
   }
 
-  //- Add 'new_message' to 'conversation.messages' --//
-  conversation = produce(conversation, (draft) => {
-    draft.messages[new_message.message_uuid] = new_message;
-  });
-
-  //-- Determine correct insert_order and insert_version --//
-  let insert_order: number;
-  let insert_version: number;
+  //-- For new_message, determine correct new_message_order and new_message_version --//
   const order_keys_desc: number[] = reverse(
     sortBy(Object.keys(conversation.message_order).map(Number))
   );
+  let new_message_version: number;
 
-  if (!new_message_order) {
-    insert_order = order_keys_desc[0] + 1; //-- By default, increment order by 1 --//
-    insert_version = 1; //-- By default, version = 1 --//
+  //-- Race condition - if previous order is a user, skip an order --//
+  //-- NOTE - only used when no specified new_message_order --//
+  let previous_message_uuid = conversation.message_order[order_keys_desc[0]][1]; //-- version-agnostic --//
+  let previous_message_role = conversation.messages[previous_message_uuid].role;
+  let order_incrementor: number;
+  if (previous_message_role === "user") {
+    order_incrementor = 2;
   } else {
-    insert_order = new_message_order; //-- Use specified order --//
+    order_incrementor = 1;
+  }
 
+  //-- If new_message_order was specified, just increment version by 1 --//
+  if (new_message_order) {
     const version_keys_desc: number[] = reverse(
       sortBy(
         Object.keys(conversation.message_order[new_message_order]).map(Number)
       )
-    ); // TODO - what happens here in the case of no existing versions for new_message_order?
-    insert_version = version_keys_desc[0] + 1; //-- Increment version --//
+    );
+    new_message_version = version_keys_desc[0] + 1;
+  } else {
+    //-- If no specified new_messge_order, increment by 1 or 2 and set version = 1 --//
+    new_message_order = order_keys_desc[0] + order_incrementor;
+    new_message_version = 1;
   }
 
-  //-- Add 'order' and 'version' of 'new_message' to 'conversation.message_order' --//
+  //-- Update `messages` and `message_order` --//
   conversation = produce(conversation, (draft) => {
-    draft.message_order[insert_order] = {
-      [insert_version]: new_message.message_uuid,
+    //- Add 'new_message' to 'conversation.messages' --//
+    draft.messages[new_message.message_uuid] = new_message;
+
+    //-- Add 'order' and 'version' of 'new_message' to 'conversation.message_order' --//
+    draft.message_order[new_message_order] = {
+      [new_message_version]: new_message.message_uuid,
     };
   });
 
-  // console.log(JSON.stringify(conversation, null, 2)); // DEV
+  console.log(conversation); // DEV
 
   //-- Save to MongoDB via insert or update --//
   if (is_new_conversation) {
-    MongoClient.db("chrtgpt-journal")
-      .collection("conversations")
-      .insertOne(conversation);
+    try {
+      console.log("foo");
+      await MongoClient.db("chrtgpt-journal") // DEV - await or no??
+        .collection("conversations")
+        .insertOne(conversation);
+    } catch (err) {
+      console.log(err);
+    }
   } else {
-    MongoClient.db("chrtgpt-journal")
-      .collection("conversations")
-      .updateOne({ _id: conversation._id }, { $set: conversation });
+    try {
+      console.log("bar");
+      await MongoClient.db("chrtgpt-journal") // DEV - await or no??
+        .collection("conversations")
+        .updateOne({ _id: conversation._id }, { $set: conversation });
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   // (2) Add prompt content and metadata to the conversation object
@@ -237,21 +256,27 @@ export const gpt35TurboSSEController = async (
           //-- Close connection --//
           res.end();
 
-          //-- Update conversation --//
+          //-- ***** ***** ***** ***** ***** --//
 
-          //-- Save entire response to conversation object in MongoDB --//
+          //-- Update conversation --//
+          conversation = produce(conversation, (draft) => {
+            //-- `messages` --//
+            draft.messages[completion_message.message_uuid] =
+              completion_message;
+
+            //-- `message_order` - to be a pair with the new_messge, the completion always uses insert_order + 1 and same version as insert_version --//
+            draft.message_order[new_message_order + 1] = {
+              [new_message_version]: completion_message.message_uuid,
+            };
+
+            //-- `api_responses` --//
+            draft.api_responses.push(api_response_metadata);
+          });
+
+          //-- Save conversation to MongoDB --//
           MongoClient.db("chrtgpt-journal")
             .collection("conversations")
             .updateOne({ _id: conversation._id }, { $set: conversation });
-
-          console.log(
-            "TODO - save to MongoDB - completion_message: ",
-            completion_message
-          );
-          console.log(
-            "save to MongoDB - api_response_metadata: ",
-            JSON.stringify(api_response_metadata, null, 2)
-          );
         }
       } else if (event.type === "reconnect-interval") {
         console.log("%d milliseconds reconnect interval", event.value);
