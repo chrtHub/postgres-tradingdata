@@ -109,7 +109,6 @@ console.log(
 console.log(
   `DocumentDB-MongoDB requesting connection at ${docDB_host}:${docDB_port}`
 );
-console.log(docDB_username, docDB_password);
 const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   tls: true,
   tlsCAFile: tlsCAFilepath,

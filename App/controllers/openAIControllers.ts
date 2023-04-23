@@ -13,6 +13,7 @@ import sortBy from "lodash/sortBy.js";
 import reverse from "lodash/reverse.js";
 import { getUUIDV4 } from "../utils/getUUIDV4.js";
 import { ObjectId } from "mongodb";
+import { validator_2023_04_20 } from "../Validators/validator-2023-04-20.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -98,10 +99,15 @@ export const gpt35TurboSSEController = async (
   // console.log(JSON.stringify(conversation, null, 2)); // DEV
 
   // TODO - save updated to mongodb
-  // save conversation_uuid as _id
-  // pseudocode:
-  // // MongoClient.db().ChrtGPT().updateOne(conversation)
-  // // MongoClient.db().ChrtGPT().insertOne(conversation)
+  // let valid = validator_2023_04_20(conversation);
+  // if (valid) {
+  //   // pseudocode:
+  //   // // MongoClient.db().ChrtGPT().updateOne(conversation)
+  //   // // MongoClient.db().ChrtGPT().insertOne(conversation)
+  // } else {
+  //   console.log("invalid conversation object", conversation);
+  //   throw new Error("invalid conversation object");
+  // }
 
   // (2) Add prompt content and metadata to the conversation object
 
@@ -234,6 +240,8 @@ export const gpt35TurboSSEController = async (
           res.end();
 
           //-- Save entire response to conversation object in MongoDB --//
+          // TODO - validate JSON schema
+          // let valid = validator_2023_04_20(conversation)
           // console.log(
           //   "TODO - save to MongoDB - completion_message: ",
           //   completion_message
