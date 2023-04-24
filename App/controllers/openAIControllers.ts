@@ -1,21 +1,31 @@
-// TODO - clean up imports
-//-- Utility Functions --//
-import getUserDbId from "../utils/getUserDbId.js";
-import { createParser } from "eventsource-parser";
-import produce from "immer";
-import { Readable } from "stream";
-import axios from "axios";
-import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
+//-- MongoDB Client --//
 import { MongoClient } from "../../index.js";
+
+//-- OpenAI Client --//
+import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
+import { openai } from "../../index.js";
+import { tiktoken } from "./tiktoken.js";
+
+//-- Node Functions --//
+import { Readable } from "stream";
+
+//-- NPM Functions --//
+import axios from "axios";
+import produce from "immer";
+import { createParser } from "eventsource-parser";
 import sortBy from "lodash/sortBy.js";
 import reverse from "lodash/reverse.js";
+
+//-- Utility Functions --//
+import getUserDbId from "../utils/getUserDbId.js";
 import { getUUIDV4 } from "../utils/getUUIDV4.js";
-import { ObjectId } from "mongodb";
+import { getNewConversation } from "../utils/getNewConversation.js";
+
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../index.d";
 import {
-  IAPIResponse,
+  IAPIReqResMetadata,
   IMessage,
   IModel,
   IConversation,
@@ -23,13 +33,10 @@ import {
   ChatCompletionRequestMessage,
   UUIDV4,
 } from "./chatson_types.js";
-
-//-- OpenAI Client --//
-import { openai } from "../../index.js";
-import { tiktoken } from "./tiktoken.js";
-import { getNewConversation } from "../utils/getNewConversation.js";
+import { ObjectId } from "mongodb";
 
 //-- ***** ***** ***** GPT-3.5 Turbo SSE ***** ***** ***** //
+//-- NOTE - the race condition which this logic doesn't handle is the receipt of two new_message requests within 2 ms. In that case, either the `new_message_order_timestamp` or the `completion_pseudo_timestamp` could collide. A potential resolution would be to use Redis via MemoryDB to assign synchronously incrementing order numbers per user (within a single region, i.e. user needs to stick to the same region). --//
 export const gpt35TurboSSEController = async (
   req: IRequestWithAuth,
   res: Response
@@ -40,7 +47,7 @@ export const gpt35TurboSSEController = async (
 
   //-- Get params from req.body --//
   let body: IChatCompletionRequestBody = req.body;
-  let _id = body._id;
+  let _id_string = body._id_string;
   let new_message = body.new_message;
   let version_of = body.version_of;
   let model = body.model;
@@ -49,22 +56,22 @@ export const gpt35TurboSSEController = async (
   let is_new_conversation: boolean = false;
 
   //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
-  if (_id == new ObjectId("000000000000000000000000")) {
+  if (_id_string == new ObjectId("000000000000000000000000").toString()) {
     conversation = getNewConversation(model, null);
     is_new_conversation = true;
   } else {
     //-- Else continue conversation --//
     let res = await MongoClient.db("chrtgpt-journal")
       .collection("conversations")
-      .findOne({ _id: _id });
+      .findOne({ _id: new ObjectId(_id_string) });
     if (res) {
-      conversation = res as IConversation; // TO TEST THIS
+      conversation = res as IConversation;
     } else {
       conversation = getNewConversation(model, null);
     }
   }
 
-  //-- Set user_db_id --//
+  //-- If user_db_id is the dummy value, set user_db_id --//
   if ((conversation.user_db_id = "dummy_user_db_id")) {
     conversation = produce(conversation, (draft) => {
       draft.user_db_id = user_db_id;
@@ -77,12 +84,9 @@ export const gpt35TurboSSEController = async (
   let new_message_version_timestamp = timestamp_unix_ms;
   let completion_pseudo_timestamp = timestamp_unix_ms + 1;
 
-  //-- Update `messages` and `message_order` --//
+  //-- Add `new_message` to `messages` and `message_order` --//
   conversation = produce(conversation, (draft) => {
-    //- Add 'new_message' to 'conversation.messages' --//
     draft.messages[new_message.message_uuid] = new_message;
-
-    //-- Add 'order' and 'version' of 'new_message' to 'conversation.message_order' --//
     draft.message_order[new_message_order_timestamp] = {
       [new_message_version_timestamp]: new_message.message_uuid,
     };
@@ -91,7 +95,7 @@ export const gpt35TurboSSEController = async (
   //-- Save to MongoDB via insert or update --//
   if (is_new_conversation) {
     try {
-      await MongoClient.db("chrtgpt-journal") // DEV - await or no??
+      MongoClient.db("chrtgpt-journal") // DEV - await or no??
         .collection("conversations")
         .insertOne(conversation);
     } catch (err) {
@@ -99,7 +103,7 @@ export const gpt35TurboSSEController = async (
     }
   } else {
     try {
-      await MongoClient.db("chrtgpt-journal") // DEV - await or no??
+      MongoClient.db("chrtgpt-journal") // DEV - await or no??
         .collection("conversations")
         .updateOne({ _id: conversation._id }, { $set: conversation });
     } catch (err) {
@@ -110,14 +114,13 @@ export const gpt35TurboSSEController = async (
   //-- Build requests messages array to send to LLM --//
   let system_message = conversation.messages[conversation.message_order[1][1]];
   let request_messages: ChatCompletionRequestMessage[] = [
-    //-- System Message--//
     {
       role: system_message.role,
       content: system_message.message,
     },
   ];
 
-  //-- Add to to 3k tokens of messages to request_messages. Add their uuids to prompt_message_uuids --//
+  //-- Prep token counter, request_message_uuids array, and message_order_timestamps_desc --//
   let request_messages_token_sum = 0;
   request_messages_token_sum += tiktoken(system_message.message);
 
@@ -128,6 +131,7 @@ export const gpt35TurboSSEController = async (
     sortBy(Object.keys(conversation.message_order).map(Number))
   );
 
+  //-- Add up to 3k tokens of messages to request_messages. Add their uuids to prompt_message_uuids --//
   message_order_timestamps_desc.forEach((message_order_timestamp) => {
     //-- Get versions within the current message order --//
     let message_version_timestamps_desc = reverse(
@@ -145,8 +149,11 @@ export const gpt35TurboSSEController = async (
     let next_message = conversation.messages[next_message_uuid];
     let next_message_tokens = tiktoken(new_message.message);
 
-    //-- Add next message if sum will be under 3k tokens --//
-    if (next_message_tokens + request_messages_token_sum < 3000) {
+    //-- Add next message if <3k tokens total and it's not the system message --//
+    let tooManyTokens: boolean =
+      next_message_tokens + request_messages_token_sum > 3000;
+    let systemMessage: boolean = next_message.role === "system";
+    if (!tooManyTokens && !systemMessage) {
       let request_message: ChatCompletionRequestMessage = {
         role: next_message.role,
         content: next_message.message,
@@ -158,7 +165,7 @@ export const gpt35TurboSSEController = async (
     }
   });
 
-  //----//
+  console.log(request_messages); // DEV
 
   //-- Set headers needed for SSE and to initialize IMessage object client-side --//
   const conversation_id_string = conversation._id.toString();
@@ -261,22 +268,21 @@ export const gpt35TurboSSEController = async (
           );
 
           //-- Build and send api_response_metadata --//
-          const api_response_metadata: IAPIResponse = {
+          const api_req_res_metadata: IAPIReqResMetadata = {
             user: user_db_id || "user_db_id_not_found",
             model_api_name: model.api_name,
             created_at: completion_created_at,
             completion_tokens: completion_tokens,
             prompt_tokens: request_messages_token_sum,
             total_tokens: request_messages_token_sum + completion_tokens,
-            request_messages_uuids: [],
+            request_messages_uuids: request_messages_uuids,
             prompt_message_uuid: new_message.message_uuid,
             completion_message_uuid: completion_message_uuid,
           };
-          const apiResponseMetadataString = JSON.stringify(
-            api_response_metadata
-          );
+          const api_req_res_metadata_string =
+            JSON.stringify(api_req_res_metadata);
           res.write(
-            `id: api_response_metadata\ndata: ${apiResponseMetadataString}\n\n`
+            `id: api_req_res_metadata\ndata: ${api_req_res_metadata_string}\n\n`
           );
 
           //-- Close connection --//
@@ -296,7 +302,7 @@ export const gpt35TurboSSEController = async (
             };
 
             //-- `api_responses` --//
-            draft.api_responses.push(api_response_metadata);
+            draft.api_req_res_metadata.push(api_req_res_metadata);
           });
 
           //-- Save conversation to MongoDB --//

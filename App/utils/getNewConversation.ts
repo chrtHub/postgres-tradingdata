@@ -32,7 +32,7 @@ export function getNewConversation(
           "Your name is ChrtGPT. Refer to yourself as ChrtGPT. You are ChrtGPT, a helpful assistant that helps power a day trading performance journal. You sometimes make jokes and say silly things on purpose.",
       },
     },
-    api_responses: [],
+    api_req_res_metadata: [],
     chatson_tags: [],
     user_tags: [],
   };
