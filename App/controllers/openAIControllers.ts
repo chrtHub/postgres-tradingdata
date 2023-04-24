@@ -168,7 +168,8 @@ export const gpt35TurboSSEController = async (
     Connection: "keep-alive",
     "Content-Type": "text/event-stream",
     "Access-Control-Expose-Headers":
-      "CHRT-conversation-id-string, CHRT-completion-message-uuid, CHRT-new-message-version-timestamp, CHRT-completion-pseudo-timestamp",
+      "CHRT-conversation-id-string, CHRT-completion-message-uuid, CHRT-new-message-order-timestamp, CHRT-new-message-version-timestamp, CHRT-completion-pseudo-timestamp",
+    "CHRT-new-message-order-timestamp": new_message_order_timestamp,
     "CHRT-new-message-version-timestamp": new_message_version_timestamp,
     "CHRT-completion-pseudo-timestamp": completion_pseudo_timestamp,
     "CHRT-conversation-id-string": conversation_id_string,
