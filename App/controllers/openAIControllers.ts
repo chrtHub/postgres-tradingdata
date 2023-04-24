@@ -38,59 +38,42 @@ export const gpt35TurboSSEController = async (
 
   //-- Get params from req.body --//
   let body: IChatCompletionRequestBody = req.body;
-  let _id = body._id; // NEW
+  let _id = body._id;
   let request_messages = body.request_messages; // TO BE DEPRACATED
   let new_message = body.new_message;
-  let new_message_order: number = body.new_message_order || 0; // TO ADD - if order specified, message will become the next version (possibly 1) for that order
+  let version_of = body.version_of;
   let model = body.model;
 
-  //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
   let conversation: IConversation;
   let is_new_conversation: boolean = false;
+
+  //-- If convsersation_uuid is the 'dummy' value, start a new conversation --//
   if (_id == new ObjectId("000000000000000000000000")) {
     conversation = getNewConversation(model, null);
     is_new_conversation = true;
   } else {
     //-- Else continue conversation --//
-    // TODO - get conversation from mongodb where _id === _id
-    // TODO - replace with mongoose ODM (Object Data Modeling) code
-    // let res = await MongoClient.db("chrtgpt-journal")
-    //   .collection("conversations")
-    //   .findOne({ _id: _id });
-
-    conversation = getNewConversation(model, null); // DEV
+    let res = await MongoClient.db("chrtgpt-journal")
+      .collection("conversations")
+      .findOne({ _id: _id });
+    if (res) {
+      conversation = res as IConversation; // TO TEST THIS
+    } else {
+      conversation = getNewConversation(model, null);
+    }
   }
 
-  //-- For new_message, determine correct new_message_order and new_message_version --//
-  const order_keys_desc: number[] = reverse(
-    sortBy(Object.keys(conversation.message_order).map(Number))
-  );
-  let new_message_version: number;
-
-  //-- Race condition - if previous order is a user, skip an order --//
-  //-- NOTE - only used when no specified new_message_order --//
-  let previous_message_uuid = conversation.message_order[order_keys_desc[0]][1]; //-- version-agnostic --//
-  let previous_message_role = conversation.messages[previous_message_uuid].role;
-  let order_incrementor: number;
-  if (previous_message_role === "user") {
-    order_incrementor = 2;
-  } else {
-    order_incrementor = 1;
+  if ((conversation.user_db_id = "dummy_user_db_id")) {
+    conversation = produce(conversation, (draft) => {
+      draft.user_db_id = user_db_id;
+    });
   }
 
-  //-- If new_message_order was specified, just increment version by 1 --//
-  if (new_message_order) {
-    const version_keys_desc: number[] = reverse(
-      sortBy(
-        Object.keys(conversation.message_order[new_message_order]).map(Number)
-      )
-    );
-    new_message_version = version_keys_desc[0] + 1;
-  } else {
-    //-- If no specified new_messge_order, increment by 1 or 2 and set version = 1 --//
-    new_message_order = order_keys_desc[0] + order_incrementor;
-    new_message_version = 1;
-  }
+  //-- Timestamps to use for new_message and completion version and order --//
+  let timestamp_unix_ms = Date.now();
+  let new_message_order_timestamp = version_of || timestamp_unix_ms;
+  let new_message_version_timestamp = timestamp_unix_ms;
+  let completion_pseudo_timestamp = timestamp_unix_ms + 1;
 
   //-- Update `messages` and `message_order` --//
   conversation = produce(conversation, (draft) => {
@@ -98,17 +81,14 @@ export const gpt35TurboSSEController = async (
     draft.messages[new_message.message_uuid] = new_message;
 
     //-- Add 'order' and 'version' of 'new_message' to 'conversation.message_order' --//
-    draft.message_order[new_message_order] = {
-      [new_message_version]: new_message.message_uuid,
+    draft.message_order[new_message_order_timestamp] = {
+      [new_message_version_timestamp]: new_message.message_uuid,
     };
   });
-
-  console.log(conversation); // DEV
 
   //-- Save to MongoDB via insert or update --//
   if (is_new_conversation) {
     try {
-      console.log("foo");
       await MongoClient.db("chrtgpt-journal") // DEV - await or no??
         .collection("conversations")
         .insertOne(conversation);
@@ -117,7 +97,6 @@ export const gpt35TurboSSEController = async (
     }
   } else {
     try {
-      console.log("bar");
       await MongoClient.db("chrtgpt-journal") // DEV - await or no??
         .collection("conversations")
         .updateOne({ _id: conversation._id }, { $set: conversation });
@@ -133,23 +112,24 @@ export const gpt35TurboSSEController = async (
   // // const chatRequestMessages_message_uuids = ["TODO"];
 
   //-- Starts counter at max order--//
-  let order_counter: number = order_keys_desc[0];
+  // get order_keys_descending and iterate the index
+  // let order_timestamp: number = order_keys_desc[idx]
 
   // (4) set variable as the token count for this api call, use that in the api_call_metadata reponse
   // // let prompt_tokens = tiktoken(chatRequestMessages)
 
   //----//
 
-  //-- Create completion_message_uuid and send to client one time --//
-  const completion_message_uuid = getUUIDV4();
-  const completion_created_at = new Date();
-
   //-- Set headers needed for SSE and to initialize IMessage object client-side --//
+  const conversation_id_string = conversation._id.toString();
+  const completion_message_uuid = getUUIDV4();
   res.set({
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
     "Content-Type": "text/event-stream",
-    "Access-Control-Expose-Headers": "CHRT-completion-message-uuid",
+    "Access-Control-Expose-Headers":
+      "CHRT-conversation-id-string, CHRT-completion-message-uuid",
+    "CHRT-conversation-id-string": conversation_id_string,
     "CHRT-completion-message-uuid": completion_message_uuid,
   });
   res.flushHeaders(); //-- Send headers immediately (don't wait for first chunk or message end) --//
@@ -162,7 +142,7 @@ export const gpt35TurboSSEController = async (
     let response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: model.api_name, // TODO - add type here, e.g. Interface for OpenAI Chat Completions Request Body
+        model: model.api_name, // TODO - add type here, e.g. Interface for OpenAI Chat Completions Request Body. Allow parameters such as temperature, etc.
         messages: request_messages,
         stream: true,
       },
@@ -221,6 +201,8 @@ export const gpt35TurboSSEController = async (
             completion_message_content.toString()
           );
 
+          const completion_created_at = new Date();
+
           //-- Build and send completion_message --//
           const completion_message: IMessage = {
             message_uuid: completion_message_uuid,
@@ -241,10 +223,10 @@ export const gpt35TurboSSEController = async (
             model_api_name: model.api_name,
             created_at: completion_created_at,
             completion_tokens: completion_tokens,
-            prompt_tokens: 100, // TODO - implement tiktoken(prompt)
-            total_tokens: 100 + completion_tokens, // TODO - implement tiktoken(prompt)
+            prompt_tokens: 100, // TODO - implement tiktoken(request_messages)
+            total_tokens: 100 + completion_tokens, // TODO - implement tiktoken(request_messages)
+            prompt_message_uuids: [], // TODO - implement [...chatRequestMessagesUUIDs, completion_message_uuid]
             completion_message_uuid: completion_message_uuid,
-            message_uuids: [completion_message_uuid], // TODO - implement [...chatRequestMessagesUUIDs, completion_message_uuid]
           };
           const apiResponseMetadataString = JSON.stringify(
             api_response_metadata
@@ -260,13 +242,13 @@ export const gpt35TurboSSEController = async (
 
           //-- Update conversation --//
           conversation = produce(conversation, (draft) => {
-            //-- `messages` --//
+            //-- `messages` - add completion_message --//
             draft.messages[completion_message.message_uuid] =
               completion_message;
 
-            //-- `message_order` - to be a pair with the new_messge, the completion always uses insert_order + 1 and same version as insert_version --//
-            draft.message_order[new_message_order + 1] = {
-              [new_message_version]: completion_message.message_uuid,
+            //-- `message_order` - completion_pseudo_timestamp is 1ms more than new_message's order_timestamp_unix_ms --//
+            draft.message_order[completion_pseudo_timestamp] = {
+              [completion_pseudo_timestamp]: completion_message.message_uuid,
             };
 
             //-- `api_responses` --//

@@ -13,6 +13,7 @@ export function getNewConversation(
 
   const new_conversation: IConversation = {
     _id: new ObjectId(),
+    user_db_id: "dummy_user_db_id",
     schema_version: CURRENT_SCHEMA_VERSION,
     created_at: created_at,
     message_order: {
