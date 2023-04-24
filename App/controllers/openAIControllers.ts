@@ -20,6 +20,8 @@ import {
   IModel,
   IConversation,
   IChatCompletionRequestBody,
+  ChatCompletionRequestMessage,
+  UUIDV4,
 } from "./chatson_types.js";
 
 //-- OpenAI Client --//
@@ -39,7 +41,6 @@ export const gpt35TurboSSEController = async (
   //-- Get params from req.body --//
   let body: IChatCompletionRequestBody = req.body;
   let _id = body._id;
-  let request_messages = body.request_messages; // TO BE DEPRACATED
   let new_message = body.new_message;
   let version_of = body.version_of;
   let model = body.model;
@@ -63,6 +64,7 @@ export const gpt35TurboSSEController = async (
     }
   }
 
+  //-- Set user_db_id --//
   if ((conversation.user_db_id = "dummy_user_db_id")) {
     conversation = produce(conversation, (draft) => {
       draft.user_db_id = user_db_id;
@@ -105,18 +107,56 @@ export const gpt35TurboSSEController = async (
     }
   }
 
-  // (2) Add prompt content and metadata to the conversation object
+  //-- Build requests messages array to send to LLM --//
+  let system_message = conversation.messages[conversation.message_order[1][1]];
+  let request_messages: ChatCompletionRequestMessage[] = [
+    //-- System Message--//
+    {
+      role: system_message.role,
+      content: system_message.message,
+    },
+  ];
 
-  // (3) use tiktoken and conversation json to package up to 3k tokens worth of messages into chatRequestMessages to be sent to the LLM
-  // // from chatRequestMessages, store each message_uuid in an array chatRequestMessagesUUIDs to be stored in apiResponseMetadata.message_uuids array
-  // // const chatRequestMessages_message_uuids = ["TODO"];
+  //-- Add to to 3k tokens of messages to request_messages. Add their uuids to prompt_message_uuids --//
+  let request_messages_token_sum = 0;
+  request_messages_token_sum += tiktoken(system_message.message);
 
-  //-- Starts counter at max order--//
-  // get order_keys_descending and iterate the index
-  // let order_timestamp: number = order_keys_desc[idx]
+  let request_messages_uuids: UUIDV4[] = [];
+  request_messages_uuids.push(system_message.message_uuid);
 
-  // (4) set variable as the token count for this api call, use that in the api_call_metadata reponse
-  // // let prompt_tokens = tiktoken(chatRequestMessages)
+  let message_order_timestamps_desc = reverse(
+    sortBy(Object.keys(conversation.message_order).map(Number))
+  );
+
+  message_order_timestamps_desc.forEach((message_order_timestamp) => {
+    //-- Get versions within the current message order --//
+    let message_version_timestamps_desc = reverse(
+      sortBy(
+        Object.keys(conversation.message_order[message_order_timestamp]).map(
+          Number
+        )
+      )
+    );
+    let latest_version = message_version_timestamps_desc[0];
+
+    //-- next message --//
+    let next_message_uuid =
+      conversation.message_order[message_order_timestamp][latest_version];
+    let next_message = conversation.messages[next_message_uuid];
+    let next_message_tokens = tiktoken(new_message.message);
+
+    //-- Add next message if sum will be under 3k tokens --//
+    if (next_message_tokens + request_messages_token_sum < 3000) {
+      let request_message: ChatCompletionRequestMessage = {
+        role: next_message.role,
+        content: next_message.message,
+      };
+      request_messages.push(request_message);
+
+      request_messages_uuids.push(next_message.message_uuid);
+      request_messages_token_sum += tiktoken(next_message.message);
+    }
+  });
 
   //----//
 
@@ -128,7 +168,9 @@ export const gpt35TurboSSEController = async (
     Connection: "keep-alive",
     "Content-Type": "text/event-stream",
     "Access-Control-Expose-Headers":
-      "CHRT-conversation-id-string, CHRT-completion-message-uuid",
+      "CHRT-conversation-id-string, CHRT-completion-message-uuid, CHRT-new-message-version-timestamp, CHRT-completion-pseudo-timestamp",
+    "CHRT-new-message-version-timestamp": new_message_version_timestamp,
+    "CHRT-completion-pseudo-timestamp": completion_pseudo_timestamp,
     "CHRT-conversation-id-string": conversation_id_string,
     "CHRT-completion-message-uuid": completion_message_uuid,
   });
@@ -223,9 +265,10 @@ export const gpt35TurboSSEController = async (
             model_api_name: model.api_name,
             created_at: completion_created_at,
             completion_tokens: completion_tokens,
-            prompt_tokens: 100, // TODO - implement tiktoken(request_messages)
-            total_tokens: 100 + completion_tokens, // TODO - implement tiktoken(request_messages)
-            prompt_message_uuids: [], // TODO - implement [...chatRequestMessagesUUIDs, completion_message_uuid]
+            prompt_tokens: request_messages_token_sum,
+            total_tokens: request_messages_token_sum + completion_tokens,
+            request_messages_uuids: [],
+            prompt_message_uuid: new_message.message_uuid,
             completion_message_uuid: completion_message_uuid,
           };
           const apiResponseMetadataString = JSON.stringify(
