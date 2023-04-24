@@ -130,6 +130,7 @@ export const gpt35TurboSSEController = async (
   let message_order_timestamps_desc = reverse(
     sortBy(Object.keys(conversation.message_order).map(Number))
   );
+  console.log(message_order_timestamps_desc); // DEV
 
   //-- Add up to 3k tokens of messages to request_messages. Add their uuids to prompt_message_uuids --//
   message_order_timestamps_desc.forEach((message_order_timestamp) => {
@@ -158,14 +159,12 @@ export const gpt35TurboSSEController = async (
         role: next_message.role,
         content: next_message.message,
       };
-      request_messages.push(request_message);
+      request_messages.splice(1, 0, request_message);
 
       request_messages_uuids.push(next_message.message_uuid);
       request_messages_token_sum += tiktoken(next_message.message);
     }
   });
-
-  console.log(request_messages); // DEV
 
   //-- Set headers needed for SSE and to initialize IMessage object client-side --//
   const conversation_id_string = conversation._id.toString();
