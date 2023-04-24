@@ -130,7 +130,6 @@ export const gpt35TurboSSEController = async (
   let message_order_timestamps_desc = reverse(
     sortBy(Object.keys(conversation.message_order).map(Number))
   );
-  console.log(message_order_timestamps_desc); // DEV
 
   //-- Add up to 3k tokens of messages to request_messages. Add their uuids to prompt_message_uuids --//
   message_order_timestamps_desc.forEach((message_order_timestamp) => {
