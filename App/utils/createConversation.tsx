@@ -33,7 +33,7 @@ export function createConversation(
     model: model,
     created_at: created_at,
     role: "system",
-    message: CURRENT_SYSTEM_MESSAGE,
+    content: CURRENT_SYSTEM_MESSAGE,
   };
 
   //-- ***** ***** Documents to be persisted in database ***** ***** --//
@@ -64,5 +64,5 @@ export function createConversation(
     user_tags: [],
   };
 
-  return { root_node, conversation };
+  return { root_node, conversation, conversation_id, root_node_id };
 }

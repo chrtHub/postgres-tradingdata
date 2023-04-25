@@ -19,7 +19,7 @@ import reverse from "lodash/reverse.js";
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
 import { getUUIDV4 } from "../utils/getUUIDV4.js";
-import { getNewConversation } from "../utils/getNewConversation.js";
+import { createConversation } from "../utils/createConversation.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -31,7 +31,6 @@ import {
   IConversation,
   IChatCompletionRequestBody,
   ChatCompletionRequestMessage,
-  UUIDV4,
 } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 
