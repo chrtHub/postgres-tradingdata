@@ -49,7 +49,7 @@ export const gpt35TurboSSEController = async (
   let body: IChatCompletionRequestBody = req.body;
   let _id_string = body._id_string;
   let new_message = body.new_message;
-  let version_of = body.version_of;
+  let parentNodeUUID = body.parentNodeUUID;
   let model = body.model;
 
   let conversation: IConversation;
