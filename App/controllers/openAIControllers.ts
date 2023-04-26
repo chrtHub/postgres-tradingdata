@@ -227,6 +227,8 @@ export const gpt35TurboSSEController = async (
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
     "Content-Type": "text/event-stream",
+    //-- Send headers with info for the IMessageNode --//
+    // NOTE - could include completion object w/o content here
     "Access-Control-Expose-Headers":
       "CHRT-conversation-id, CHRT-new-message-node-id, CHRT-new-message-created-at, CHRT-parent-node-id",
     "CHRT-conversation-id": new_message_node.conversation_id,
@@ -287,9 +289,18 @@ export const gpt35TurboSSEController = async (
     const completion_chunks: string[] = [];
 
     //-- Inside parser, send each chunk to the client, then close the connection --//
+    let conversation_sent: boolean = false;
     async function onParse(event: any) {
       if (event.type === "event") {
         if (event.data !== "[DONE]") {
+          //-- Send conversation upon first event --//
+          if (!conversation_sent) {
+            let conversation_string = JSON.stringify(conversation);
+            res.write(`id: conversation\ndata: ${conversation_string}\n\n`);
+            conversation_sent = true;
+          }
+
+          //-- Get data from event --//
           let data = JSON.parse(event.data).choices[0].delta?.content || "";
 
           //-- Add chunk to response chunks (to be accessed post-stream) --//
@@ -326,6 +337,23 @@ export const gpt35TurboSSEController = async (
             console.log(err);
             throw new Error("error storing new message_node");
           }
+
+          //-- Send completion to client --//
+          const completion_string = JSON.stringify(completion);
+          res.write(`id: completion\ndata: ${completion_string}\n\n`);
+
+          //-- Update api_req_res_metadata --//
+          api_req_res_metadata = {
+            user: user_db_id,
+            model_api_name: model.api_name,
+            created_at: new Date(),
+            request_tokens: request_tokens,
+            completion_tokens: completion_tokens,
+            total_tokens: request_tokens + completion_tokens,
+            node_id: new_message_node._id,
+            request_messages_node_ids: request_messages_node_ids,
+          };
+
           //-- Write api_req_res_metadata as update to conversation --//
           try {
             await Mongo.conversations.updateOne(
@@ -339,21 +367,12 @@ export const gpt35TurboSSEController = async (
             );
           }
 
-          //-- Send completion to client --//
-          const completion_string = JSON.stringify(completion);
-          res.write(`id: completion_message\ndata: ${completion_string}\n\n`);
-
-          //-- Update api_req_res_metadata --//
-          api_req_res_metadata = {
-            user: user_db_id,
-            model_api_name: model.api_name,
-            created_at: new Date(),
-            request_tokens: request_tokens,
-            completion_tokens: completion_tokens,
-            total_tokens: request_tokens + completion_tokens,
-            node_id: new_message_node._id,
-            request_messages_node_ids: request_messages_node_ids,
-          };
+          //-- Send api_req_res_metatdata to client --//
+          const api_req_res_metadata_string =
+            JSON.stringify(api_req_res_metadata);
+          res.write(
+            `id: api_req_res_metadata\ndata: ${api_req_res_metadata_string}\n\n`
+          );
 
           //-- Close connection --//
           res.end();
