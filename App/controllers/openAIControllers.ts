@@ -41,7 +41,8 @@ export const gpt35TurboSSEController = async (
   const llm_provider: LLMProvider = "openai";
   const user_db_id = getUserDbId(req);
   const body: IChatCompletionRequestBody = req.body;
-  const { model, prompt } = body;
+  const { prompt } = body;
+  const model = prompt.model;
 
   //-- Variables for on new/existing conversation --//
   let { conversation_id, parent_node_id } = body;
