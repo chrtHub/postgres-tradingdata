@@ -18,7 +18,7 @@ router.post("/v1/chat/completions", (req: IRequestWithAuth, res: Response) => {
   if (acceptHeader && acceptHeader.includes("text/event-stream")) {
     return ctrl.gpt35TurboSSEController(req, res);
   } else {
-    return ctrl.gpt35TurboController(req, res);
+    // return ctrl.gpt35TurboController(req, res);
   }
 });
 

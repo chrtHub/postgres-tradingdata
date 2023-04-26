@@ -63,6 +63,12 @@ export interface IAPIReqResMetadata {
   request_messages_node_ids: ObjectId[];
 }
 
+export interface IOpenAIChatCompletionsRequestBody {
+  model: ModelAPINames;
+  messages: ChatCompletionRequestMessage[];
+  stream: boolean;
+}
+
 //-- ***** ***** ***** ***** ***** ***** ***** ***** ***** --//
 //-- ***** ***** ***** ***** ***** ***** ***** ***** ***** --//
 //-- ***** ***** ***** ***** ***** ***** ***** ***** ***** --//
