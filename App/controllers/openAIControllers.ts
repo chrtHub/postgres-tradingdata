@@ -230,10 +230,10 @@ export const gpt35TurboSSEController = async (
     //-- Send headers with info for the IMessageNode --//
     // NOTE - could include completion object w/o content here
     "Access-Control-Expose-Headers":
-      "CHRT-conversation-id, CHRT-new-message-node-id, CHRT-new-message-created-at, CHRT-parent-node-id",
+      "CHRT-conversation-id, CHRT-new-node-id, CHRT-new-node-created-at, CHRT-parent-node-id",
     "CHRT-conversation-id": new_message_node.conversation_id,
-    "CHRT-new-message-node-id": new_message_node._id,
-    "CHRT-new-message-created-at": new_message_node.created_at,
+    "CHRT-new-node-id": new_message_node._id,
+    "CHRT-new-node-created-at": new_message_node.created_at,
     "CHRT-parent-node-id": new_message_node.parent_node_id,
   });
   //-- Send headers immediately (don't wait for first chunk or message end) --//
@@ -293,8 +293,8 @@ export const gpt35TurboSSEController = async (
     async function onParse(event: any) {
       if (event.type === "event") {
         if (event.data !== "[DONE]") {
-          //-- Send conversation upon first event --//
-          if (!conversation_sent) {
+          //-- For new conversations, send conversation upon first event --//
+          if (new_conversation && !conversation_sent) {
             let conversation_string = JSON.stringify(conversation);
             res.write(`id: conversation\ndata: ${conversation_string}\n\n`);
             conversation_sent = true;
