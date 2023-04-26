@@ -3,7 +3,6 @@ import { MongoClient } from "../../index.js";
 
 //-- OpenAI Client --//
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
-import { openai } from "../../index.js";
 import { tiktoken } from "./tiktoken.js";
 
 //-- Node Functions --//
@@ -13,12 +12,9 @@ import { Readable } from "stream";
 import axios from "axios";
 import produce from "immer";
 import { createParser } from "eventsource-parser";
-import sortBy from "lodash/sortBy.js";
-import reverse from "lodash/reverse.js";
 
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
-import { getUUIDV4 } from "../utils/getUUIDV4.js";
 import { createConversation } from "../utils/createConversation.js";
 
 //-- Types --//
@@ -27,7 +23,6 @@ import { IRequestWithAuth } from "../../index.d";
 import {
   IAPIReqResMetadata,
   IMessage,
-  IModel,
   IConversation,
   IChatCompletionRequestBody,
   ChatCompletionRequestMessage,
@@ -35,6 +30,7 @@ import {
   IMessageNode,
 } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
+
 //-- ***** ***** ***** GPT-3.5 Turbo SSE ***** ***** ***** //
 export const gpt35TurboSSEController = async (
   req: IRequestWithAuth,
@@ -186,8 +182,6 @@ export const gpt35TurboSSEController = async (
   // // // calculate the total tokens as the prompt_tokens
 
   let api_req_res_metadata: IAPIReqResMetadata;
-
-  let completion_content: string;
 
   //-- Set headers --//
   res.set({
