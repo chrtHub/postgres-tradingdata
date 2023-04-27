@@ -106,6 +106,7 @@ export const gpt35TurboSSEController = async (
       throw new Error("fetching message_nodes error");
     }
     //-- Find root_node --//
+    // TODO - for existing conversations, overwrite root_node with conversation.root_node_id?
     let res = existing_conversation_message_nodes.find((message_node) =>
       message_node._id.equals(root_node._id)
     );
@@ -230,7 +231,9 @@ export const gpt35TurboSSEController = async (
     //-- Send headers with info for the IMessageNode --//
     // NOTE - could include completion object w/o content here
     "Access-Control-Expose-Headers":
-      "CHRT-conversation-id, CHRT-new-node-id, CHRT-new-node-created-at, CHRT-parent-node-id",
+      "CHRT-root-node-id, CHRT-root-node-created-at, CHRT-conversation-id, CHRT-new-node-id, CHRT-new-node-created-at, CHRT-parent-node-id",
+    "CHRT-root-node-id": new_conversation ? root_node._id : null,
+    "CHRT-root-node-created-at": new_conversation ? root_node.created_at : null,
     "CHRT-conversation-id": new_message_node.conversation_id,
     "CHRT-new-node-id": new_message_node._id,
     "CHRT-new-node-created-at": new_message_node.created_at,
