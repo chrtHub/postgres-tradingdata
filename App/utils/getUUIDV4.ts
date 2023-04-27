@@ -1,6 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
 
-import { UUIDV4 } from "../controllers/chatson_types";
+export type UUIDV4 = string & {
+  //-- UUIDv4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx --//
+  //-- where x is any hexadecimal digit and y is one of 8, 9, A, or B --//
+  readonly _uuidBrand: unique symbol;
+};
 
 //-- Regex test and format ---//
 function isUUIDV4(uuid: string): uuid is UUIDV4 {
