@@ -37,6 +37,7 @@ export const gpt35TurboSSEController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
+  console.log("----- gpt35TurboSSEController -----"); // DEV
   //-- Constants based on request --//
   const llm_provider: LLMProvider = "openai";
   const user_db_id = getUserDbId(req);
@@ -75,7 +76,7 @@ export const gpt35TurboSSEController = async (
 
   //-- New or existing conversation --//
   let conversation: IConversation;
-  let root_node: IMessageNode;
+  let root_node: IMessageNode | null = null;
   if (!conversation_id || !parent_node_id) {
     //-- Create new conversation --//
     console.log("CREATE NEW CONVERSATION"); // DEV
@@ -103,12 +104,12 @@ export const gpt35TurboSSEController = async (
     console.log("FETCH EXISTING CONVERSATION NODES"); // DEV
     try {
       let res = await Mongo.message_nodes
-        .find({ _id: conversation_id })
+        .find({ conversation_id: conversation_id })
         .toArray();
       if (res) {
-        console.log(res); // DEV
         //-- set existing_conversation_message_nodes --//
         existing_conversation_message_nodes = res;
+        console.log(existing_conversation_message_nodes); // DEV
       } else {
         throw new Error(
           `no existing_conversation_message_nodes found for conversation_id: ${conversation_id}`
@@ -118,10 +119,9 @@ export const gpt35TurboSSEController = async (
       console.log(err);
       throw new Error("fetching message_nodes error");
     }
-    //-- Find root_node --//
-    // TODO - for existing conversations, overwrite root_node with conversation.root_node_id?
+    //-- Find root_node for existing conversations --//
     let res = existing_conversation_message_nodes.find((message_node) =>
-      message_node._id.equals(root_node._id)
+      message_node._id.equals(conversation.root_node_id)
     );
     if (res) {
       root_node = res; //-- Set root_node --//
@@ -144,13 +144,13 @@ export const gpt35TurboSSEController = async (
     completion: null,
   };
 
-  //-- Update root_node by adding message_node to its children --//
-  root_node = produce(root_node, (draft) => {
-    draft.children_node_ids.push(new_message_node._id);
-  });
-
   //-- For new conversation  --//
   if (new_conversation) {
+    //-- Update root_node by adding message_node to its children --//
+    root_node = produce(root_node, (draft) => {
+      draft.children_node_ids.push(new_message_node._id);
+    });
+
     try {
       //-- Write conversation and root_node to database  --//
       await Mongo.conversations.insertOne(conversation);
