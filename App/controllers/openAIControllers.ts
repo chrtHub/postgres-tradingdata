@@ -45,16 +45,20 @@ export const gpt35TurboSSEController = async (
   const model = prompt.model;
 
   //-- Variables for on new/existing conversation --//
-  let { conversation_id, parent_node_id } = body;
-  let conversation: IConversation;
-  let root_node: IMessageNode;
+  let { conversation_id_string, parent_node_id_string } = body;
 
   //-- Other --//
-  // const new_conversation = Boolean(conversation_id && parent_node_id);
+  let conversation_id: ObjectId | null = null;
+  let parent_node_id: ObjectId | null = null;
   let new_conversation: boolean = false;
-  if (!conversation_id && !parent_node_id) {
+
+  if (conversation_id_string && parent_node_id_string) {
+    conversation_id = ObjectId.createFromHexString(conversation_id_string);
+    parent_node_id = ObjectId.createFromHexString(parent_node_id_string);
+  } else {
     new_conversation = true;
   }
+
   let existing_conversation_message_nodes: IMessageNode[] = [];
 
   //-- MongoDB client for each databse collection --//
@@ -70,8 +74,11 @@ export const gpt35TurboSSEController = async (
   };
 
   //-- New or existing conversation --//
+  let conversation: IConversation;
+  let root_node: IMessageNode;
   if (!conversation_id || !parent_node_id) {
     //-- Create new conversation --//
+    console.log("CREATE NEW CONVERSATION"); // DEV
     let res = createConversation(user_db_id, model, llm_provider, null);
     conversation_id = res.conversation_id;
     parent_node_id = res.root_node_id;
@@ -79,6 +86,8 @@ export const gpt35TurboSSEController = async (
     root_node = res.root_node;
   } else {
     //-- Fetch conversation --//
+    console.log("FETCH CONVERSATION"); // DEV
+    console.log(conversation_id); // DEV
     try {
       let res = await Mongo.conversations.findOne({ _id: conversation_id });
       if (res) {
@@ -90,10 +99,14 @@ export const gpt35TurboSSEController = async (
       console.log(err);
       throw new Error("fetching conversation error");
     }
-    //-- Fetch existing_conversation_message_nodes --//
+    //-- Fetch existing_conversation_nodes --//
+    console.log("FETCH EXISTING CONVERSATION NODES"); // DEV
     try {
-      let res = await Mongo.message_nodes.find({ conversation_id }).toArray();
+      let res = await Mongo.message_nodes
+        .find({ _id: conversation_id })
+        .toArray();
       if (res) {
+        console.log(res); // DEV
         //-- set existing_conversation_message_nodes --//
         existing_conversation_message_nodes = res;
       } else {
