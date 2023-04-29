@@ -87,8 +87,7 @@ export const gpt35TurboSSEController = async (
     root_node = res.root_node;
   } else {
     //-- Fetch conversation --//
-    console.log("FETCH CONVERSATION"); // DEV
-    console.log(conversation_id); // DEV
+    console.log("FETCH CONVERSATION, id: ", conversation_id); // DEV
     try {
       let res = await Mongo.conversations.findOne({ _id: conversation_id });
       if (res) {
@@ -150,11 +149,11 @@ export const gpt35TurboSSEController = async (
     root_node = produce(root_node, (draft) => {
       draft.children_node_ids.push(new_message_node._id);
     });
-
     try {
       //-- Write conversation and root_node to database  --//
       await Mongo.conversations.insertOne(conversation);
       await Mongo.message_nodes.insertOne(root_node);
+      console.log("updated root node for new conversation, ", root_node); // DEV
     } catch (err) {
       console.log(err);
       throw new Error("error storing new conversation and/or root_node");
@@ -167,6 +166,9 @@ export const gpt35TurboSSEController = async (
         { _id: parent_node_id },
         { $addToSet: { children_node_ids: new_message_node._id } }
       );
+      console.log(
+        "updated parent node children_node_ids for existing conversation"
+      ); // DEV
     } catch (err) {
       console.log(err);
       throw new Error("error updating parent node");
@@ -184,6 +186,7 @@ export const gpt35TurboSSEController = async (
       content: new_message_node.prompt.content,
     },
   ];
+  console.log("about to build request_messages array"); // DEV
 
   //-- Start tracking request_message_node_ids and request_tokens --//
   const request_messages_node_ids: ObjectId[] = [];
@@ -194,8 +197,10 @@ export const gpt35TurboSSEController = async (
 
   //-- If continuing a conversation, add messages from thread --//
   if (!new_conversation) {
+    console.log("--A--"); // DEV
     //-- Just ensuring new_message_node.parent_node_id exist --//
     if (new_message_node.parent_node_id) {
+      console.log("--B--"); // DEV
       //-- Create node_map for O(1) lookups inside the while loop --//
       let node_map: Record<string, IMessageNode> = {};
       existing_conversation_message_nodes.forEach((node) => {
@@ -207,14 +212,17 @@ export const gpt35TurboSSEController = async (
       let node: IMessageNode = node_map[id.toString()];
 
       let token_limit_hit: boolean = false;
-      while (!token_limit_hit) {
+      while (!token_limit_hit && node.parent_node_id) {
+        console.log("--C--"); // DEV
         //-- Just ensuring id and node.completion exist --//
         if (id && node?.completion) {
+          console.log("--D--"); // DEV
           //-- Check if node's messages fit within 3k token running total --//
           let prompt_tokens = tiktoken(node.prompt.content);
           let completion_tokens = tiktoken(node.completion.content);
 
           if (request_tokens + prompt_tokens + completion_tokens < 3000) {
+            console.log("--E--"); // DEV
             request_messages.splice(1, 0, node.completion); //-- Newest to oldest --//
             request_messages.splice(1, 0, node.prompt);
             request_tokens += prompt_tokens + completion_tokens;
@@ -223,16 +231,19 @@ export const gpt35TurboSSEController = async (
             request_messages_node_ids.push(id);
 
             //-- Traverse back thru history by getting parent node --//
-            if (node.parent_node_id) {
-              node = node_map[node.parent_node_id.toString()];
-            }
+            console.log("--F--"); // DEV
+            node = node_map[node.parent_node_id.toString()];
+            //----//
           } else {
             token_limit_hit = true;
+            console.log("--G--"); // DEV
           }
         }
       }
     }
   }
+  console.log("Complete request_messages array:"); // DEV
+  console.log(JSON.stringify(request_messages, null, 2)); // DEV
 
   let api_req_res_metadata: IAPIReqResMetadata;
 
@@ -311,6 +322,7 @@ export const gpt35TurboSSEController = async (
         if (event.data !== "[DONE]") {
           //-- For new conversations, send conversation upon first event --//
           if (new_conversation && !conversation_sent) {
+            console.log("sending conversation object for new conversation"); // DEV
             let conversation_string = JSON.stringify(conversation);
             res.write(`id: conversation\ndata: ${conversation_string}\n\n`);
             conversation_sent = true;
