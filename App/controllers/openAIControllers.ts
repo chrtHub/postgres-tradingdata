@@ -132,7 +132,7 @@ export const gpt35TurboSSEController = async (
   }
 
   //-- Create new message_node --//
-  const new_message_node: IMessageNode = {
+  let new_message_node: IMessageNode = {
     _id: new ObjectId(),
     user_db_id: user_db_id,
     created_at: new Date(),
@@ -188,60 +188,59 @@ export const gpt35TurboSSEController = async (
   ];
   console.log("about to build request_messages array"); // DEV
 
-  //-- Start tracking request_message_node_ids and request_tokens --//
+  //-- Build request_messages and request_message_node_ids. Count tokens. --//
   const request_messages_node_ids: ObjectId[] = [];
   request_messages_node_ids.push(new_message_node._id);
   let request_tokens: number = 0;
   request_tokens += tiktoken(root_node.prompt.content);
   request_tokens += tiktoken(new_message_node.prompt.content);
 
-  //-- If continuing a conversation, add messages from thread --//
-  if (!new_conversation) {
-    console.log("--A--"); // DEV
-    //-- Just ensuring new_message_node.parent_node_id exist --//
-    if (new_message_node.parent_node_id) {
-      console.log("--B--"); // DEV
-      //-- Create node_map for O(1) lookups inside the while loop --//
-      let node_map: Record<string, IMessageNode> = {};
-      existing_conversation_message_nodes.forEach((node) => {
-        node_map[node._id.toString()] = node;
-      });
+  //-- Create node_map for O(1) lookups inside the while loop --//
+  let node_map: Record<string, IMessageNode> = {};
+  existing_conversation_message_nodes.forEach((node) => {
+    node_map[node._id.toString()] = node;
+  });
 
-      //-- Initial id and node --//
-      let id: ObjectId = new_message_node.parent_node_id;
-      let node: IMessageNode = node_map[id.toString()];
+  //-- For new conversation, request messages is ready. For !new_conversation, add up to 3k tokens of messages. Newest node was already added, start from its parent. --//
+  if (!new_conversation && new_message_node.parent_node_id) {
+    let node = node_map[new_message_node.parent_node_id.toString()];
+    let tokenLimitHit: boolean = false;
 
-      let token_limit_hit: boolean = false;
-      while (!token_limit_hit && node.parent_node_id) {
-        console.log("--C--"); // DEV
-        //-- Just ensuring id and node.completion exist --//
-        if (id && node?.completion) {
-          console.log("--D--"); // DEV
-          //-- Check if node's messages fit within 3k token running total --//
-          let prompt_tokens = tiktoken(node.prompt.content);
-          let completion_tokens = tiktoken(node.completion.content);
+    //-- Stop when root node reached (parent id will be null) or token limit hit --//
+    while (node.parent_node_id && !tokenLimitHit) {
+      //-- Add completion if it exists --//
+      let completion_content = node.completion?.content;
+      if (completion_content) {
+        let completionTokens: number = tiktoken(completion_content);
 
-          if (request_tokens + prompt_tokens + completion_tokens < 3000) {
-            console.log("--E--"); // DEV
-            request_messages.splice(1, 0, node.completion); //-- Newest to oldest --//
-            request_messages.splice(1, 0, node.prompt);
-            request_tokens += prompt_tokens + completion_tokens;
-
-            //- Add id to request_messages_node_ids --//
-            request_messages_node_ids.push(id);
-
-            //-- Traverse back thru history by getting parent node --//
-            console.log("--F--"); // DEV
-            node = node_map[node.parent_node_id.toString()];
-            //----//
-          } else {
-            token_limit_hit = true;
-            console.log("--G--"); // DEV
-          }
+        if (request_tokens + completionTokens < 3000) {
+          let completion_request_message: ChatCompletionRequestMessage = {
+            content: completion_content,
+            role: "assistant",
+          };
+          request_messages.splice(1, 0, completion_request_message);
+        } else {
+          tokenLimitHit = true;
         }
       }
+
+      //-- Add prompt --//
+      let prompt_content = node.prompt.content;
+      let promptTokens = tiktoken(prompt_content);
+      if (request_tokens + promptTokens < 3000) {
+        let prompt_request_message: ChatCompletionRequestMessage = {
+          content: prompt_content,
+          role: "user",
+        };
+        request_messages.splice(1, 0, prompt_request_message);
+        request_messages_node_ids.push(node._id);
+      }
+
+      //-- Get the parent node --//
+      node = node_map[node.parent_node_id.toString()];
     }
   }
+
   console.log("Complete request_messages array:"); // DEV
   console.log(JSON.stringify(request_messages, null, 2)); // DEV
 
@@ -256,8 +255,10 @@ export const gpt35TurboSSEController = async (
     // NOTE - could include completion object w/o content here
     "Access-Control-Expose-Headers":
       "CHRT-root-node-id, CHRT-root-node-created-at, CHRT-conversation-id, CHRT-new-node-id, CHRT-new-node-created-at, CHRT-parent-node-id",
-    "CHRT-root-node-id": new_conversation ? root_node._id : null,
-    "CHRT-root-node-created-at": new_conversation ? root_node.created_at : null,
+    "CHRT-root-node-id": new_conversation ? root_node._id : "none",
+    "CHRT-root-node-created-at": new_conversation
+      ? root_node.created_at
+      : "none",
     "CHRT-conversation-id": new_message_node.conversation_id,
     "CHRT-new-node-id": new_message_node._id,
     "CHRT-new-node-created-at": new_message_node.created_at,
@@ -354,9 +355,11 @@ export const gpt35TurboSSEController = async (
           };
 
           //-- Update new_message_node by adding completion --//
-          root_node = produce(new_message_node, (draft) => {
+          new_message_node = produce(new_message_node, (draft) => {
             draft.completion = completion;
           });
+          console.log("completion IMessage", completion);
+          console.log("new_message_node IMessageNode", new_message_node); // DEV
 
           //-- Write new_message_node to database --//
           try {
