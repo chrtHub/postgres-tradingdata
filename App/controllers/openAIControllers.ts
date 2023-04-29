@@ -32,6 +32,58 @@ import {
 } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 
+//-- Outline --//
+// (1) Receive:
+// // interface IChatCompletionRequestBody {
+// //   prompt: IMessage;
+// //   conversation_id_string: string | null;
+// //   parent_node_id_string: string | null;
+// // }
+
+// (2a) New conversation
+// // create a new conversation
+// (2b) Existing conversation:
+// // fetch conversation from MongoDB by conversation_id
+// // fetch message nodes from MongoDB by conversation_id
+// // find root node
+
+// (3) Create new message node based on received prompt, leaving completion as null
+
+// (4a) New conversation
+// // add new node's id to root node's children ids array
+// // write conversation object to MongoDB
+// // write root node to MongoDB
+// (4b) Existing conversation
+// // write new node's id to parent node's children ids array in MongoDB
+
+// (5) create request_messages array
+// // start with root node prompt content (system message) and new nodes's prompt content
+// // // count tokens for each message, add to token count
+// // traverse each parent node, adding the completion and the prompt, stopping at the root node or 3k tokens
+// // // count tokens for each message, add to token count
+
+// (6) Set headers, send to client. Make POST request to LLM. Create a readable stream and call parser for each received chunk.
+
+// (7a) New conversation - on first received chunk
+// // send the conversation object to the client
+
+// (7b) All conversations - on each chunk
+// // push the chunks content onto the completion_chunks string to be sent on [DONE]
+// // URI encode the chunnk's content and write it to the client
+
+// (8) On the "[DONE]" event, handle the completion object:
+// // build the completion object including the concatenated completion_chunks, its token count, and the creation time
+// // add the completion object to the new_message_node
+// // write the new_message_node to the MongoDB
+// // send the completion object to the client
+
+// (9) Also on the "[DONE]" event, handlel the api_req_res_metadata object:
+// // build the api_req_res_metatdata object
+// // write the api_req_res_metatdata object to the conversation's api_req_res_metatdata array in MongoDB
+// // send the api_req_res_metatdata object to the client
+
+// (10) Close the SSE connection to the client.
+
 //-- ***** ***** ***** GPT-3.5 Turbo SSE ***** ***** ***** //
 export const gpt35TurboSSEController = async (
   req: IRequestWithAuth,
@@ -219,6 +271,7 @@ export const gpt35TurboSSEController = async (
             role: "assistant",
           };
           request_messages.splice(1, 0, completion_request_message);
+          request_tokens += completionTokens;
         } else {
           tokenLimitHit = true;
         }
@@ -233,6 +286,7 @@ export const gpt35TurboSSEController = async (
           role: "user",
         };
         request_messages.splice(1, 0, prompt_request_message);
+        request_tokens += promptTokens;
         request_messages_node_ids.push(node._id);
       }
 
