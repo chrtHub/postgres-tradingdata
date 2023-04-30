@@ -26,11 +26,12 @@ import {
   IConversation,
   IChatCompletionRequestBody,
   ChatCompletionRequestMessage,
-  IOpenAIChatCompletionsRequestBody,
+  CreateChatCompletionRequest,
   LLMProvider,
   IMessageNode,
 } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
+import { getSHA256Hash } from "../utils/getSHA256Hash.js";
 
 //-- Outline --//
 // (1) Receive:
@@ -106,7 +107,7 @@ export const gpt35TurboSSEController = async (
   const model = prompt.model;
 
   //-- Variables for on new/existing conversation --//
-  let { conversation_id_string, parent_node_id_string } = body;
+  let { conversation_id_string, parent_node_id_string, temperature } = body;
 
   //-- Other --//
   let conversation_id: ObjectId | null = null;
@@ -120,7 +121,13 @@ export const gpt35TurboSSEController = async (
     new_conversation = true;
   }
 
-  let existing_conversation_message_nodes: IMessageNode[] = [];
+  if (temperature) {
+    if (temperature < 0) {
+      temperature = 0;
+    } else if (temperature > 2) {
+      temperature = 2;
+    }
+  }
 
   //-- MongoDB client for each databse collection --//
   const Mongo = {
@@ -136,6 +143,7 @@ export const gpt35TurboSSEController = async (
 
   //-- New or existing conversation --//
   let conversation: IConversation;
+  let existing_conversation_message_nodes: IMessageNode[] = [];
   let root_node: IMessageNode | null = null;
   if (!conversation_id || !parent_node_id) {
     //-- Create new conversation --//
@@ -341,10 +349,12 @@ export const gpt35TurboSSEController = async (
     let OPENAI_API_KEY = await getOpenAI_API_Key();
 
     //-- Reqeuest body --//
-    const request_body: IOpenAIChatCompletionsRequestBody = {
+    const request_body: CreateChatCompletionRequest = {
       model: model.api_name,
       messages: request_messages,
       stream: true,
+      user: await getSHA256Hash(user_db_id),
+      temperature: temperature,
     };
 
     //-- Axios POST request to OpenAI --//
@@ -352,6 +362,8 @@ export const gpt35TurboSSEController = async (
       "https://api.openai.com/v1/chat/completions",
       request_body,
       {
+        // TODO - implement AbortController?
+        // signal
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_API_KEY}`,
