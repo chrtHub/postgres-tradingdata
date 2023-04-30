@@ -55,6 +55,10 @@ export interface IModel {
 export interface IAPIReqResMetadata {
   user: string;
   model_api_name: string;
+  params: {
+    temperature?: number | null;
+    [key: string]: any; //-- Index signature for additional parameters --//
+  };
   created_at: Date;
   request_tokens: number;
   completion_tokens: number;

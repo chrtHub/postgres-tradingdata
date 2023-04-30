@@ -281,7 +281,7 @@ export const gpt35TurboSSEController = async (
     let tokenLimitHit: boolean = false;
 
     //-- Stop when root node reached (parent id will be null) or token limit hit --//
-    while (node.parent_node_id && !tokenLimitHit) {
+    while (node?.parent_node_id && !tokenLimitHit) {
       //-- Add completion if it exists --//
       let completion_content = node.completion?.content;
       if (completion_content) {
@@ -457,6 +457,9 @@ export const gpt35TurboSSEController = async (
           api_req_res_metadata = {
             user: user_db_id,
             model_api_name: model.api_name,
+            params: {
+              temperature: temperature,
+            },
             created_at: new Date(),
             request_tokens: request_tokens,
             completion_tokens: completion_tokens,
