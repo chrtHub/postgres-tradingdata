@@ -44,6 +44,9 @@ import { ObjectId } from "mongodb";
 // // create a new conversation
 // (2b) Existing conversation:
 // // fetch conversation from MongoDB by conversation_id
+
+// // // TODO - check if conversation has a lock on it. if so, fail request and send error to client. notify client that the conversation can only have a single prompt at a time. if no lock, set a lock (TTL 60 seconds) and proceed.
+
 // // fetch message nodes from MongoDB by conversation_id
 // // find root node
 
@@ -52,6 +55,9 @@ import { ObjectId } from "mongodb";
 // (4a) New conversation
 // // add new node's id to root node's children ids array
 // // write conversation object to MongoDB
+
+// // // TODO - lock conversation
+
 // // write root node to MongoDB
 // (4b) Existing conversation
 // // write new node's id to parent node's children ids array in MongoDB
@@ -69,7 +75,7 @@ import { ObjectId } from "mongodb";
 
 // (7b) All conversations - on each chunk
 // // push the chunks content onto the completion_chunks string to be sent on [DONE]
-// // URI encode the chunnk's content and write it to the client
+// // URI encode the chunk's content and write it to the client
 
 // (8) On the "[DONE]" event, handle the completion object:
 // // build the completion object including the concatenated completion_chunks, its token count, and the creation time
@@ -77,10 +83,12 @@ import { ObjectId } from "mongodb";
 // // write the new_message_node to the MongoDB
 // // send the completion object to the client
 
-// (9) Also on the "[DONE]" event, handlel the api_req_res_metadata object:
+// (9) Also on the "[DONE]" event, handle the api_req_res_metadata object:
 // // build the api_req_res_metatdata object
 // // write the api_req_res_metatdata object to the conversation's api_req_res_metatdata array in MongoDB
 // // send the api_req_res_metatdata object to the client
+
+// // // TODO - delete the lock on the conversation. send event to client to inform client. client-side use that event to allow another submission.
 
 // (10) Close the SSE connection to the client.
 
@@ -141,7 +149,10 @@ export const gpt35TurboSSEController = async (
     //-- Fetch conversation --//
     console.log("FETCH CONVERSATION, id: ", conversation_id); // DEV
     try {
-      let res = await Mongo.conversations.findOne({ _id: conversation_id });
+      let res = await Mongo.conversations.findOne({
+        _id: conversation_id,
+        user_db_id: user_db_id, //-- Security --//
+      });
       if (res) {
         conversation = res; //-- set conversation --//
       } else {
@@ -155,7 +166,10 @@ export const gpt35TurboSSEController = async (
     console.log("FETCH EXISTING CONVERSATION NODES"); // DEV
     try {
       let res = await Mongo.message_nodes
-        .find({ conversation_id: conversation_id })
+        .find({
+          conversation_id: conversation_id,
+          user_db_id: user_db_id, //-- Security --//
+        })
         .toArray();
       if (res) {
         //-- set existing_conversation_message_nodes --//
