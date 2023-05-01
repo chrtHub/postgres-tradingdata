@@ -147,7 +147,6 @@ export const gpt35TurboSSEController = async (
   let root_node: IMessageNode | null = null;
   if (!conversation_id || !parent_node_id) {
     //-- Create new conversation --//
-    console.log("CREATE NEW CONVERSATION"); // DEV
     let res = createConversation(user_db_id, model, llm_provider, null);
     conversation_id = res.conversation_id;
     parent_node_id = res.root_node_id;
@@ -155,7 +154,6 @@ export const gpt35TurboSSEController = async (
     root_node = res.root_node;
   } else {
     //-- Fetch conversation --//
-    console.log("FETCH CONVERSATION, id: ", conversation_id); // DEV
     try {
       let res = await Mongo.conversations.findOne({
         _id: conversation_id,
@@ -171,7 +169,6 @@ export const gpt35TurboSSEController = async (
       throw new Error("fetching conversation error");
     }
     //-- Fetch existing_conversation_nodes --//
-    console.log("FETCH EXISTING CONVERSATION NODES"); // DEV
     try {
       let res = await Mongo.message_nodes
         .find({
@@ -182,7 +179,6 @@ export const gpt35TurboSSEController = async (
       if (res) {
         //-- set existing_conversation_message_nodes --//
         existing_conversation_message_nodes = res;
-        console.log(existing_conversation_message_nodes); // DEV
       } else {
         throw new Error(
           `no existing_conversation_message_nodes found for conversation_id: ${conversation_id}`
@@ -227,7 +223,6 @@ export const gpt35TurboSSEController = async (
       //-- Write conversation and root_node to database  --//
       await Mongo.conversations.insertOne(conversation);
       await Mongo.message_nodes.insertOne(root_node);
-      console.log("updated root node for new conversation, ", root_node); // DEV
     } catch (err) {
       console.log(err);
       throw new Error("error storing new conversation and/or root_node");
@@ -240,9 +235,6 @@ export const gpt35TurboSSEController = async (
         { _id: parent_node_id },
         { $addToSet: { children_node_ids: new_message_node._id } }
       );
-      console.log(
-        "updated parent node children_node_ids for existing conversation"
-      ); // DEV
     } catch (err) {
       console.log(err);
       throw new Error("error updating parent node");
@@ -260,7 +252,6 @@ export const gpt35TurboSSEController = async (
       content: new_message_node.prompt.content,
     },
   ];
-  console.log("about to build request_messages array"); // DEV
 
   //-- Build request_messages and request_message_node_ids. Count tokens. --//
   const request_messages_node_ids: ObjectId[] = [];
@@ -316,9 +307,6 @@ export const gpt35TurboSSEController = async (
       node = node_map[node.parent_node_id.toString()];
     }
   }
-
-  console.log("Complete request_messages array:"); // DEV
-  console.log(JSON.stringify(request_messages, null, 2)); // DEV
 
   let api_req_res_metadata: IAPIReqResMetadata;
 
@@ -403,7 +391,6 @@ export const gpt35TurboSSEController = async (
         if (event.data !== "[DONE]") {
           //-- For new conversations, send conversation upon first event --//
           if (new_conversation && !conversation_sent) {
-            console.log("sending conversation object for new conversation"); // DEV
             let conversation_string = JSON.stringify(conversation);
             res.write(`id: conversation\ndata: ${conversation_string}\n\n`);
             conversation_sent = true;
@@ -438,8 +425,6 @@ export const gpt35TurboSSEController = async (
           new_message_node = produce(new_message_node, (draft) => {
             draft.completion = completion;
           });
-          console.log("completion IMessage", completion);
-          console.log("new_message_node IMessageNode", new_message_node); // DEV
 
           //-- Write new_message_node to database --//
           try {
