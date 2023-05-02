@@ -4,7 +4,8 @@ import {
   IMessage,
   IMessageNode,
   IModel,
-  LLMProvider,
+  ModelDeveloperNames,
+  APIProviderNames,
 } from "../controllers/chatson_types.js";
 import { ObjectId } from "mongodb";
 
@@ -19,7 +20,8 @@ const CURRENT_SYSTEM_MESSAGE =
 export function createConversation(
   user_db_id: string,
   model: IModel,
-  llm_provider: LLMProvider,
+  api_provider_name: APIProviderNames,
+  model_developer_name: ModelDeveloperNames,
   schema_version: string | null
 ) {
   //-- Generate timestamp, _id values --//
@@ -53,7 +55,8 @@ export function createConversation(
   //-- Create conversation document --//
   const conversation: IConversation = {
     _id: conversation_id,
-    llm_provider: llm_provider,
+    api_provider_name: api_provider_name,
+    model_developer_name: model_developer_name,
     user_db_id: user_db_id,
     title: "",
     root_node_id: root_node_id,

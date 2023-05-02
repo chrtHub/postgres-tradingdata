@@ -27,8 +27,9 @@ import {
   IChatCompletionRequestBody,
   ChatCompletionRequestMessage,
   CreateChatCompletionRequest,
-  LLMProvider,
   IMessageNode,
+  APIProviderNames,
+  ModelDeveloperNames,
 } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 import { getSHA256Hash } from "../utils/getSHA256Hash.js";
@@ -99,8 +100,11 @@ export const gpt35TurboSSEController = async (
   res: Response
 ) => {
   console.log("----- gpt35TurboSSEController -----"); // DEV
+  //-- Cosntants based on route --//
+  const api_provider_name: APIProviderNames = "openai";
+  const model_developer_name: ModelDeveloperNames = "openai";
+
   //-- Constants based on request --//
-  const llm_provider: LLMProvider = "openai";
   const user_db_id = getUserDbId(req);
   const body: IChatCompletionRequestBody = req.body;
   const { prompt } = body;
@@ -147,7 +151,13 @@ export const gpt35TurboSSEController = async (
   let root_node: IMessageNode | null = null;
   if (!conversation_id || !parent_node_id) {
     //-- Create new conversation --//
-    let res = createConversation(user_db_id, model, llm_provider, null);
+    let res = createConversation(
+      user_db_id,
+      model,
+      api_provider_name,
+      model_developer_name,
+      null
+    );
     conversation_id = res.conversation_id;
     parent_node_id = res.root_node_id;
     conversation = res.conversation;
@@ -338,7 +348,7 @@ export const gpt35TurboSSEController = async (
 
     //-- Reqeuest body --//
     const request_body: CreateChatCompletionRequest = {
-      model: model.api_name,
+      model: model.model_api_name,
       messages: request_messages,
       stream: true,
       user: await getSHA256Hash(user_db_id),
@@ -414,7 +424,7 @@ export const gpt35TurboSSEController = async (
           const completion_tokens = tiktoken(completion_content.toString());
           const completion_created_at = new Date();
           const completion: IMessage = {
-            author: model.api_name,
+            author: model.model_api_name,
             model: model,
             created_at: completion_created_at,
             role: "assistant",
@@ -441,7 +451,7 @@ export const gpt35TurboSSEController = async (
           //-- Update api_req_res_metadata --//
           api_req_res_metadata = {
             user: user_db_id,
-            model_api_name: model.api_name,
+            model_api_name: model.model_api_name,
             params: {
               temperature: temperature,
             },
