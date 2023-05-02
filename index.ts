@@ -25,12 +25,13 @@ import dataRoutes from "./App/routes/dataRoutes.js";
 import journalRoutes from "./App/routes/journalRoutes.js";
 import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 import openAIRoutes from "./App/routes/openAIRoutes.js";
+import llmRoutes from "./App/routes/llmRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
 import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
 import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
-import { openAIAuthMiddleware } from "./App/Auth/openAIAuthMiddleware.js";
+import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware.js";
 
 //-- OpenAPI Spec --//
 import swaggerJsdoc from "swagger-jsdoc";
@@ -242,7 +243,8 @@ const jwtCheck = auth({
 app.use("/data", jwtCheck, dataAuthMiddleware, dataRoutes);
 app.use("/journal", jwtCheck, journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
-app.use("/openai", jwtCheck, openAIAuthMiddleware, openAIRoutes);
+app.use("/openai", jwtCheck, llmAuthMiddleware, openAIRoutes);
+app.use("/llm", jwtCheck, llmAuthMiddleware, llmRoutes);
 
 //-- *************** Error Handler *************** --//
 /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
