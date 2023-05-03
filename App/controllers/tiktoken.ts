@@ -7,10 +7,15 @@ import { get_encoding } from "@dqbd/tiktoken";
 const PADDING_TOKENS = 5;
 
 export function tiktoken(message: string): number {
-  const encoder = get_encoding("cl100k_base");
-  let encoded = encoder.encode(message);
+  try {
+    const encoder = get_encoding("cl100k_base");
+    let encoded = encoder.encode(message);
 
-  //-- Add padding_tokens because raw message content has some chars added for structure --//
-  let tokens = encoded.length + PADDING_TOKENS;
-  return tokens;
+    //-- Add padding_tokens because raw message content has some chars added for structure --//
+    let tokens = encoded.length + PADDING_TOKENS;
+    return tokens;
+  } catch (err) {
+    console.error("Tiktoken error: ", err);
+    return 0;
+  }
 }
