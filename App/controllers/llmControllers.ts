@@ -37,7 +37,7 @@ export const listConversationsController = async (
     let conversationsArray: IConversation[] = await Mongo.conversations
       .find({ user_db_id: user_db_id }) //-- Security --//
       .skip(skipInt)
-      .limit(30) // TODO - pick a number here. Perhaps 50?
+      .limit(42) //-- arbitrary number --//
       .sort({ created_at: -1 })
       .toArray();
 
