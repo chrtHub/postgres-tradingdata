@@ -1,5 +1,5 @@
 //-- MongoDB Client --//
-import { MongoClient } from "../../index.js";
+import { Mongo } from "../../index.js";
 
 //-- OpenAI Client --//
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
@@ -133,44 +133,32 @@ export const gpt35TurboSSEController = async (
     }
   }
 
-  //-- MongoDB client for each databse collection --//
-  const Mongo = {
-    conversations:
-      MongoClient.db("chrtgpt-journal").collection<IConversation>(
-        "conversations"
-      ),
-    message_nodes:
-      MongoClient.db("chrtgpt-journal").collection<IMessageNode>(
-        "message_nodes"
-      ),
-  };
-
   //-- New or existing conversation --//
   let conversation: IConversation;
   let existing_conversation_message_nodes: IMessageNode[] = [];
   let root_node: IMessageNode | null = null;
   if (!conversation_id || !parent_node_id) {
     //-- Create new conversation --//
-    let res = createConversation(
+    let response = createConversation(
       user_db_id,
       model,
       api_provider_name,
       model_developer_name,
       null
     );
-    conversation_id = res.conversation_id;
-    parent_node_id = res.root_node_id;
-    conversation = res.conversation;
-    root_node = res.root_node;
+    conversation_id = response.conversation_id;
+    parent_node_id = response.root_node_id;
+    conversation = response.conversation;
+    root_node = response.root_node;
   } else {
     //-- Fetch conversation --//
     try {
-      let res = await Mongo.conversations.findOne({
+      let response = await Mongo.conversations.findOne({
         _id: conversation_id,
         user_db_id: user_db_id, //-- Security --//
       });
-      if (res) {
-        conversation = res; //-- set conversation --//
+      if (response) {
+        conversation = response; //-- set conversation --//
       } else {
         throw new Error(`unknown conversation_id: ${conversation_id}`);
       }
@@ -180,15 +168,15 @@ export const gpt35TurboSSEController = async (
     }
     //-- Fetch existing_conversation_nodes --//
     try {
-      let res = await Mongo.message_nodes
+      let response = await Mongo.message_nodes
         .find({
           conversation_id: conversation_id,
           user_db_id: user_db_id, //-- Security --//
         })
         .toArray();
-      if (res) {
+      if (response) {
         //-- set existing_conversation_message_nodes --//
-        existing_conversation_message_nodes = res;
+        existing_conversation_message_nodes = response;
       } else {
         throw new Error(
           `no existing_conversation_message_nodes found for conversation_id: ${conversation_id}`
@@ -199,11 +187,11 @@ export const gpt35TurboSSEController = async (
       throw new Error("fetching message_nodes error");
     }
     //-- Find root_node for existing conversations --//
-    let res = existing_conversation_message_nodes.find((message_node) =>
+    let response = existing_conversation_message_nodes.find((message_node) =>
       message_node._id.equals(conversation.root_node_id)
     );
-    if (res) {
-      root_node = res; //-- Set root_node --//
+    if (response) {
+      root_node = response; //-- Set root_node --//
     } else {
       throw new Error(
         `root node not found for conversation_id: ${conversation_id}`

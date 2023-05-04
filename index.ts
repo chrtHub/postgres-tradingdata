@@ -43,6 +43,10 @@ const require = createRequire(import.meta.url);
 //-- Types --//
 import { Request, Response, NextFunction } from "express";
 import { IRequestWithAuth } from "./index.d";
+import {
+  IConversation,
+  IMessageNode,
+} from "./App/controllers/chatson_types.js";
 
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
@@ -130,7 +134,15 @@ try {
   console.log("DocumentDB-MongoDB connection error");
   console.log(error);
 }
-export { MongoClient }; // TODO - is this good?
+const Mongo = {
+  conversations:
+    MongoClient.db("chrtgpt-journal").collection<IConversation>(
+      "conversations"
+    ),
+  message_nodes:
+    MongoClient.db("chrtgpt-journal").collection<IMessageNode>("message_nodes"),
+};
+export { Mongo }; // TODO - is this good?
 
 //-- OpenAI --//
 let OPENAI_API_KEY: string = await getOpenAI_API_Key();
