@@ -24,7 +24,7 @@ import {
   IAPIReqResMetadata,
   IMessage,
   IConversation,
-  IChatCompletionRequestBody,
+  IOpenAIChatCompletionRequestBody,
   ChatCompletionRequestMessage,
   CreateChatCompletionRequest,
   IMessageNode,
@@ -106,7 +106,7 @@ export const gpt35TurboSSEController = async (
 
   //-- Constants based on request --//
   const user_db_id = getUserDbId(req);
-  const body: IChatCompletionRequestBody = req.body;
+  const body: IOpenAIChatCompletionRequestBody = req.body;
   const { prompt } = body;
   const model = prompt.model;
 

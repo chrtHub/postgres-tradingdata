@@ -12,7 +12,10 @@ import orderBy from "lodash/orderBy.js";
 //-- Types --//
 import { IRequestWithAuth } from "../../index.d";
 import { Response } from "express";
-import { IConversation } from "./chatson_types.js";
+import {
+  IConversation,
+  IGetConversationsAndMessagesResponse,
+} from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 
 //-- ********************* List Conversations ********************* --//
@@ -59,33 +62,38 @@ export const getConversationController = async (
       _id: conversation_id,
     });
 
-    //-- Fetch messages --//
-    try {
-      let message_nodes = await Mongo.message_nodes
-        .find({
-          user_db_id: user_db_id, //-- Security --//
-          conversation_id: conversation_id,
-        })
-        .toArray();
-      if (message_nodes) {
-        //-- Remove system message --//
-        message_nodes = message_nodes.filter(
-          (node) => node.prompt.role !== "system"
-        );
+    if (conversation) {
+      //-- Fetch messages --//
+      try {
+        let message_nodes = await Mongo.message_nodes
+          .find({
+            user_db_id: user_db_id, //-- Security --//
+            conversation_id: conversation_id,
+          })
+          .toArray();
+        if (message_nodes) {
+          //-- Remove system message --//
+          message_nodes = message_nodes.filter(
+            (node) => node.prompt.role !== "system"
+          );
 
-        // TODO - return the 'conversation' obect and also the 'message_nodes' array
-        return res.status(200).json({ conversation, message_nodes });
-        //----//
-      } else {
-        throw new Error(
-          `no message_nodes found for conversation_id: ${conversation_id}`
-        );
+          const response: IGetConversationsAndMessagesResponse = {
+            conversation,
+            message_nodes,
+          };
+          return res.status(200).json(response);
+          //----//
+        } else {
+          throw new Error(
+            `no message_nodes found for conversation_id: ${conversation_id}`
+          );
+        }
+      } catch (err) {
+        console.log(err);
+        throw new Error("Error while fetching messages");
       }
-    } catch (err) {
-      console.log(err);
-      throw new Error("Error while fetching messages");
+      //
     }
-    //
   } catch (error) {
     console.log(error);
     return res.status(500).send("Error while fetching conversation list");
