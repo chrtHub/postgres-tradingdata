@@ -12,7 +12,7 @@ const router = express.Router();
 //-- ********** Routes ********** --//
 //-- ***** ***** ***** ***** ***** --//
 
-router.get("/list_conversations", ctrl.listConversationsController);
+router.get("/list_conversations/:skip", ctrl.listConversationsController);
 
 //-- ********** Export ********** --//
 export default router;
