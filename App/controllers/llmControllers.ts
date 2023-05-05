@@ -35,7 +35,7 @@ export const listConversationsController = async (
       .sort({ created_at: -1 })
       .toArray();
 
-    return res.json(conversationsArray);
+    return res.status(200).json(conversationsArray);
   } catch (error) {
     console.log(error);
     return res.status(500).send("Error while fetching conversations list");
