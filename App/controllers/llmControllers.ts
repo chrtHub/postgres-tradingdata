@@ -6,16 +6,14 @@ import getUserDbId from "../utils/getUserDbId.js";
 import orderBy from "lodash/orderBy.js";
 
 //-- NPM Functions --//
+import produce from "immer";
 
 //-- Utility Functions --//
 
 //-- Types --//
 import { IRequestWithAuth } from "../../index.d";
 import { Response } from "express";
-import {
-  IConversation,
-  IGetConversationsAndMessagesResponse,
-} from "./chatson_types.js";
+import { IConversation, IMessageNode } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 
 //-- ********************* List Conversations ********************* --//
@@ -45,7 +43,7 @@ export const listConversationsController = async (
 };
 
 //-- ********************* Get Conversation ********************* --//
-export const getConversationController = async (
+export const getConversationAndMessagesController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
@@ -65,23 +63,24 @@ export const getConversationController = async (
     if (conversation) {
       //-- Fetch messages --//
       try {
-        let message_nodes = await Mongo.message_nodes
+        let message_nodes: IMessageNode[] = await Mongo.message_nodes
           .find({
             user_db_id: user_db_id, //-- Security --//
             conversation_id: conversation_id,
           })
           .toArray();
         if (message_nodes) {
-          //-- Remove system message --//
-          message_nodes = message_nodes.filter(
-            (node) => node.prompt.role !== "system"
-          );
+          //-- Redact system message --//
+          message_nodes = produce(message_nodes, (draft) => {
+            let system_node = draft.find(
+              (node) => node.prompt.role === "system"
+            );
+            if (system_node) {
+              system_node.prompt.content = "redacted system message";
+            }
+          });
 
-          const response: IGetConversationsAndMessagesResponse = {
-            conversation,
-            message_nodes,
-          };
-          return res.status(200).json(response);
+          return res.status(200).json({ conversation, message_nodes });
           //----//
         } else {
           throw new Error(

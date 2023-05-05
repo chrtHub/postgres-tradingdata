@@ -111,12 +111,6 @@ export interface IOpenAIChatCompletionRequestBody {
   temperature: number | null; //-- between 0 and 2, inclusive --//
 }
 
-//== Server Response Types ==//
-export interface IGetConversationsAndMessagesResponse {
-  conversation: IConversation;
-  message_nodes: IMessageNode[];
-}
-
 /** These lists is to be append-only. To prevent the use of a model, limit the models included in the model_options object created in the file where ChatContext is created. */
 export type APIProviderNames = "openai" | "amazon_bedrock";
 // export type APIProviderFriendlyName = "OpenAI" | "Amazon Bedrock"

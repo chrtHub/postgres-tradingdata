@@ -15,7 +15,7 @@ router.get("/list_conversations/:skip", ctrl.listConversationsController);
 
 router.get(
   "/get_conversation_and_messages/:objectIdString",
-  ctrl.getConversationController
+  ctrl.getConversationAndMessagesController
 );
 
 //-- ********** Export ********** --//
