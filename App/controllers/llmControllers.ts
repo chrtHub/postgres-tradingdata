@@ -13,7 +13,12 @@ import produce from "immer";
 //-- Types --//
 import { IRequestWithAuth } from "../../index.d";
 import { Response } from "express";
-import { IConversation, IMessageNode } from "./chatson_types.js";
+import {
+  IConversation_Mongo,
+  IMessageNode,
+  IMessageNode_Mongo,
+} from "./chatson_types.js";
+import { ObjectId } from "mongodb";
 
 //-- ********************* List Conversations ********************* --//
 export const listConversationsController = async (
@@ -27,7 +32,7 @@ export const listConversationsController = async (
   let user_db_id = getUserDbId(req);
 
   try {
-    let conversationsArray: IConversation[] = await Mongo.conversations
+    let conversationsArray: IConversation_Mongo[] = await Mongo.conversations
       .find({ user_db_id: user_db_id }) //-- Security --//
       .skip(skipInt)
       .limit(42) //-- arbitrary number --//
@@ -53,18 +58,19 @@ export const getConversationAndMessagesController = async (
 
   //-- Fetch conversation --//
   try {
-    let conversation: IConversation | null = await Mongo.conversations.findOne({
-      user_db_id: user_db_id, //-- Security --//
-      _id: conversation_id,
-    });
+    let conversation: IConversation_Mongo | null =
+      await Mongo.conversations.findOne({
+        user_db_id: user_db_id, //-- Security --//
+        _id: ObjectId.createFromHexString(conversation_id),
+      });
 
     if (conversation) {
       //-- Fetch messages --//
       try {
-        let message_nodes: IMessageNode[] = await Mongo.message_nodes
+        let message_nodes: IMessageNode_Mongo[] = await Mongo.message_nodes
           .find({
             user_db_id: user_db_id, //-- Security --//
-            conversation_id: conversation_id,
+            conversation_id: ObjectId.createFromHexString(conversation_id),
           })
           .toArray();
         if (message_nodes) {

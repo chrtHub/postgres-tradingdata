@@ -44,8 +44,8 @@ const require = createRequire(import.meta.url);
 import { Request, Response, NextFunction } from "express";
 import { IRequestWithAuth } from "./index.d";
 import {
-  IConversation,
-  IMessageNode,
+  IConversation_Mongo,
+  IMessageNode_Mongo,
 } from "./App/controllers/chatson_types.js";
 
 //-- Print current value of process.env.NODE_ENV --//
@@ -136,11 +136,13 @@ try {
 }
 const Mongo = {
   conversations:
-    MongoClient.db("chrtgpt-journal").collection<IConversation>(
+    MongoClient.db("chrtgpt-journal").collection<IConversation_Mongo>(
       "conversations"
     ),
   message_nodes:
-    MongoClient.db("chrtgpt-journal").collection<IMessageNode>("message_nodes"),
+    MongoClient.db("chrtgpt-journal").collection<IMessageNode_Mongo>(
+      "message_nodes"
+    ),
 };
 export { Mongo }; // TODO - is this good?
 

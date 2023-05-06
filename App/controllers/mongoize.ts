@@ -1,100 +1,102 @@
-import { IConversation, IMessageNode } from "./chatson_types";
+import {
+  IConversation,
+  IConversation_Mongo,
+  IMessageNode,
+  IMessageNode_Mongo,
+} from "./chatson_types";
 import { ObjectId } from "mongodb";
 
-/**
- * Converts ISO 8601 date strings to Date objects and ObjectId Hex Strings to ObjectId objects
- *
- * @param object
- */
-export function mongoize_conversation(conversation: IConversation) {
-  const mongoizedConversation: any = { ...conversation };
+//-- ***** ***** ***** ***** DMongoize ***** ***** ***** ***** --//
 
-  //-- _id --//
-  mongoizedConversation._id = ObjectId.createFromHexString(conversation._id);
-
-  //-- root_node_id --//
-  mongoizedConversation.root_node_id = ObjectId.createFromHexString(
-    conversation.root_node_id
+//-- Conversations --//
+export function mongoize_conversation(__: IConversation): IConversation_Mongo {
+  return {
+    _id: ObjectId.createFromHexString(__._id), //-- Changed --//
+    created_at: new Date(__.created_at), //-- Changed --//
+    api_provider_name: __.api_provider_name,
+    model_developer_name: __.model_developer_name,
+    user_db_id: __.user_db_id,
+    title: __.title,
+    root_node_id: __.root_node_id,
+    schema_version: __.schema_version,
+    api_req_res_metadata: __.api_req_res_metadata,
+    system_tags: __.system_tags,
+    user_tags: __.user_tags,
+  };
+}
+export function mongoize_conversations(
+  conversations: IConversation[]
+): IConversation_Mongo[] {
+  return conversations.map((conversation) =>
+    mongoize_conversation(conversation)
   );
-
-  //-- created_at --//
-  mongoizedConversation.created_at = new Date(conversation.created_at);
-
-  return mongoizedConversation;
 }
 
-function convertAPIReqResMetadata(
-  metadata: IAPIReqResMetadata
-): IAPIReqResMetadata {
-  const mongoizedMetadata: IAPIReqResMetadata = { ...metadata };
+//-- Message Nodes --//
+export function mongoize_message_node(node: IMessageNode): IMessageNode_Mongo {
+  const mongoizedNode: IMessageNode_Mongo = {
+    _id: new ObjectId(node._id), //-- Changed --//
+    conversation_id: new ObjectId(node.conversation_id), //-- Changed --//
+    created_at: new Date(node.created_at), //-- Changed --//
+    user_db_id: node.user_db_id,
+    parent_node_id: node.parent_node_id,
+    children_node_ids: node.children_node_ids,
+    prompt: node.prompt,
+    completion: node.completion,
+  };
 
-  // Convert created_at to Date
-  mongoizedMetadata.created_at = new Date(metadata.created_at);
+  return mongoizedNode;
+}
+export function mongoize_message_nodes(
+  messageNodes: IMessageNode[]
+): IMessageNode_Mongo[] {
+  return messageNodes.map((node) => mongoize_message_node(node));
+}
+//-- ***** ***** ***** ***** De-Mongoize ***** ***** ***** ***** --//
 
-  // Convert node_id to ObjectId
-  mongoizedMetadata.node_id = ObjectId.createFromHexString(metadata.node_id);
-
-  // Convert request_messages_node_ids to ObjectId[]
-  mongoizedMetadata.request_messages_node_ids =
-    metadata.request_messages_node_ids.map((nodeId) =>
-      ObjectId.createFromHexString(nodeId)
-    );
-
-  return mongoizedMetadata;
+//-- Conversations --//
+export function demongoize_conversation(
+  conversation: IConversation_Mongo
+): IConversation {
+  return {
+    _id: conversation._id.toHexString(), //-- Changed --//
+    created_at: conversation.created_at.toISOString(), //-- Changed --//
+    api_provider_name: conversation.api_provider_name,
+    model_developer_name: conversation.model_developer_name,
+    user_db_id: conversation.user_db_id,
+    title: conversation.title,
+    root_node_id: conversation.root_node_id,
+    schema_version: conversation.schema_version,
+    api_req_res_metadata: conversation.api_req_res_metadata,
+    system_tags: conversation.system_tags,
+    user_tags: conversation.user_tags,
+  };
+}
+export function demongoize_conversations(
+  conversations: IConversation_Mongo[]
+): IConversation[] {
+  return conversations.map((conversation) =>
+    demongoize_conversation(conversation)
+  );
 }
 
-/**
- * Converts ISO 8601 date strings to Date objects and ObjectId Hex Strings to ObjectId objects
- *
- * @param object
- */
-function mongoize_message_node(messageNode: IMessageNode) {
-  const mongoizedMessageNode: any = { ...messageNode };
-
-  //-- _id --//
-  mongoizedMessageNode._id = ObjectId.createFromHexString(messageNode._id);
-
-  //-- created_at --//
-  mongoizedMessageNode.created_at = new Date(messageNode.created_at);
-
-  //-- conversation_id --//
-  mongoizedMessageNode.conversation_id = ObjectId.createFromHexString(
-    messageNode.conversation_id
-  );
-
-  //-- parent_node_id --//
-  if (messageNode.parent_node_id) {
-    mongoizedMessageNode.parent_node_id = ObjectId.createFromHexString(
-      messageNode.parent_node_id
-    );
-  }
-
-  //-- children_node_ids[] --//
-  if (
-    Array.isArray(messageNode.children_node_ids) &&
-    messageNode.children_node_ids.length > 0
-  ) {
-    mongoizedMessageNode.children_node_ids = messageNode.children_node_ids.map(
-      (nodeId) => ObjectId.createFromHexString(nodeId)
-    );
-  }
-
-  //-- Prompt (IMessage) created_at --//
-  if (mongoizedMessageNode.prompt && mongoizedMessageNode.prompt.created_at) {
-    mongoizedMessageNode.prompt.created_at = new Date(
-      mongoizedMessageNode.prompt.created_at
-    );
-  }
-
-  //-- Completion (IMessage) created_at --//
-  if (
-    mongoizedMessageNode.completion &&
-    mongoizedMessageNode.completion.created_at
-  ) {
-    mongoizedMessageNode.completion.created_at = new Date(
-      mongoizedMessageNode.completion.created_at
-    );
-  }
-
-  return mongoizedMessageNode;
+//-- Message Nodes --//
+export function demongoize_message_node(
+  message_node: IMessageNode_Mongo
+): IMessageNode {
+  return {
+    _id: message_node._id.toString(), //-- Changed --//
+    conversation_id: message_node.conversation_id.toString(), //-- Changed --//
+    created_at: message_node.created_at.toISOString(), //-- Changed --//
+    user_db_id: message_node.user_db_id,
+    parent_node_id: message_node.parent_node_id,
+    children_node_ids: message_node.children_node_ids,
+    prompt: message_node.prompt,
+    completion: message_node.completion,
+  };
+}
+export function demongoize_message_nodes(
+  messageNodes: IMessageNode_Mongo[]
+): IMessageNode[] {
+  return messageNodes.map(demongoize_message_node);
 }

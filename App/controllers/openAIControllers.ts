@@ -33,7 +33,11 @@ import {
 } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 import { getSHA256Hash } from "../utils/getSHA256Hash.js";
-import { mongoize_conversation, mongoize_message_node } from "./mongoize.js";
+import {
+  mongoize_conversation,
+  mongoize_message_node,
+  demongoize_message_nodes,
+} from "./mongoize.js";
 
 //-- Outline --//
 // (1) Receive:
@@ -155,11 +159,23 @@ export const gpt35TurboSSEController = async (
     //-- Fetch conversation --//
     try {
       let response = await Mongo.conversations.findOne({
-        _id: conversation_id, // DEV - does this work?? or convert to ObjectId??
+        _id: ObjectId.createFromHexString(conversation_id),
         user_db_id: user_db_id, //-- Security --//
       });
       if (response) {
-        conversation = response; //-- set conversation --//
+        conversation = {
+          _id: response._id.toHexString(),
+          created_at: response.created_at.toISOString(),
+          api_provider_name: response.api_provider_name,
+          model_developer_name: response.model_developer_name,
+          user_db_id: response.user_db_id,
+          title: response.title,
+          root_node_id: response.root_node_id,
+          schema_version: response.schema_version,
+          api_req_res_metadata: response.api_req_res_metadata,
+          system_tags: response.system_tags,
+          user_tags: response.user_tags,
+        };
       } else {
         throw new Error(`unknown conversation_id: ${conversation_id}`);
       }
@@ -171,13 +187,14 @@ export const gpt35TurboSSEController = async (
     try {
       let response = await Mongo.message_nodes
         .find({
-          conversation_id: conversation_id,
+          conversation_id: ObjectId.createFromHexString(conversation_id),
           user_db_id: user_db_id, //-- Security --//
         })
         .toArray();
       if (response) {
         //-- set existing_conversation_message_nodes --//
-        existing_conversation_message_nodes = response;
+        existing_conversation_message_nodes =
+          demongoize_message_nodes(response);
       } else {
         throw new Error(
           `no existing_conversation_message_nodes found for conversation_id: ${conversation_id}`
@@ -231,7 +248,7 @@ export const gpt35TurboSSEController = async (
     try {
       //-- Write message_node's _id to parent_node's children array --//
       await Mongo.message_nodes.updateOne(
-        { _id: parent_node_id },
+        { _id: ObjectId.createFromHexString(parent_node_id) },
         { $addToSet: { children_node_ids: new_message_node._id } }
       );
     } catch (err) {
@@ -427,7 +444,9 @@ export const gpt35TurboSSEController = async (
 
           //-- Write new_message_node to database --//
           try {
-            await Mongo.message_nodes.insertOne(new_message_node);
+            await Mongo.message_nodes.insertOne(
+              mongoize_message_node(new_message_node)
+            );
           } catch (err) {
             console.log(err);
             throw new Error("error storing new message_node");
@@ -455,7 +474,11 @@ export const gpt35TurboSSEController = async (
           //-- Write api_req_res_metadata as update to conversation --//
           try {
             await Mongo.conversations.updateOne(
-              { _id: new_message_node.conversation_id },
+              {
+                _id: ObjectId.createFromHexString(
+                  new_message_node.conversation_id
+                ),
+              },
               { $addToSet: { api_req_res_metadata: api_req_res_metadata } }
             );
           } catch (err) {
