@@ -14,7 +14,6 @@ import produce from "immer";
 import { IRequestWithAuth } from "../../index.d";
 import { Response } from "express";
 import { IConversation, IMessageNode } from "./chatson_types.js";
-import { ObjectId } from "mongodb";
 
 //-- ********************* List Conversations ********************* --//
 export const listConversationsController = async (
@@ -49,8 +48,7 @@ export const getConversationAndMessagesController = async (
 ) => {
   console.log("-- get conversation --"); // DEV
   //-- Get data from params --//
-  let { objectIdString } = req.params;
-  let conversation_id = ObjectId.createFromHexString(objectIdString);
+  let { conversation_id } = req.params;
   let user_db_id = getUserDbId(req);
 
   //-- Fetch conversation --//

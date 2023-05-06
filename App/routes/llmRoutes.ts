@@ -14,7 +14,7 @@ const router = express.Router();
 router.get("/list_conversations/:skip", ctrl.listConversationsController);
 
 router.get(
-  "/get_conversation_and_messages/:objectIdString",
+  "/get_conversation_and_messages/:conversation_id",
   ctrl.getConversationAndMessagesController
 );
 

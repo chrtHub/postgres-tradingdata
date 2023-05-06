@@ -33,6 +33,7 @@ import {
 } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 import { getSHA256Hash } from "../utils/getSHA256Hash.js";
+import { mongoize_conversation, mongoize_message_node } from "./mongoize.js";
 
 //-- Outline --//
 // (1) Receive:
@@ -114,13 +115,13 @@ export const gpt35TurboSSEController = async (
   let { conversation_id_string, parent_node_id_string, temperature } = body;
 
   //-- Other --//
-  let conversation_id: ObjectId | null = null;
-  let parent_node_id: ObjectId | null = null;
+  let conversation_id: string | null = null;
+  let parent_node_id: string | null = null;
   let new_conversation: boolean = false;
 
   if (conversation_id_string && parent_node_id_string) {
-    conversation_id = ObjectId.createFromHexString(conversation_id_string);
-    parent_node_id = ObjectId.createFromHexString(parent_node_id_string);
+    conversation_id = conversation_id_string;
+    parent_node_id = parent_node_id_string;
   } else {
     new_conversation = true;
   }
@@ -154,7 +155,7 @@ export const gpt35TurboSSEController = async (
     //-- Fetch conversation --//
     try {
       let response = await Mongo.conversations.findOne({
-        _id: conversation_id,
+        _id: conversation_id, // DEV - does this work?? or convert to ObjectId??
         user_db_id: user_db_id, //-- Security --//
       });
       if (response) {
@@ -187,8 +188,8 @@ export const gpt35TurboSSEController = async (
       throw new Error("fetching message_nodes error");
     }
     //-- Find root_node for existing conversations --//
-    let response = existing_conversation_message_nodes.find((message_node) =>
-      message_node._id.equals(conversation.root_node_id)
+    let response = existing_conversation_message_nodes.find(
+      (message_node) => message_node._id === conversation.root_node_id
     );
     if (response) {
       root_node = response; //-- Set root_node --//
@@ -201,9 +202,9 @@ export const gpt35TurboSSEController = async (
 
   //-- Create new message_node --//
   let new_message_node: IMessageNode = {
-    _id: new ObjectId(),
+    _id: new ObjectId().toHexString(),
     user_db_id: user_db_id,
-    created_at: new Date(),
+    created_at: new Date().toISOString(),
     conversation_id: conversation_id,
     parent_node_id: parent_node_id,
     children_node_ids: [],
@@ -219,8 +220,8 @@ export const gpt35TurboSSEController = async (
     });
     try {
       //-- Write conversation and root_node to database  --//
-      await Mongo.conversations.insertOne(conversation);
-      await Mongo.message_nodes.insertOne(root_node);
+      await Mongo.conversations.insertOne(mongoize_conversation(conversation));
+      await Mongo.message_nodes.insertOne(mongoize_message_node(root_node));
     } catch (err) {
       console.log(err);
       throw new Error("error storing new conversation and/or root_node");
@@ -252,7 +253,7 @@ export const gpt35TurboSSEController = async (
   ];
 
   //-- Build request_messages and request_message_node_ids. Count tokens. --//
-  const request_messages_node_ids: ObjectId[] = [];
+  const request_messages_node_ids: string[] = [];
   request_messages_node_ids.push(new_message_node._id);
   let request_tokens: number = 0;
   request_tokens += tiktoken(root_node.prompt.content);
@@ -261,12 +262,12 @@ export const gpt35TurboSSEController = async (
   //-- Create node_map for O(1) lookups inside the while loop --//
   let node_map: Record<string, IMessageNode> = {};
   existing_conversation_message_nodes.forEach((node) => {
-    node_map[node._id.toString()] = node;
+    node_map[node._id] = node;
   });
 
   //-- For new conversation, request messages is ready. For !new_conversation, add up to 3k tokens of messages. Newest node was already added, start from its parent. --//
   if (!new_conversation && new_message_node.parent_node_id) {
-    let node = node_map[new_message_node.parent_node_id.toString()];
+    let node = node_map[new_message_node.parent_node_id];
     let tokenLimitHit: boolean = false;
 
     //-- Stop when root node reached (parent id will be null) or token limit hit --//
@@ -410,7 +411,7 @@ export const gpt35TurboSSEController = async (
           //-- Build completion --//
           const completion_content = completion_chunks.join("");
           const completion_tokens = tiktoken(completion_content.toString());
-          const completion_created_at = new Date();
+          const completion_created_at = new Date().toISOString();
           const completion: IMessage = {
             author: model.model_api_name,
             model: model,

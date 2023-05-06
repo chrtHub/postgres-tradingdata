@@ -25,9 +25,9 @@ export function createConversation(
   schema_version: string | null
 ) {
   //-- Generate timestamp, _id values --//
-  let created_at = new Date();
-  const root_node_id = new ObjectId();
-  const conversation_id = new ObjectId();
+  let created_at = new Date().toISOString();
+  const root_node_id = new ObjectId().toHexString();
+  const conversation_id = new ObjectId().toHexString();
 
   //-- Use system_message as prompt --//
   const system_message: IMessage = {
