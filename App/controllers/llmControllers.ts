@@ -3,7 +3,6 @@ import { Mongo } from "../../index.js";
 
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
-import orderBy from "lodash/orderBy.js";
 
 //-- NPM Functions --//
 import produce from "immer";
@@ -13,11 +12,7 @@ import produce from "immer";
 //-- Types --//
 import { IRequestWithAuth } from "../../index.d";
 import { Response } from "express";
-import {
-  IConversation_Mongo,
-  IMessageNode,
-  IMessageNode_Mongo,
-} from "./chatson_types.js";
+import { IConversation_Mongo, IMessageNode_Mongo } from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 
 //-- ********************* List Conversations ********************* --//
