@@ -3,7 +3,7 @@ import { Mongo } from "../../index.js";
 
 //-- OpenAI Client --//
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
-import { tiktoken } from "./tiktoken.js";
+import { tiktoken } from "./chatson/tiktoken.js";
 
 //-- Node Functions --//
 import { Readable } from "stream";
@@ -30,14 +30,14 @@ import {
   IMessageNode,
   APIProviderNames,
   ModelDeveloperNames,
-} from "./chatson_types.js";
+} from "./chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
 import { getSHA256Hash } from "../utils/getSHA256Hash.js";
 import {
   mongoize_conversation,
   mongoize_message_node,
   demongoize_message_nodes,
-} from "./mongoize.js";
+} from "./chatson/mongoize.js";
 
 //-- Outline --//
 // (1) Receive:

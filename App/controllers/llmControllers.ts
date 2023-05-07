@@ -12,7 +12,10 @@ import produce from "immer";
 //-- Types --//
 import { IRequestWithAuth } from "../../index.d";
 import { Response } from "express";
-import { IConversation_Mongo, IMessageNode_Mongo } from "./chatson_types.js";
+import {
+  IConversation_Mongo,
+  IMessageNode_Mongo,
+} from "./chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
 
 //-- ********************* List Conversations ********************* --//

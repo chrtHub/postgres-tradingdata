@@ -46,7 +46,7 @@ import { IRequestWithAuth } from "./index.d";
 import {
   IConversation_Mongo,
   IMessageNode_Mongo,
-} from "./App/controllers/chatson_types.js";
+} from "./App/controllers/chatson/chatson_types.js";
 
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
