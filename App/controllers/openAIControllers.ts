@@ -15,7 +15,7 @@ import { createParser } from "eventsource-parser";
 
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
-import { createConversation } from "../utils/createConversation.js";
+import { createConversation } from "./chatson/createConversation.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -24,7 +24,7 @@ import {
   IAPIReqResMetadata,
   IMessage,
   IConversation,
-  IOpenAIChatCompletionRequestBody,
+  IChatCompletionRequestBody_OpenAI,
   ChatCompletionRequestMessage,
   CreateChatCompletionRequest,
   IMessageNode,
@@ -111,7 +111,7 @@ export const gpt35TurboSSEController = async (
 
   //-- Constants based on request --//
   const user_db_id = getUserDbId(req);
-  const body: IOpenAIChatCompletionRequestBody = req.body;
+  const body: IChatCompletionRequestBody_OpenAI = req.body;
   const { prompt } = body;
   const model = prompt.model;
 
@@ -138,7 +138,7 @@ export const gpt35TurboSSEController = async (
     }
   }
 
-  //-- New or existing conversation --//
+  //-- New or existing conversation? --//
   let conversation: IConversation;
   let existing_conversation_message_nodes: IMessageNode[] = [];
   let root_node: IMessageNode | null = null;
@@ -221,7 +221,7 @@ export const gpt35TurboSSEController = async (
   let new_message_node: IMessageNode = {
     _id: new ObjectId().toHexString(),
     user_db_id: user_db_id,
-    created_at: new Date().toISOString(),
+    created_at: new Date(new Date().getTime() + 1).toISOString(), //-- 1 ms in the future to avoid collision with root node --//
     conversation_id: conversation_id,
     parent_node_id: parent_node_id,
     children_node_ids: [],

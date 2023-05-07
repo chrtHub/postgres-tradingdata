@@ -6,7 +6,7 @@ import {
   IModel,
   ModelDeveloperNames,
   APIProviderNames,
-} from "../controllers/chatson/chatson_types.js";
+} from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 
 //-- Schemas --//
