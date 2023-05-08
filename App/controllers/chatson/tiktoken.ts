@@ -16,6 +16,7 @@ export function tiktoken(message: string): number {
     return tokens;
   } catch (err) {
     console.error("Tiktoken error: ", err);
+    console.error("Tiktoken message: ", message);
     return 0;
   }
 }
