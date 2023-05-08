@@ -12,10 +12,13 @@ const router = express.Router();
 //-- ********** Routes ********** --//
 //-- ***** ***** ***** ***** ***** --//
 router.get("/list_conversations/:skip", ctrl.listConversationsController);
-
 router.get(
   "/get_conversation_and_messages/:conversation_id",
   ctrl.getConversationAndMessagesController
+);
+router.delete(
+  "/delete_conversation_and_messages/:conversation_id",
+  ctrl.deleteConversationAndMessagesController
 );
 
 //-- ********** Export ********** --//

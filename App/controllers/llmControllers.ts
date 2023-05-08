@@ -100,3 +100,36 @@ export const getConversationAndMessagesController = async (
     return res.status(500).send("Error while fetching conversation list");
   }
 };
+
+//-- ********************* Get Conversation ********************* --//
+export const deleteConversationAndMessagesController = async (
+  req: IRequestWithAuth,
+  res: Response
+) => {
+  console.log("-- delete conversation --"); // DEV
+  //-- Get data from params --//
+  let { conversation_id } = req.params;
+  let user_db_id = getUserDbId(req);
+
+  try {
+    let msg_res = await Mongo.message_nodes.deleteMany({
+      user_db_id: user_db_id, //-- security --//
+      conversation_id: ObjectId.createFromHexString(conversation_id),
+    });
+    console.log(msg_res); // DEV
+
+    try {
+      let convo_res = await Mongo.conversations.deleteOne({
+        user_db_id: user_db_id, //-- security --//
+        _id: ObjectId.createFromHexString(conversation_id),
+      });
+      console.log(convo_res); // DEV
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send("Error while deleting conversation");
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Error while deleting messages");
+  }
+};
