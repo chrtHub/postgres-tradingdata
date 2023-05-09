@@ -67,10 +67,9 @@ export const listConversationsController = async (
       }
     }
 
-    // res.status(200).json(conversationsArray);
-    res.status(200).json([]); // DEV
-    //-- Execute bulk write --//
+    res.status(200).json(conversationsArray);
 
+    //-- Execute bulk write --//
     if (bulkUpdateOperations.length > 0) {
       try {
         console.log("bulk update conversation last_edited");
