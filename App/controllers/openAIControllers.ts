@@ -166,8 +166,7 @@ export const gpt35TurboSSEController = async (
         conversation = {
           _id: response._id.toHexString(),
           created_at: response.created_at.toISOString(),
-          last_edited:
-            response.last_edited?.toISOString() || new Date().toISOString(), //-- DEBT - for schema compatability --//
+          last_edited: response.last_edited?.toISOString(), // || new Date().toISOString(), //-- DEBT - for schema compatability --//
           api_provider_name: response.api_provider_name,
           model_developer_name: response.model_developer_name,
           user_db_id: response.user_db_id,
@@ -459,13 +458,14 @@ export const gpt35TurboSSEController = async (
           res.write(`id: completion\ndata: ${completion_string}\n\n`);
 
           //-- Update api_req_res_metadata --//
+          let api_req_res_metadata_date = new Date();
           api_req_res_metadata = {
             user: user_db_id,
             model_api_name: model.model_api_name,
             params: {
               temperature: temperature,
             },
-            created_at: new Date(),
+            created_at: api_req_res_metadata_date.toISOString(),
             request_tokens: request_tokens,
             completion_tokens: completion_tokens,
             total_tokens: request_tokens + completion_tokens,
@@ -483,7 +483,7 @@ export const gpt35TurboSSEController = async (
               },
               {
                 $addToSet: { api_req_res_metadata: api_req_res_metadata },
-                $set: { last_edited: new Date() },
+                $set: { last_edited: api_req_res_metadata_date },
               }
             );
           } catch (err) {

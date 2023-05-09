@@ -38,11 +38,49 @@ export const listConversationsController = async (
     let conversationsArray: IConversation_Mongo[] = await Mongo.conversations
       .find({ user_db_id: user_db_id }) //-- Security --//
       .skip(skipInt)
-      .limit(20) //-- arbitrary number --//
+      .limit(25) //-- arbitrary number --//
       .sort({ [sort_param]: -1 })
       .toArray();
 
-    return res.status(200).json(conversationsArray);
+    //-- Lazy Migration to add last_edited --//
+    const bulkUpdateOperations = [];
+    for (let conversation of conversationsArray) {
+      //-- If no 'last_edited', use time of last API req. --//
+      if (!conversation.last_edited) {
+        conversation.api_req_res_metadata.sort((a, b) => {
+          const timestampA = new Date(a.created_at).getTime();
+          const timestampB = new Date(b.created_at).getTime();
+          return timestampB - timestampA; //-- Descending --//
+        });
+        const newestMetadata = conversation.api_req_res_metadata[0];
+
+        //-- Update in conversationsArray --//
+        conversation.last_edited = new Date(newestMetadata.created_at);
+
+        //-- Add to bulkWrite array to update MongoDB --//
+        bulkUpdateOperations.push({
+          updateOne: {
+            filter: { _id: conversation._id },
+            update: { $set: { last_edited: conversation.last_edited } },
+          },
+        });
+      }
+    }
+
+    // res.status(200).json(conversationsArray);
+    res.status(200).json([]); // DEV
+    //-- Execute bulk write --//
+
+    if (bulkUpdateOperations.length > 0) {
+      try {
+        console.log("bulk update conversation last_edited");
+        await Mongo.conversations.bulkWrite(bulkUpdateOperations);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    return;
   } catch (error) {
     console.log(error);
     return res.status(500).send("Error while fetching conversations list");

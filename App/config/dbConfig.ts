@@ -8,6 +8,7 @@ const secretsManager_client = new SecretsManagerClient({
   region: "us-east-1",
 });
 
+//-- RDS PostgreSQL --//
 export const getRDSDatabaseConfigFromSecretsManager = async () => {
   let rdsDB_host, rdsDB_port, rdsDB_dbname, rdsDB_username, rdsDB_password;
 
@@ -44,6 +45,7 @@ export const getRDSDatabaseConfigFromSecretsManager = async () => {
   };
 };
 
+//-- DocumentDB MongoDB --//
 export const getDocDBDatabaseConfigFromSecretsManager = async () => {
   let docDB_host, docDB_port, docDB_dbname, docDB_username, docDB_password;
 
