@@ -24,17 +24,22 @@ export const listConversationsController = async (
   res: Response
 ) => {
   console.log("-- list conversations --"); // DEV
-  let { skip } = req.params;
+  let user_db_id = getUserDbId(req);
+
+  let { sort_by, skip } = req.params;
   let skipInt: number = parseInt(skip);
 
-  let user_db_id = getUserDbId(req);
+  let sort_param = "last_edited";
+  if (sort_by === "created_at") {
+    sort_param = "created_at";
+  }
 
   try {
     let conversationsArray: IConversation_Mongo[] = await Mongo.conversations
       .find({ user_db_id: user_db_id }) //-- Security --//
       .skip(skipInt)
-      .limit(42) //-- arbitrary number --//
-      .sort({ created_at: -1 })
+      .limit(20) //-- arbitrary number --//
+      .sort({ [sort_param]: -1 })
       .toArray();
 
     return res.status(200).json(conversationsArray);

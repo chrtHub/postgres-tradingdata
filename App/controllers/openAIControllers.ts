@@ -166,6 +166,8 @@ export const gpt35TurboSSEController = async (
         conversation = {
           _id: response._id.toHexString(),
           created_at: response.created_at.toISOString(),
+          last_edited:
+            response.last_edited?.toISOString() || new Date().toISOString(), //-- DEBT - for schema compatability --//
           api_provider_name: response.api_provider_name,
           model_developer_name: response.model_developer_name,
           user_db_id: response.user_db_id,
@@ -479,7 +481,10 @@ export const gpt35TurboSSEController = async (
                   new_message_node.conversation_id
                 ),
               },
-              { $addToSet: { api_req_res_metadata: api_req_res_metadata } }
+              {
+                $addToSet: { api_req_res_metadata: api_req_res_metadata },
+                $set: { last_edited: new Date() },
+              }
             );
           } catch (err) {
             console.log(err);

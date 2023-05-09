@@ -13,6 +13,7 @@ export function mongoize_conversation(__: IConversation): IConversation_Mongo {
   return {
     _id: ObjectId.createFromHexString(__._id), //-- Changed --//
     created_at: new Date(__.created_at), //-- Changed --//
+    last_edited: new Date(__.last_edited), //-- Changed --//
     api_provider_name: __.api_provider_name,
     model_developer_name: __.model_developer_name,
     user_db_id: __.user_db_id,
@@ -61,6 +62,7 @@ export function demongoize_conversation(
   return {
     _id: conversation._id.toHexString(), //-- Changed --//
     created_at: conversation.created_at.toISOString(), //-- Changed --//
+    last_edited: conversation.last_edited.toISOString(), //-- Changed --//
     api_provider_name: conversation.api_provider_name,
     model_developer_name: conversation.model_developer_name,
     user_db_id: conversation.user_db_id,

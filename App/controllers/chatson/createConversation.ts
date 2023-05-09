@@ -62,6 +62,7 @@ export function createConversation(
     root_node_id: root_node_id,
     schema_version: CURRENT_SCHEMA_VERSION,
     created_at: created_at,
+    last_edited: created_at,
     api_req_res_metadata: [],
     system_tags: [],
     user_tags: [],
