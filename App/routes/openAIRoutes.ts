@@ -16,11 +16,13 @@ router.post("/v1/chat/completions", (req: IRequestWithAuth, res: Response) => {
   //-- If request has `accept: text/event-stream` header, use the SSE controller --//
   const acceptHeader = req.get("Accept") || req.get("accept");
   if (acceptHeader && acceptHeader.includes("text/event-stream")) {
-    return ctrl.gpt35TurboSSEController(req, res);
+    return ctrl.chatCompletionsSSEController(req, res);
   } else {
     // return ctrl.gpt35TurboController(req, res);
   }
 });
+
+router.post("/create_title", ctrl.createTitleController);
 
 //-- ********** Export ********** --//
 export default router;

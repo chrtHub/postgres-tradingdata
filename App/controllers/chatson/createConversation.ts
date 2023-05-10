@@ -58,7 +58,7 @@ export function createConversation(
     api_provider_name: api_provider_name,
     model_developer_name: model_developer_name,
     user_db_id: user_db_id,
-    title: "",
+    title: "New conversation",
     root_node_id: root_node_id,
     schema_version: CURRENT_SCHEMA_VERSION,
     created_at: created_at,

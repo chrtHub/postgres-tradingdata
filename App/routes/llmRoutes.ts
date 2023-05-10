@@ -23,6 +23,7 @@ router.delete(
   "/delete_conversation_and_messages/:conversation_id",
   ctrl.deleteConversationAndMessagesController
 );
+router.post("/retitle", ctrl.retitle);
 
 //-- ********** Export ********** --//
 export default router;

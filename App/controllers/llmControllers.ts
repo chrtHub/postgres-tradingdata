@@ -175,3 +175,34 @@ export const deleteConversationAndMessagesController = async (
     return res.status(500).send("Error while deleting messages");
   }
 };
+
+//-- ********************* Retitle Conversation ********************* --//
+export const retitle = async (req: IRequestWithAuth, res: Response) => {
+  console.log("----- retitle -----");
+  //-- Get data from params --//
+  let { conversation_id, new_title } = req.body;
+  let user_db_id = getUserDbId(req);
+
+  if (new_title) {
+    //-- Enforce title max length 60 chars --//
+    if (new_title.length > 60) {
+      new_title = new_title.substring(0, 60) + "...";
+    }
+
+    try {
+      await Mongo.conversations.updateOne(
+        {
+          _id: ObjectId.createFromHexString(conversation_id),
+          user_db_id: user_db_id, //-- security --//
+        },
+        { $set: { title: new_title } }
+      );
+      return res.send(`title updated to: ${new_title}`);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("error setting title");
+    }
+  } else {
+    return res.send("no new_title received");
+  }
+};

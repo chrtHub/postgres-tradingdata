@@ -99,12 +99,22 @@ import {
 
 // (10) Close the SSE connection to the client.
 
-//-- ***** ***** ***** GPT-3.5 Turbo SSE ***** ***** ***** //
-export const gpt35TurboSSEController = async (
+//-- ***** ***** ***** Titles ***** ***** ***** --//
+export const createTitleController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  console.log("----- gpt35TurboSSEController -----"); // DEV
+  console.log("----- titlesController -----");
+  // TODO
+  res.send("new title!");
+};
+
+//-- ***** ***** ***** Chat Completions SSE ***** ***** ***** --//
+export const chatCompletionsSSEController = async (
+  req: IRequestWithAuth,
+  res: Response
+) => {
+  console.log("----- chatCompletionsSSEController -----"); // DEV
   //-- Cosntants based on route --//
   const api_provider_name: APIProviderNames = "openai";
   const model_developer_name: ModelDeveloperNames = "openai";
@@ -166,7 +176,7 @@ export const gpt35TurboSSEController = async (
         conversation = {
           _id: response._id.toHexString(),
           created_at: response.created_at.toISOString(),
-          last_edited: response.last_edited?.toISOString(), // || new Date().toISOString(), //-- DEBT - for schema compatability --//
+          last_edited: response.last_edited?.toISOString(),
           api_provider_name: response.api_provider_name,
           model_developer_name: response.model_developer_name,
           user_db_id: response.user_db_id,
