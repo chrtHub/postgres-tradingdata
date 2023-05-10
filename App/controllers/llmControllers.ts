@@ -154,18 +154,18 @@ export const deleteConversationAndMessagesController = async (
   let user_db_id = getUserDbId(req);
 
   try {
-    let msg_res = await Mongo.message_nodes.deleteMany({
+    await Mongo.message_nodes.deleteMany({
       user_db_id: user_db_id, //-- security --//
       conversation_id: ObjectId.createFromHexString(conversation_id),
     });
-    console.log(msg_res); // DEV
-
     try {
-      let convo_res = await Mongo.conversations.deleteOne({
+      await Mongo.conversations.deleteOne({
         user_db_id: user_db_id, //-- security --//
         _id: ObjectId.createFromHexString(conversation_id),
       });
-      console.log(convo_res); // DEV
+      return res
+        .status(200)
+        .send(`deleted ${conversation_id} and its messages`);
     } catch (error) {
       console.log(error);
       return res.status(500).send("Error while deleting conversation");
