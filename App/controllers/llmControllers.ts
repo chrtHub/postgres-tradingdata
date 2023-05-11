@@ -57,6 +57,7 @@ export const listConversationsController = async (
         //-- Update in conversationsArray --//
         conversation.last_edited = new Date(newestMetadata.created_at);
 
+        console.log(conversation.last_edited); // DEV
         //-- Add to bulkWrite array to update MongoDB --//
         bulkUpdateOperations.push({
           updateOne: {
