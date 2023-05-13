@@ -164,6 +164,10 @@ export const createTitleController = async (
       res.status(500).send("Error calling LLM to create title");
     }
 
+    //-- Clean up --//
+    //-- Remove quotation marks from start and end --//
+    new_title = new_title.replace(/^"|"$/g, "");
+
     //-- Enforce title max length 60 chars. If char 60 is whitespace, remove it. --//
     if (new_title.length > 60) {
       new_title = new_title.substring(0, 60).trim();
