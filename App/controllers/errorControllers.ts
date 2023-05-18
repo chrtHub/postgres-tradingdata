@@ -16,6 +16,9 @@ export const backend500Error = async (req: IRequestWithAuth, res: Response) => {
   try {
     throw new Error();
   } catch (e) {
-    res.status(500).send("hello, this is a test backend 500 error");
+    // res.status(500).send("hello, this is a test backend 500 error");
+    res
+      .status(500)
+      .json({ message: "hello, this is a test backend 500 error" });
   }
 };
