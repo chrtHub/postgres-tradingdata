@@ -108,9 +108,11 @@ export const createTitleController = async (
   res: Response
 ) => {
   console.log("----- createTitle -----");
+
   //-- Get data from params --//
   let { conversation_id } = req.body;
   let user_db_id = getUserDbId(req);
+
   let new_title: string = "TODO - new title";
 
   try {
