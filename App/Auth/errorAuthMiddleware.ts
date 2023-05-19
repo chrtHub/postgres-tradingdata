@@ -8,8 +8,9 @@ export const errorAuthMiddleware = async (
 ) => {
   let payload = req?.auth?.payload;
 
-  return res.status(401).json({
-    error:
-      "Hello, this is an errorAuthMiddleware test error (JWT was received and valid)",
-  });
+  return res
+    .status(401)
+    .send(
+      "Hello, this is an errorAuthMiddleware test error (JWT was received and valid)"
+    );
 };
