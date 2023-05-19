@@ -22,9 +22,10 @@ export const journalAuthMiddleware = async (
     res.append("CHRT-JWT-permission-write_journal", "verified");
     next();
   } else {
-    return res.status(401).json({
-      error:
-        "JWT received and valid, but did not find 'read:journal' && 'write:journal' permissions",
-    });
+    return res
+      .status(401)
+      .send(
+        "JWT received and valid, but did not find 'read:journal' && 'write:journal' permissions"
+      );
   }
 };

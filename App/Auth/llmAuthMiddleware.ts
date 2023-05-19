@@ -19,8 +19,8 @@ export const llmAuthMiddleware = async (
     res.append("CHRT-JWT-permission-chat-llm", "verified");
     next();
   } else {
-    return res.status(401).json({
-      error: "JWT received and valid, but did not find 'chat:llm' permission",
-    });
+    return res
+      .status(401)
+      .send("JWT received and valid, but did not find 'chat:llm' permission");
   }
 };

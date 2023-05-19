@@ -23,7 +23,6 @@ export const listConversationsController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  console.log("-- list conversations --"); // DEV
   let user_db_id = getUserDbId(req);
 
   let { sort_by, skip } = req.params;
@@ -57,7 +56,6 @@ export const listConversationsController = async (
         //-- Update in conversationsArray --//
         conversation.last_edited = new Date(newestMetadata.created_at);
 
-        console.log(conversation.last_edited); // DEV
         //-- Add to bulkWrite array to update MongoDB --//
         bulkUpdateOperations.push({
           updateOne: {
@@ -92,7 +90,6 @@ export const getConversationAndMessagesController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  console.log("-- get conversation --"); // DEV
   //-- Get data from params --//
   let { conversation_id } = req.params;
   let user_db_id = getUserDbId(req);
@@ -140,7 +137,9 @@ export const getConversationAndMessagesController = async (
     }
   } catch (error) {
     console.log(error);
-    return res.status(500).send("Error while fetching conversation list");
+    return res
+      .status(500)
+      .send("Error while fetching conversation and messages");
   }
 };
 
@@ -149,7 +148,6 @@ export const deleteConversationAndMessagesController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  console.log("-- delete conversation --"); // DEV
   //-- Get data from params --//
   let { conversation_id } = req.params;
   let user_db_id = getUserDbId(req);
@@ -173,7 +171,7 @@ export const deleteConversationAndMessagesController = async (
     }
   } catch (error) {
     console.log(error);
-    return res.status(500).send("Error while deleting messages");
+    return res.status(500).send("error deleting conversation and messages");
   }
 };
 
@@ -198,12 +196,12 @@ export const retitle = async (req: IRequestWithAuth, res: Response) => {
         },
         { $set: { title: new_title } }
       );
-      return res.send(`title updated to: ${new_title}`);
+      return res.status(200).send(`title updated to: ${new_title}`);
     } catch (err) {
       console.log(err);
       return res.status(500).send("error setting title");
     }
   } else {
-    return res.send("no new_title received");
+    return res.status(500).send("no new_title received");
   }
 };

@@ -7,19 +7,13 @@ export const backend400Error = async (req: IRequestWithAuth, res: Response) => {
   try {
     throw new Error();
   } catch (e) {
-    // TODO - pick either send, json, or other strategy to standardize for error handling
     res.status(400).send("hello, this is a test backend 400 error");
-    // res
-    //   .status(400)
-    //   .json({ message: "hello, this is a test backend 400 error" });
   }
 };
 
 //-- 401 Error --//
 export const backend401Error = async (req: IRequestWithAuth, res: Response) => {
-  res
-    .status(200)
-    .send("the errorAuthMiddleware was expected to fail but did not");
+  res.status(200).send("errorAuthMiddleware was expected to fail but did not");
 };
 
 //-- 403 Error --//
