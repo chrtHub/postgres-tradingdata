@@ -227,11 +227,7 @@ export const chatCompletionsSSEController = async (
     const body: IChatCompletionRequestBody_OpenAI = req.body;
     const { prompt } = body;
     const model = prompt.model;
-    const start = performance.now(); // DEV
     const incomingPromptTokens = tiktoken(prompt.content);
-    const end = performance.now(); // DEV
-    console.log(`incoming prompt tiktoken time: ${end - start}ms`); // DEV
-    console.log(`incomingPromptTokens: ${incomingPromptTokens}`); // DEV
 
     //-- Check token count against token limit --//
     const tokenLimit = TOKEN_LIMITS[prompt.model.model_api_name] - BUFFER;
@@ -649,7 +645,15 @@ export const chatCompletionsSSEController = async (
       res.end();
     }
   } catch (err: any) {
-    res.status(400).send(err?.message || "unspecified error");
-    console.log(err);
+    if (typeof err.message === "string") {
+      // res.status(400).send(err.message);
+      res.status(418).send("hello");
+      console.log("foo"); // DEV
+      console.log(err.message);
+    } else {
+      res.status(400).send("world");
+      console.log("bar"); // DEV
+      console.log(err);
+    }
   }
 };
