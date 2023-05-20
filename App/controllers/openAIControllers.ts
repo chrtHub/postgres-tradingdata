@@ -32,6 +32,7 @@ import {
   APIProviderNames,
   ModelDeveloperNames,
   ModelAPINames,
+  TokenLimit,
 } from "./chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
 import { getSHA256Hash } from "../utils/getSHA256Hash.js";
@@ -199,18 +200,15 @@ export const createTitleController = async (
 };
 
 //-- Token Limit per model --//
-type TokenLimit = {
-  [key in ModelAPINames]: number;
-};
+const BUFFER: number = 96;
 const TOKEN_LIMITS: TokenLimit = {
-  "gpt-3.5-turbo": 4096,
-  "gpt-4": 4096,
+  "gpt-3.5-turbo": 4096 - BUFFER,
+  "gpt-4": 4096 - BUFFER,
   "gpt-4-32k": 0,
   claude: 0,
   "jurrasic-2": 0,
   "amazon-titan": 0,
 };
-const BUFFER = 96;
 
 //-- ***** ***** ***** Chat Completions SSE ***** ***** ***** --//
 export const chatCompletionsSSEController = async (
@@ -230,10 +228,18 @@ export const chatCompletionsSSEController = async (
     const incomingPromptTokens = tiktoken(prompt.content);
 
     //-- Check token count against token limit --//
-    const tokenLimit = TOKEN_LIMITS[prompt.model.model_api_name] - BUFFER;
+    const tokenLimit = TOKEN_LIMITS[prompt.model.model_api_name];
     if (incomingPromptTokens > tokenLimit) {
-      throw new Error(
-        `prompt too large: (${incomingPromptTokens} tokens vs. limit of ${tokenLimit})`
+      return (
+        res
+          // .status(400)
+          // .json({
+          //   errorMessage: `Prompt too long: (${incomingPromptTokens} tokens (Limit ${tokenLimit})`,
+          // });
+          .status(400)
+          .send(
+            `Prompt too long: (${incomingPromptTokens} tokens (Limit ${tokenLimit})`
+          )
       );
     }
 
@@ -646,13 +652,10 @@ export const chatCompletionsSSEController = async (
     }
   } catch (err: any) {
     if (typeof err.message === "string") {
-      // res.status(400).send(err.message);
-      res.status(418).send("hello");
-      console.log("foo"); // DEV
-      console.log(err.message);
+      res.status(400).send(err.message);
+      console.log(err);
     } else {
-      res.status(400).send("world");
-      console.log("bar"); // DEV
+      res.status(400);
       console.log(err);
     }
   }
