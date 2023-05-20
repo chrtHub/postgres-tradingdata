@@ -230,17 +230,14 @@ export const chatCompletionsSSEController = async (
     //-- Check token count against token limit --//
     const tokenLimit = TOKEN_LIMITS[prompt.model.model_api_name];
     if (incomingPromptTokens > tokenLimit) {
-      return (
-        res
-          // .status(400)
-          // .json({
-          //   errorMessage: `Prompt too long: (${incomingPromptTokens} tokens (Limit ${tokenLimit})`,
-          // });
-          .status(400)
-          .send(
-            `Prompt too long: (${incomingPromptTokens} tokens (Limit ${tokenLimit})`
-          )
+      console.log(
+        `Prompt was too long: ${incomingPromptTokens} tokens (Limit ${tokenLimit})`
       );
+      return res
+        .status(400)
+        .send(
+          `Prompt was too long: ${incomingPromptTokens} tokens (Limit ${tokenLimit})`
+        );
     }
 
     //-- Variables for on new/existing conversation --//
