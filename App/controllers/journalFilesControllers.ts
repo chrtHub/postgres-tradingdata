@@ -87,6 +87,7 @@ export const listFiles = async (req: IRequestWithAuth, res: Response) => {
       if (x.Key && x.Size) {
         const [user_db_id, brokerage = "", file_uuid_plus_filename = ""] =
           x.Key.split("/");
+        // TODO - fix the filename such that an underscored after the one separating the uuid and the filename doesn't stop the full name from getting to the user
         let [file_uuid, filename] = file_uuid_plus_filename.split("_");
 
         //-- Only include filename and brokerage that aren't "" (those are for the S3 "folders") --//
@@ -161,6 +162,9 @@ export const deleteFile = async (req: IRequestWithAuth, res: Response) => {
   try {
     //-- Delete data from Postgres --//
     await knex("tradingdata02").where({ file_uuid: file_uuid }).del();
+
+    // TODO - if no data exists for the file, continue with deleting the file
+    // // probably use two separate try-catch blocks?
 
     //-- Delete file from S3 --//
     await s3_client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
