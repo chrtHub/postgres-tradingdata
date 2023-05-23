@@ -208,6 +208,7 @@ const TOKEN_LIMITS: TokenLimit = {
   claude: 0,
   "jurrasic-2": 0,
   "amazon-titan": 0,
+  "google-palm-2": 0,
 };
 
 //-- ***** ***** ***** Chat Completions SSE ***** ***** ***** --//

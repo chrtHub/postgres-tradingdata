@@ -17,6 +17,7 @@ import {
   IMessageNode_Mongo,
 } from "./chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
+class CustomError extends Error {}
 
 //-- ********************* List Conversations ********************* --//
 export const listConversationsController = async (
@@ -71,7 +72,7 @@ export const listConversationsController = async (
     //-- Execute bulk write --//
     if (bulkUpdateOperations.length > 0) {
       try {
-        console.log("bulk update conversation last_edited");
+        console.log("bulk update conversation last_edited"); // DEV
         await Mongo.conversations.bulkWrite(bulkUpdateOperations);
       } catch (err) {
         console.log(err);
@@ -80,12 +81,16 @@ export const listConversationsController = async (
 
     return;
   } catch (error) {
-    console.log(error);
-    return res.status(500).send("Error while fetching conversations list");
+    if (error instanceof CustomError) {
+      return res.status(400).send(error.message);
+    } else {
+      console.log(error);
+      return res.status(500).send("Error while fetching conversations list");
+    }
   }
 };
 
-//-- ********************* Get Conversation ********************* --//
+//-- **************** Get Conversation and Messages **************** --//
 export const getConversationAndMessagesController = async (
   req: IRequestWithAuth,
   res: Response
@@ -94,7 +99,7 @@ export const getConversationAndMessagesController = async (
   let { conversation_id } = req.params;
   let user_db_id = getUserDbId(req);
 
-  //-- Fetch conversation --//
+  //--Fetch conversation --//
   try {
     let conversation: IConversation_Mongo | null =
       await Mongo.conversations.findOne({
@@ -103,7 +108,6 @@ export const getConversationAndMessagesController = async (
       });
 
     if (conversation) {
-      //-- Fetch messages --//
       try {
         let message_nodes: IMessageNode_Mongo[] = await Mongo.message_nodes
           .find({
@@ -111,6 +115,7 @@ export const getConversationAndMessagesController = async (
             conversation_id: ObjectId.createFromHexString(conversation_id),
           })
           .toArray();
+
         if (message_nodes) {
           //-- Redact system message --//
           message_nodes = produce(message_nodes, (draft) => {
@@ -125,21 +130,24 @@ export const getConversationAndMessagesController = async (
           return res.status(200).json({ conversation, message_nodes });
           //----//
         } else {
-          throw new Error(
-            `no message_nodes found for conversation_id: ${conversation_id}`
-          );
+          return res
+            .status(400)
+            .send(`No messages found for conversation_id: ${conversation_id}`);
         }
       } catch (err) {
         console.log(err);
-        throw new Error("Error while fetching messages");
+        return res.status(500).send("Error while fetching messages");
       }
-      //
+    } else {
+      return res
+        .status(400)
+        .send(
+          "Conversation unavailable - either it doesn't exist or you lack permission to view it"
+        );
     }
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .send("Error while fetching conversation and messages");
+    return res.status(500).send("Error while fetching conversation");
   }
 };
 
