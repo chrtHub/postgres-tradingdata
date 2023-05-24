@@ -48,6 +48,7 @@ import {
   IConversation_Mongo,
   IMessageNode_Mongo,
 } from "./App/controllers/chatson/chatson_types.js";
+import { AxiosError } from "axios";
 
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
@@ -236,14 +237,6 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
 
-//-- Emits 'Request' with shape 'IRequestWithAuth' by adding: --//
-//-- Request.auth.header, Request.auth.payload --//
-const jwtCheck = auth({
-  audience: "https://chrt.com",
-  issuerBaseURL: "https://chrt-prod.us.auth0.com/",
-  tokenSigningAlg: "RS256",
-});
-
 //-- Dev utility for logging token --//
 // app.use((req, res, next) => {
 //   let { header, payload, token } = req.auth;
@@ -252,6 +245,14 @@ const jwtCheck = auth({
 //   console.log("token: " + token);
 //   next();
 // });
+
+//-- Emits 'Request' with shape 'IRequestWithAuth' by adding: --//
+//-- Request.auth.header, Request.auth.payload --//
+const jwtCheck = auth({
+  audience: "https://chrt.com",
+  issuerBaseURL: "https://chrt-prod.us.auth0.com/",
+  tokenSigningAlg: "RS256",
+});
 
 //-- *************** Routes w/ authentication *************** --//
 //-- Routes --//
@@ -267,11 +268,17 @@ app.use("/error", jwtCheck, errorRoutes);
 //-- *************** Error Handler *************** --//
 /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
 const errorHandler = (err: any, res: Response) => {
+  //-- DEV --//
+  if (err instanceof AxiosError) {
+    const axiosError = err as AxiosError;
+    console.log("AxiosError: ", err);
+  }
+  //----//
   if (err.name === "UnauthorizedError") {
     return res
       .status(401)
       .send(
-        "Authentication failed OR resource not found beep boop. Everything except '/', '/spec', and '/docs' requires a Bearer token."
+        "Authentication failed OR resource not found beep boop. Everything except '/' and '/spec.json' requires a Bearer token."
       );
   } else {
     return res.status(500).send("Internal server error beep boop");
