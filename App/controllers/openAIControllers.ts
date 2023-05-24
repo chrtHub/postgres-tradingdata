@@ -165,7 +165,7 @@ export const createTitleController = async (
       new_title = chat_completion.data.choices[0].message.content;
     } catch (err) {
       console.log(err);
-      res.status(500).send("Error calling LLM to create title");
+      return res.status(500).send("Error calling LLM to create title");
     }
 
     //-- Clean up --//
@@ -195,7 +195,7 @@ export const createTitleController = async (
     }
   } catch (err) {
     console.log(err);
-    res.status(500).send("Error fetching most recent message node");
+    return res.status(500).send("Error fetching most recent message node");
   }
 };
 
