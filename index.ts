@@ -124,7 +124,7 @@ const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
     username: docDB_username,
     password: docDB_password,
   },
-  retryWrites: false,
+  retryWrites: false, //-- Works here, by don't declare retryWrites: false when using Mongo Shell --//
   directConnection: true,
 });
 try {
@@ -146,7 +146,7 @@ const Mongo = {
       "message_nodes"
     ),
 };
-export { Mongo };
+export { Mongo, MongoClient };
 
 //-- OpenAI --//
 let OPENAI_API_KEY: string = await getOpenAI_API_Key();

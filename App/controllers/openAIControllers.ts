@@ -1,5 +1,5 @@
 //-- MongoDB Client --//
-import { Mongo } from "../../index.js";
+import { Mongo, MongoClient } from "../../index.js";
 
 //-- OpenAI Client --//
 import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
@@ -386,8 +386,6 @@ export const chatCompletionsSSEController = async (
       });
     }
 
-    //-- DEV - SPOT WHERE MONGO WRITES WERE REMOVED --//
-
     //-- Start request_messages with system message + prompt --//
     let request_messages: ChatCompletionRequestMessage[] = [
       {
@@ -594,83 +592,27 @@ export const chatCompletionsSSEController = async (
                 request_messages_node_ids: request_messages_node_ids,
               };
 
+              //-- Start MongoClient session to use for transactions --//
+              const session = MongoClient.startSession({
+                causalConsistency: false,
+              });
+
               //-- For new conversation  --//
               if (new_conversation) {
-                // // TODO - transaction(conversation + root_node + new_message_node + api_req_res_metadata)
                 try {
-                  //-- Insert conversation --//
-                  await Mongo.conversations.insertOne(
-                    mongoize_conversation(conversation)
-                  );
-                  //-- Insert root_node --//
-                  await Mongo.message_nodes.insertOne(
-                    mongoize_message_node(root_node!) //-- Non-Null Assertion --//
-                  );
-                  //-- Update api_req_res_metadata --//
-                  await Mongo.conversations.updateOne(
-                    {
-                      _id: ObjectId.createFromHexString(
-                        new_message_node.conversation_id
-                      ),
-                    },
-                    {
-                      $addToSet: {
-                        api_req_res_metadata: api_req_res_metadata,
-                      },
-                      $set: { last_edited: api_req_res_metadata_date },
-                    }
-                  );
-                } catch (err) {
-                  return res
-                    .status(500)
-                    .send(
-                      "error storing new conversation and/or root message node, please try again"
-                    );
-                }
-              } //-- Else for existing conversation --//
-              // // TODO - transaction(update parent node's children array +  add new_message_node + api_req_res_metadata)
-              else {
-                try {
-                  //-- Write message_node's _id to parent_node's children array --//
-                  await Mongo.message_nodes.updateOne(
-                    { _id: ObjectId.createFromHexString(parent_node_id!) }, //-- Non-Null Assertion --//
-                    { $addToSet: { children_node_ids: new_message_node._id } }
-                  );
-                } catch (err) {
-                  return res
-                    .status(500)
-                    .send(
-                      "error updating new message's parent node, please try again"
-                    );
-                }
-              }
+                  console.log("foo"); // DEV
 
-              //-- Write new_message_node to database --//
-              try {
-                await retry(
-                  async () => {
-                    await Mongo.message_nodes.insertOne(
-                      mongoize_message_node(new_message_node)
-                    );
-                  },
-                  {
-                    //-- Retries @ 1s, 3s, 7s --//
-                    retries: 3,
-                    minTimeout: 1000,
-                    factor: 2,
-                  }
-                );
-              } catch (err) {
-                console.log(err);
-                throw new ErrorForClient(
-                  "error storing new prompt and completion, please refresh and try again"
-                );
-              }
+                  //-- Start Transaction --//
+                  session.startTransaction();
 
-              //-- Write api_req_res_metadata as update to conversation --//
-              try {
-                await retry(
-                  async () => {
+                  const transact = async () => {
+                    //-- Insert conversation --//
+                    await Mongo.conversations.insertOne(
+                      mongoize_conversation(conversation),
+                      { session }
+                    );
+
+                    //-- Update api_req_res_metadata --//
                     await Mongo.conversations.updateOne(
                       {
                         _id: ObjectId.createFromHexString(
@@ -682,19 +624,89 @@ export const chatCompletionsSSEController = async (
                           api_req_res_metadata: api_req_res_metadata,
                         },
                         $set: { last_edited: api_req_res_metadata_date },
-                      }
+                      },
+                      { session }
                     );
-                  },
-                  {
-                    //-- Retries @ 1s, 3s, 7s --//
-                    retries: 3,
-                    minTimeout: 1000,
-                    factor: 2,
-                  }
-                );
-              } catch (err) {
-                console.log(err);
-                throw new ErrorForClient("error updating converation stats");
+
+                    //-- Insert root_node --//
+                    await Mongo.message_nodes.insertOne(
+                      mongoize_message_node(root_node!), //-- Non-Null Assertion --//
+                      { session }
+                    );
+                  };
+                  await transact();
+
+                  //-- Commit transaction --//
+                  await session.commitTransaction();
+
+                  console.log("just committed transaction"); // DEV
+                } catch (err) {
+                  console.log("bar"); // DEV
+                  //-- Abort transaction --//
+                  session.abortTransaction();
+                  throw new ErrorForClient(
+                    "error saving new messages, please submit the prompt again"
+                  );
+                } finally {
+                  //-- End MongoClient session --//
+                  console.log("baz"); // DEV
+                  // session.endSession();
+                }
+              } else {
+                //-- Else for existing conversation --//
+                try {
+                  //-- Start Transaction --//
+                  session.startTransaction();
+                  await retry(
+                    async () => {
+                      console.log("zoo"); // DEV
+                      //-- Write message_node's _id to parent_node's children array --//
+                      await Mongo.message_nodes.updateOne(
+                        { _id: ObjectId.createFromHexString(parent_node_id!) }, //-- Non-Null Assertion --//
+                        {
+                          $addToSet: {
+                            children_node_ids: new_message_node._id,
+                          },
+                        }
+                      );
+                      //-- Write new_message_node to database --//
+                      await Mongo.message_nodes.insertOne(
+                        mongoize_message_node(new_message_node)
+                      );
+                      //-- Write api_req_res_metadata as update to conversation --//
+                      await Mongo.conversations.updateOne(
+                        {
+                          _id: ObjectId.createFromHexString(
+                            new_message_node.conversation_id
+                          ),
+                        },
+                        {
+                          $addToSet: {
+                            api_req_res_metadata: api_req_res_metadata,
+                          },
+                          $set: { last_edited: api_req_res_metadata_date },
+                        }
+                      );
+                    },
+                    {
+                      //-- Retries @ 1s, 3s, 7s --//
+                      retries: 3,
+                      minTimeout: 1000,
+                      factor: 2,
+                    }
+                  );
+                } catch (err) {
+                  console.log("zar"); // DEV
+                  //-- Abort transaction, end session --//
+                  session.abortTransaction();
+                  throw new ErrorForClient(
+                    "error saving new messages, please submit the prompt again"
+                  );
+                } finally {
+                  //-- End MongoClient session --//
+                  console.log("zaz"); // DEV
+                  session.endSession();
+                }
               }
 
               //-- Send api_req_res_metatdata to client --//
@@ -704,17 +716,14 @@ export const chatCompletionsSSEController = async (
                 `id: api_req_res_metadata\ndata: ${api_req_res_metadata_string}\n\n`
               );
 
-              //-- Close connection --//
+              //-- Close connection (end of event.data === "[DONE]" section) --//
               res.end();
-              //-- End of event.data === "[DONE]"--//
             }
           } else if (event.type === "reconnect-interval") {
-            // TODO - how to handle this? is a retry needed?
-            console.log("%d milliseconds reconnect interval", event.value);
+            console.log("%d milliseconds reconnect interval", event.value); // TODO - how to handle this? is a retry needed?
           }
-          //-- onParse Catch --//
         } catch (err) {
-          //-- Send client error or just console.log it --//
+          //-- onParse Catch --//
           if (err instanceof ErrorForClient) {
             res.write(
               `id: error\ndata: ${JSON.stringify({
@@ -723,9 +732,11 @@ export const chatCompletionsSSEController = async (
             );
           }
         }
-      }
-      //-- Axios Send Request Catch --//
+      } //-- end of onParse function --//
+      //----//
     } catch (err) {
+      //-- Axios Send Request Catch --//
+      // DEV - perhaps this one can be non res.write??
       res.write(
         `id: error\ndata: ${JSON.stringify({
           message: `LLM request failed, please try again`,
