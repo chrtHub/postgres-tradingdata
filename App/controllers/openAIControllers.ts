@@ -324,10 +324,15 @@ export const chatCompletionsSSEController = async (
       //-- Fetch existing_conversation_nodes --//
       try {
         let response = await Mongo.message_nodes
-          .find({
-            conversation_id: ObjectId.createFromHexString(conversation_id),
-            user_db_id: user_db_id, //-- Security --//
-          })
+          .find(
+            {
+              conversation_id: ObjectId.createFromHexString(conversation_id),
+              user_db_id: user_db_id, //-- Security --//
+            }
+            //-- NOTE - tradeoffs here. Currently choosing (a). --//
+            //-- (a) always fetching all message nodes incurs perfomance cost for fetching large conversations --//
+            //-- (b) compound index on {conversation_id: 1, created_at: -1} with numerical limit per fetch results in potentially missing conversation context for a highly-branched conversation which needs to have a message with an old created_at that puts it beyond the fetch limit--//
+          )
           .toArray();
         if (response) {
           //-- set existing_conversation_message_nodes --//
@@ -379,33 +384,9 @@ export const chatCompletionsSSEController = async (
       root_node = produce(root_node, (draft) => {
         draft.children_node_ids.push(new_message_node._id);
       });
-      try {
-        //-- Write conversation and root_node to database  --//
-        await Mongo.conversations.insertOne(
-          mongoize_conversation(conversation)
-        );
-        await Mongo.message_nodes.insertOne(mongoize_message_node(root_node));
-      } catch (err) {
-        return res
-          .status(500)
-          .send(
-            "error storing new conversation and/or root message node, please try again"
-          );
-      }
-    } else {
-      //-- For existing conversation --//
-      try {
-        //-- Write message_node's _id to parent_node's children array --//
-        await Mongo.message_nodes.updateOne(
-          { _id: ObjectId.createFromHexString(parent_node_id) },
-          { $addToSet: { children_node_ids: new_message_node._id } }
-        );
-      } catch (err) {
-        return res
-          .status(500)
-          .send("error updating new message's parent node, please try again");
-      }
     }
+
+    //-- DEV - SPOT WHERE MONGO WRITES WERE REMOVED --//
 
     //-- Start request_messages with system message + prompt --//
     let request_messages: ChatCompletionRequestMessage[] = [
@@ -588,10 +569,81 @@ export const chatCompletionsSSEController = async (
                 content: completion_content,
               };
 
+              //-- Send completion to client --//
+              const completion_string = JSON.stringify(completion);
+              res.write(`id: completion\ndata: ${completion_string}\n\n`);
+
               //-- Update new_message_node by adding completion --//
               new_message_node = produce(new_message_node, (draft) => {
                 draft.completion = completion;
               });
+
+              //-- Update api_req_res_metadata --//
+              let api_req_res_metadata_date = new Date();
+              api_req_res_metadata = {
+                user: user_db_id,
+                model_api_name: model.model_api_name,
+                params: {
+                  temperature: temperature,
+                },
+                created_at: api_req_res_metadata_date.toISOString(),
+                request_tokens: request_tokens,
+                completion_tokens: completion_tokens,
+                total_tokens: request_tokens + completion_tokens,
+                node_id: new_message_node._id,
+                request_messages_node_ids: request_messages_node_ids,
+              };
+
+              //-- For new conversation  --//
+              if (new_conversation) {
+                // // TODO - transaction(conversation + root_node + new_message_node + api_req_res_metadata)
+                try {
+                  //-- Insert conversation --//
+                  await Mongo.conversations.insertOne(
+                    mongoize_conversation(conversation)
+                  );
+                  //-- Insert root_node --//
+                  await Mongo.message_nodes.insertOne(
+                    mongoize_message_node(root_node!) //-- Non-Null Assertion --//
+                  );
+                  //-- Update api_req_res_metadata --//
+                  await Mongo.conversations.updateOne(
+                    {
+                      _id: ObjectId.createFromHexString(
+                        new_message_node.conversation_id
+                      ),
+                    },
+                    {
+                      $addToSet: {
+                        api_req_res_metadata: api_req_res_metadata,
+                      },
+                      $set: { last_edited: api_req_res_metadata_date },
+                    }
+                  );
+                } catch (err) {
+                  return res
+                    .status(500)
+                    .send(
+                      "error storing new conversation and/or root message node, please try again"
+                    );
+                }
+              } //-- Else for existing conversation --//
+              // // TODO - transaction(update parent node's children array +  add new_message_node + api_req_res_metadata)
+              else {
+                try {
+                  //-- Write message_node's _id to parent_node's children array --//
+                  await Mongo.message_nodes.updateOne(
+                    { _id: ObjectId.createFromHexString(parent_node_id!) }, //-- Non-Null Assertion --//
+                    { $addToSet: { children_node_ids: new_message_node._id } }
+                  );
+                } catch (err) {
+                  return res
+                    .status(500)
+                    .send(
+                      "error updating new message's parent node, please try again"
+                    );
+                }
+              }
 
               //-- Write new_message_node to database --//
               try {
@@ -614,26 +666,6 @@ export const chatCompletionsSSEController = async (
                   "error storing new prompt and completion, please refresh and try again"
                 );
               }
-
-              //-- Send completion to client --//
-              const completion_string = JSON.stringify(completion);
-              res.write(`id: completion\ndata: ${completion_string}\n\n`);
-
-              //-- Update api_req_res_metadata --//
-              let api_req_res_metadata_date = new Date();
-              api_req_res_metadata = {
-                user: user_db_id,
-                model_api_name: model.model_api_name,
-                params: {
-                  temperature: temperature,
-                },
-                created_at: api_req_res_metadata_date.toISOString(),
-                request_tokens: request_tokens,
-                completion_tokens: completion_tokens,
-                total_tokens: request_tokens + completion_tokens,
-                node_id: new_message_node._id,
-                request_messages_node_ids: request_messages_node_ids,
-              };
 
               //-- Write api_req_res_metadata as update to conversation --//
               try {
@@ -674,9 +706,10 @@ export const chatCompletionsSSEController = async (
 
               //-- Close connection --//
               res.end();
+              //-- End of event.data === "[DONE]"--//
             }
-            //----//
           } else if (event.type === "reconnect-interval") {
+            // TODO - how to handle this? is a retry needed?
             console.log("%d milliseconds reconnect interval", event.value);
           }
           //-- onParse Catch --//

@@ -146,7 +146,7 @@ const Mongo = {
       "message_nodes"
     ),
 };
-export { Mongo }; // TODO - is this good?
+export { Mongo };
 
 //-- OpenAI --//
 let OPENAI_API_KEY: string = await getOpenAI_API_Key();
