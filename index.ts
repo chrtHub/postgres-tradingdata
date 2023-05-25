@@ -281,7 +281,7 @@ const errorHandler = (err: any, res: Response) => {
         "Authentication failed OR resource not found beep boop. Everything except '/' and '/spec.json' requires a Bearer token."
       );
   } else {
-    return res.status(500).send("Internal server error beep boop");
+    return res.status(500).send("unexpected error, beep boop");
   }
 };
 app.use(errorHandler);

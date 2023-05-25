@@ -12,6 +12,7 @@ import { Readable } from "stream";
 import axios from "axios";
 import produce from "immer";
 import { createParser } from "eventsource-parser";
+import retry from "async-retry";
 
 //-- Utility Functions --//
 import getUserDbId from "../utils/getUserDbId.js";
@@ -104,6 +105,8 @@ import {
 
 // (10) Close the SSE connection to the client.
 
+class ErrorForClient extends Error {}
+
 //-- ***** ***** ***** Titles ***** ***** ***** --//
 export const createTitleController = async (
   req: IRequestWithAuth,
@@ -165,7 +168,9 @@ export const createTitleController = async (
       new_title = chat_completion.data.choices[0].message.content;
     } catch (err) {
       console.log(err);
-      return res.status(500).send("Error calling LLM to create title");
+      return res
+        .status(500)
+        .send("Error calling LLM to create title, please try again");
     }
 
     //-- Clean up --//
@@ -188,14 +193,18 @@ export const createTitleController = async (
         },
         { $set: { title: new_title } }
       );
-      return res.send(`title updated to: ${new_title}`);
+      return res.status(200).send(`title updated to: ${new_title}`);
     } catch (err) {
       console.log(err);
-      return res.status(500).send("Error writing title to database");
+      return res
+        .status(500)
+        .send("Error writing title to database, please try again");
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).send("Error fetching most recent message node");
+    return res
+      .status(500)
+      .send("Error fetching most recent message node, please try again");
   }
 };
 
@@ -216,6 +225,7 @@ export const chatCompletionsSSEController = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
+  //-- Controller Try --//
   try {
     //-- Cosntants based on route --//
     const api_provider_name: APIProviderNames = "openai";
@@ -231,9 +241,6 @@ export const chatCompletionsSSEController = async (
     //-- Check token count against token limit --//
     const tokenLimit = TOKEN_LIMITS[prompt.model.model_api_name];
     if (incomingPromptTokens > tokenLimit) {
-      console.log(
-        `Prompt was too long: ${incomingPromptTokens} tokens (Limit ${tokenLimit})`
-      );
       return res
         .status(400)
         .send(
@@ -304,11 +311,15 @@ export const chatCompletionsSSEController = async (
             user_tags: response.user_tags,
           };
         } else {
-          throw new Error(`unknown conversation_id: ${conversation_id}`);
+          return res
+            .status(400)
+            .send(`unknown conversation_id: ${conversation_id}`);
         }
       } catch (err) {
         console.log(err);
-        throw new Error("fetching conversation error");
+        return res
+          .status(500)
+          .send("error finding conversation, please try again");
       }
       //-- Fetch existing_conversation_nodes --//
       try {
@@ -323,13 +334,17 @@ export const chatCompletionsSSEController = async (
           existing_conversation_message_nodes =
             demongoize_message_nodes(response);
         } else {
-          throw new Error(
-            `no existing_conversation_message_nodes found for conversation_id: ${conversation_id}`
-          );
+          return res
+            .status(400)
+            .send(`no messages found for conversation_id: ${conversation_id}`);
         }
       } catch (err) {
         console.log(err);
-        throw new Error("fetching message_nodes error");
+        return res
+          .status(500)
+          .send(
+            `error fetching messages for conversation_id: ${conversation_id}, please try again`
+          );
       }
       //-- Find root_node for existing conversations --//
       let response = existing_conversation_message_nodes.find(
@@ -338,9 +353,11 @@ export const chatCompletionsSSEController = async (
       if (response) {
         root_node = response; //-- Set root_node --//
       } else {
-        throw new Error(
-          `root node not found for conversation_id: ${conversation_id}`
-        );
+        return res
+          .status(400)
+          .send(
+            `root message node not found for conversation_id: ${conversation_id}`
+          );
       }
     }
 
@@ -369,8 +386,11 @@ export const chatCompletionsSSEController = async (
         );
         await Mongo.message_nodes.insertOne(mongoize_message_node(root_node));
       } catch (err) {
-        console.log(err);
-        throw new Error("error storing new conversation and/or root_node");
+        return res
+          .status(500)
+          .send(
+            "error storing new conversation and/or root message node, please try again"
+          );
       }
     } else {
       //-- For existing conversation --//
@@ -381,8 +401,9 @@ export const chatCompletionsSSEController = async (
           { $addToSet: { children_node_ids: new_message_node._id } }
         );
       } catch (err) {
-        console.log(err);
-        throw new Error("error updating parent node");
+        return res
+          .status(500)
+          .send("error updating new message's parent node, please try again");
       }
     }
 
@@ -476,7 +497,7 @@ export const chatCompletionsSSEController = async (
     //-- Send headers immediately (don't wait for first chunk or message end) --//
     res.flushHeaders();
 
-    //-- Send request to LLM --//
+    //-- Axios Send Request Try --//
     try {
       //-- Get API Key --//
       let OPENAI_API_KEY = await getOpenAI_API_Key();
@@ -532,129 +553,155 @@ export const chatCompletionsSSEController = async (
       //-- Inside parser, send each chunk to the client, then close the connection --//
       let conversation_sent: boolean = false;
       async function onParse(event: any) {
-        if (event.type === "event") {
-          if (event.data !== "[DONE]") {
-            //-- For new conversations, send conversation upon first event --//
-            if (new_conversation && !conversation_sent) {
-              let conversation_string = JSON.stringify(conversation);
-              res.write(`id: conversation\ndata: ${conversation_string}\n\n`);
-              conversation_sent = true;
-            }
+        try {
+          if (event.type === "event") {
+            if (event.data !== "[DONE]") {
+              //-- For new conversations, send conversation upon first event --//
+              if (new_conversation && !conversation_sent) {
+                let conversation_string = JSON.stringify(conversation);
+                res.write(`id: conversation\ndata: ${conversation_string}\n\n`);
+                conversation_sent = true;
+              }
 
-            //-- Get data from event --//
-            let data = JSON.parse(event.data).choices[0].delta?.content || "";
+              //-- Get data from event --//
+              let data = JSON.parse(event.data).choices[0].delta?.content || "";
 
-            //-- Add chunk to response chunks (to be accessed post-stream) --//
-            completion_chunks.push(data);
+              //-- Add chunk to response chunks (to be accessed post-stream) --//
+              completion_chunks.push(data);
 
-            //-- URI Encode to avoid content and delimeter `\n\n` collisions --//
-            const uriEncodedData = encodeURI(data);
+              //-- URI Encode to avoid content and delimeter `\n\n` collisions --//
+              const uriEncodedData = encodeURI(data);
 
-            //-- Send data to the client --//
-            res.write(`data: ${uriEncodedData}\n\n`);
-            //----//
-          } else if (event.data === "[DONE]") {
-            //-- Build completion --//
-            const completion_content = completion_chunks.join("");
-            const completion_tokens = tiktoken(completion_content.toString());
-            const completion_created_at = new Date().toISOString();
-            const completion: IMessage = {
-              author: model.model_api_name,
-              model: model,
-              created_at: completion_created_at,
-              role: "assistant",
-              content: completion_content,
-            };
+              //-- Send data to the client --//
+              res.write(`data: ${uriEncodedData}\n\n`);
+              //----//
+            } else if (event.data === "[DONE]") {
+              //-- Build completion --//
+              const completion_content = completion_chunks.join("");
+              const completion_tokens = tiktoken(completion_content.toString());
+              const completion_created_at = new Date().toISOString();
+              const completion: IMessage = {
+                author: model.model_api_name,
+                model: model,
+                created_at: completion_created_at,
+                role: "assistant",
+                content: completion_content,
+              };
 
-            //-- Update new_message_node by adding completion --//
-            new_message_node = produce(new_message_node, (draft) => {
-              draft.completion = completion;
-            });
+              //-- Update new_message_node by adding completion --//
+              new_message_node = produce(new_message_node, (draft) => {
+                draft.completion = completion;
+              });
 
-            //-- Write new_message_node to database --//
-            try {
-              await Mongo.message_nodes.insertOne(
-                mongoize_message_node(new_message_node)
-              );
-            } catch (err) {
-              console.log(err);
-              throw new Error("error storing new message_node");
-            }
+              //-- Write new_message_node to database --//
+              try {
+                await retry(
+                  async () => {
+                    await Mongo.message_nodes.insertOne(
+                      mongoize_message_node(new_message_node)
+                    );
+                  },
+                  {
+                    //-- Retries @ 1s, 3s, 7s --//
+                    retries: 3,
+                    minTimeout: 1000,
+                    factor: 2,
+                  }
+                );
+              } catch (err) {
+                console.log(err);
+                throw new ErrorForClient(
+                  "error storing new prompt and completion, please refresh and try again"
+                );
+              }
 
-            //-- Send completion to client --//
-            const completion_string = JSON.stringify(completion);
-            res.write(`id: completion\ndata: ${completion_string}\n\n`);
+              //-- Send completion to client --//
+              const completion_string = JSON.stringify(completion);
+              res.write(`id: completion\ndata: ${completion_string}\n\n`);
 
-            //-- Update api_req_res_metadata --//
-            let api_req_res_metadata_date = new Date();
-            api_req_res_metadata = {
-              user: user_db_id,
-              model_api_name: model.model_api_name,
-              params: {
-                temperature: temperature,
-              },
-              created_at: api_req_res_metadata_date.toISOString(),
-              request_tokens: request_tokens,
-              completion_tokens: completion_tokens,
-              total_tokens: request_tokens + completion_tokens,
-              node_id: new_message_node._id,
-              request_messages_node_ids: request_messages_node_ids,
-            };
-
-            //-- Write api_req_res_metadata as update to conversation --//
-            try {
-              await Mongo.conversations.updateOne(
-                {
-                  _id: ObjectId.createFromHexString(
-                    new_message_node.conversation_id
-                  ),
+              //-- Update api_req_res_metadata --//
+              let api_req_res_metadata_date = new Date();
+              api_req_res_metadata = {
+                user: user_db_id,
+                model_api_name: model.model_api_name,
+                params: {
+                  temperature: temperature,
                 },
-                {
-                  $addToSet: { api_req_res_metadata: api_req_res_metadata },
-                  $set: { last_edited: api_req_res_metadata_date },
-                }
+                created_at: api_req_res_metadata_date.toISOString(),
+                request_tokens: request_tokens,
+                completion_tokens: completion_tokens,
+                total_tokens: request_tokens + completion_tokens,
+                node_id: new_message_node._id,
+                request_messages_node_ids: request_messages_node_ids,
+              };
+
+              //-- Write api_req_res_metadata as update to conversation --//
+              try {
+                await retry(
+                  async () => {
+                    await Mongo.conversations.updateOne(
+                      {
+                        _id: ObjectId.createFromHexString(
+                          new_message_node.conversation_id
+                        ),
+                      },
+                      {
+                        $addToSet: {
+                          api_req_res_metadata: api_req_res_metadata,
+                        },
+                        $set: { last_edited: api_req_res_metadata_date },
+                      }
+                    );
+                  },
+                  {
+                    //-- Retries @ 1s, 3s, 7s --//
+                    retries: 3,
+                    minTimeout: 1000,
+                    factor: 2,
+                  }
+                );
+              } catch (err) {
+                console.log(err);
+                throw new ErrorForClient("error updating converation stats");
+              }
+
+              //-- Send api_req_res_metatdata to client --//
+              const api_req_res_metadata_string =
+                JSON.stringify(api_req_res_metadata);
+              res.write(
+                `id: api_req_res_metadata\ndata: ${api_req_res_metadata_string}\n\n`
               );
-            } catch (err) {
-              console.log(err);
-              throw new Error(
-                "error adding api_req_res_metadata to conversation"
-              );
+
+              //-- Close connection --//
+              res.end();
             }
-
-            //-- Send api_req_res_metatdata to client --//
-            const api_req_res_metadata_string =
-              JSON.stringify(api_req_res_metadata);
-            res.write(
-              `id: api_req_res_metadata\ndata: ${api_req_res_metadata_string}\n\n`
-            );
-
-            //-- Close connection --//
-            res.end();
+            //----//
+          } else if (event.type === "reconnect-interval") {
+            console.log("%d milliseconds reconnect interval", event.value);
           }
-        } else if (event.type === "reconnect-interval") {
-          console.log("%d milliseconds reconnect interval", event.value);
+          //-- onParse Catch --//
+        } catch (err) {
+          //-- Send client error or just console.log it --//
+          if (err instanceof ErrorForClient) {
+            res.write(
+              `id: error\ndata: ${JSON.stringify({
+                message: `${err}`,
+              })}\n\n`
+            );
+          }
         }
       }
-      //----//
+      //-- Axios Send Request Catch --//
     } catch (err) {
-      console.log(err);
       res.write(
         `id: error\ndata: ${JSON.stringify({
-          message: "error during gpt35turboStreamController LLM query",
-          error: err,
-        })}\n\n` // TODO - test that frontend parses this correctly
+          message: `LLM request failed, please try again`,
+        })}\n\n`
       );
-
-      //-- Close the connection after sending the error message --//
-      res.end();
+      res.end(); //-- Close connection --//
     }
+    //-- Controller Catch --//
   } catch (err: any) {
-    if (typeof err.message === "string") {
-      res.status(400).send(err.message);
-      console.log(err);
-    } else {
-      res.status(400);
-      console.log(err);
-    }
+    res.status(400);
   }
 };
