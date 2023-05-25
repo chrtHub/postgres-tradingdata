@@ -117,6 +117,7 @@ export const createTitleController = async (
   //-- Get data from params --//
   let { conversation_id } = req.body;
   let user_db_id = getUserDbId(req);
+  console.log("conversation_id: ", conversation_id); // DEV
 
   let new_title: string = "TODO - new title";
 
@@ -593,7 +594,7 @@ export const chatCompletionsSSEController = async (
               };
 
               //-- Start MongoClient session to use for transactions --//
-              const session = MongoClient.startSession({
+              const mongoSession = MongoClient.startSession({
                 causalConsistency: false,
               });
 
@@ -601,13 +602,14 @@ export const chatCompletionsSSEController = async (
               if (new_conversation) {
                 try {
                   //-- Start Transaction --//
-                  session.startTransaction();
+                  mongoSession.startTransaction();
 
+                  //-- Bundle operations into async 'transact' function --//
                   const transact = async () => {
                     //-- Insert conversation --//
                     await Mongo.conversations.insertOne(
                       mongoize_conversation(conversation),
-                      { session }
+                      { session: mongoSession }
                     );
 
                     //-- Update api_req_res_metadata --//
@@ -623,83 +625,92 @@ export const chatCompletionsSSEController = async (
                         },
                         $set: { last_edited: api_req_res_metadata_date },
                       },
-                      { session }
+                      { session: mongoSession }
                     );
 
                     //-- Insert root_node --//
                     await Mongo.message_nodes.insertOne(
                       mongoize_message_node(root_node!), //-- Non-Null Assertion --//
-                      { session }
+                      { session: mongoSession }
+                    );
+
+                    //-- Insert new_message_node --//
+                    await Mongo.message_nodes.insertOne(
+                      mongoize_message_node(new_message_node)
                     );
 
                     //-- Commit transaction --//
-                    await session.commitTransaction();
+                    let res = await mongoSession.commitTransaction();
+                    console.log(res);
                   };
                   await transact();
+                  //----//
                 } catch (err) {
                   //-- Abort transaction --//
-                  session.abortTransaction();
+                  mongoSession.abortTransaction();
                   throw new ErrorForClient(
                     "error saving new messages, please submit the prompt again"
                   );
                 } finally {
                   //-- End MongoClient session --//
-                  // session.endSession();
+                  mongoSession.endSession();
                 }
               } else {
                 //-- Else for existing conversation --//
                 try {
                   //-- Start Transaction --//
-                  session.startTransaction();
-                  await retry(
-                    async () => {
-                      console.log("zoo"); // DEV
-                      //-- Write message_node's _id to parent_node's children array --//
-                      await Mongo.message_nodes.updateOne(
-                        { _id: ObjectId.createFromHexString(parent_node_id!) }, //-- Non-Null Assertion --//
-                        {
-                          $addToSet: {
-                            children_node_ids: new_message_node._id,
-                          },
-                        }
-                      );
-                      //-- Write new_message_node to database --//
-                      await Mongo.message_nodes.insertOne(
-                        mongoize_message_node(new_message_node)
-                      );
-                      //-- Write api_req_res_metadata as update to conversation --//
-                      await Mongo.conversations.updateOne(
-                        {
-                          _id: ObjectId.createFromHexString(
-                            new_message_node.conversation_id
-                          ),
+                  mongoSession.startTransaction();
+
+                  //-- Bundle operations into async 'transact' function --//
+                  const transact = async () => {
+                    //-- Update parent node's children_node_ids --//
+                    await Mongo.message_nodes.updateOne(
+                      { _id: ObjectId.createFromHexString(parent_node_id!) }, //-- Non-Null Assertion --//
+                      {
+                        $addToSet: {
+                          children_node_ids: new_message_node._id,
                         },
-                        {
-                          $addToSet: {
-                            api_req_res_metadata: api_req_res_metadata,
-                          },
-                          $set: { last_edited: api_req_res_metadata_date },
-                        }
-                      );
-                    },
-                    {
-                      //-- Retries @ 1s, 3s, 7s --//
-                      retries: 3,
-                      minTimeout: 1000,
-                      factor: 2,
-                    }
-                  );
+                      },
+                      { session: mongoSession }
+                    );
+
+                    //-- Insert new_message_node --//
+                    await Mongo.message_nodes.insertOne(
+                      mongoize_message_node(new_message_node),
+                      { session: mongoSession }
+                    );
+
+                    //-- Update conversation with api_req_res_metadata --//
+                    await Mongo.conversations.updateOne(
+                      {
+                        _id: ObjectId.createFromHexString(
+                          new_message_node.conversation_id
+                        ),
+                      },
+                      {
+                        $addToSet: {
+                          api_req_res_metadata: api_req_res_metadata,
+                        },
+                        $set: { last_edited: api_req_res_metadata_date },
+                      },
+                      { session: mongoSession }
+                    );
+
+                    //-- Commit transaction --//
+                    let res = await mongoSession.commitTransaction();
+                    console.log(res);
+                  };
+                  await transact();
+                  //----//
                 } catch (err) {
-                  console.log("zar"); // DEV
                   //-- Abort transaction, end session --//
-                  session.abortTransaction();
+                  mongoSession.abortTransaction();
                   throw new ErrorForClient(
                     "error saving new messages, please submit the prompt again"
                   );
                 } finally {
                   //-- End MongoClient session --//
-                  console.log("zaz"); // DEV
-                  session.endSession();
+                  mongoSession.endSession();
                 }
               }
 
