@@ -600,8 +600,6 @@ export const chatCompletionsSSEController = async (
               //-- For new conversation  --//
               if (new_conversation) {
                 try {
-                  console.log("foo"); // DEV
-
                   //-- Start Transaction --//
                   session.startTransaction();
 
@@ -633,15 +631,12 @@ export const chatCompletionsSSEController = async (
                       mongoize_message_node(root_node!), //-- Non-Null Assertion --//
                       { session }
                     );
+
+                    //-- Commit transaction --//
+                    await session.commitTransaction();
                   };
                   await transact();
-
-                  //-- Commit transaction --//
-                  await session.commitTransaction();
-
-                  console.log("just committed transaction"); // DEV
                 } catch (err) {
-                  console.log("bar"); // DEV
                   //-- Abort transaction --//
                   session.abortTransaction();
                   throw new ErrorForClient(
@@ -649,7 +644,6 @@ export const chatCompletionsSSEController = async (
                   );
                 } finally {
                   //-- End MongoClient session --//
-                  console.log("baz"); // DEV
                   // session.endSession();
                 }
               } else {
