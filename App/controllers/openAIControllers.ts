@@ -607,99 +607,131 @@ export const chatCompletionsSSEController = async (
                 });
 
                 try {
-                  //-- Start Transaction --//
-                  mongoSession.startTransaction();
+                  await retry(
+                    async () => {
+                      //-- Start Transaction --//
+                      mongoSession.startTransaction();
 
-                  //-- Bundle operations into async 'transact' function --//
-                  const transact = async () => {
-                    //-- (1/3) Insert conversation --//
-                    await Mongo.conversations.insertOne(
-                      mongoize_conversation(conversation),
-                      { session: mongoSession }
-                    );
+                      //-- Transaction function --//
+                      const transaction = async () => {
+                        //-- (1/3) Insert conversation --//
+                        await Mongo.conversations.insertOne(
+                          mongoize_conversation(conversation),
+                          { session: mongoSession }
+                        );
 
-                    //-- (2/3) Insert root_node --//
-                    await Mongo.message_nodes.insertOne(
-                      mongoize_message_node(root_node!), //-- Non-Null Assertion --//
-                      { session: mongoSession }
-                    );
+                        //-- (2/3) Insert root_node --//
+                        await Mongo.message_nodes.insertOne(
+                          mongoize_message_node(root_node!), //-- Non-Null Assertion --//
+                          { session: mongoSession }
+                        );
 
-                    //-- (3/3) Insert new_message_node --//
-                    await Mongo.message_nodes.insertOne(
-                      mongoize_message_node(new_message_node),
-                      { session: mongoSession }
-                    );
+                        //-- (3/3) Insert new_message_node --//
+                        await Mongo.message_nodes.insertOne(
+                          mongoize_message_node(new_message_node),
+                          { session: mongoSession }
+                        );
+                      };
+                      //-- Execute transaction --//
+                      await transaction();
 
-                    //-- Commit transaction --//
-                    await mongoSession.commitTransaction();
-                  };
-                  await transact();
+                      //-- Commit transaction --//
+                      await mongoSession.commitTransaction();
+                    },
+                    {
+                      retries: 2,
+                      minTimeout: 1000,
+                      factor: 2,
+                      onRetry: async () => {
+                        if (mongoSession.inTransaction()) {
+                          await mongoSession.abortTransaction();
+                        }
+                      },
+                    }
+                  );
                   //----//
                 } catch (err) {
                   //-- Abort transaction --//
-                  mongoSession.abortTransaction();
+                  await mongoSession.abortTransaction();
                   throw new ErrorForClient(
-                    "error saving new messages, please submit the prompt again"
+                    "error saving new conversation and messages, please open a new conversation and submit the prompt again"
                   );
                 } finally {
                   //-- End MongoClient session --//
-                  mongoSession.endSession();
+                  await mongoSession.endSession();
                 }
               } //-- Else for existing conversation --//
               else {
                 try {
-                  //-- Start Transaction --//
-                  mongoSession.startTransaction();
+                  await retry(
+                    async () => {
+                      //-- Start Transaction --//
+                      mongoSession.startTransaction();
 
-                  //-- Bundle operations into async 'transact' function --//
-                  const transact = async () => {
-                    //-- (1/3) Update conversation with api_req_res_metadata --//
-                    await Mongo.conversations.updateOne(
-                      {
-                        _id: ObjectId.createFromHexString(
-                          new_message_node.conversation_id
-                        ),
+                      //-- Transaction function --//
+                      const transaction = async () => {
+                        //-- (1/3) Update conversation with api_req_res_metadata --//
+                        await Mongo.conversations.updateOne(
+                          {
+                            _id: ObjectId.createFromHexString(
+                              new_message_node.conversation_id
+                            ),
+                          },
+                          {
+                            $addToSet: {
+                              api_req_res_metadata: api_req_res_metadata,
+                            },
+                            $set: { last_edited: api_req_res_metadata_date },
+                          },
+                          { session: mongoSession }
+                        );
+
+                        //-- (2/3) Update parent node's children_node_ids --//
+                        await Mongo.message_nodes.updateOne(
+                          {
+                            _id: ObjectId.createFromHexString(parent_node_id!),
+                          }, //-- Non-Null Assertion --//
+                          {
+                            $addToSet: {
+                              children_node_ids: new_message_node._id,
+                            },
+                          },
+                          { session: mongoSession }
+                        );
+
+                        //-- (3/3) Insert new_message_node --//
+                        await Mongo.message_nodes.insertOne(
+                          mongoize_message_node(new_message_node),
+                          { session: mongoSession }
+                        );
+                      };
+                      //-- Execute transcation --//
+                      await transaction();
+
+                      //-- Commit transaction --//
+                      await mongoSession.commitTransaction();
+                    },
+                    {
+                      retries: 2,
+                      minTimeout: 1000,
+                      factor: 2,
+                      onRetry: async () => {
+                        if (mongoSession.inTransaction()) {
+                          await mongoSession.abortTransaction();
+                        }
                       },
-                      {
-                        $addToSet: {
-                          api_req_res_metadata: api_req_res_metadata,
-                        },
-                        $set: { last_edited: api_req_res_metadata_date },
-                      },
-                      { session: mongoSession }
-                    );
-
-                    //-- (2/3) Update parent node's children_node_ids --//
-                    await Mongo.message_nodes.updateOne(
-                      { _id: ObjectId.createFromHexString(parent_node_id!) }, //-- Non-Null Assertion --//
-                      {
-                        $addToSet: {
-                          children_node_ids: new_message_node._id,
-                        },
-                      },
-                      { session: mongoSession }
-                    );
-
-                    //-- (3/3) Insert new_message_node --//
-                    await Mongo.message_nodes.insertOne(
-                      mongoize_message_node(new_message_node),
-                      { session: mongoSession }
-                    );
-
-                    //-- Commit transaction --//
-                    await mongoSession.commitTransaction();
-                  };
-                  await transact();
+                    }
+                  );
                   //----//
                 } catch (err) {
                   //-- Abort transaction, end session --//
-                  mongoSession.abortTransaction();
+                  await mongoSession.abortTransaction();
                   throw new ErrorForClient(
                     "error saving new messages, please submit the prompt again"
                   );
                 } finally {
                   //-- End MongoClient session --//
-                  mongoSession.endSession();
+                  await mongoSession.endSession();
                 }
               }
 
