@@ -598,50 +598,40 @@ export const chatCompletionsSSEController = async (
                 causalConsistency: false,
               });
 
-              //-- For new conversation  --//
+              //-- For new conversation --//
               if (new_conversation) {
+                //-- Before inserting conversation, update (a) api_req_res_metadata, (b) last_edited --//
+                conversation = produce(conversation, (draft) => {
+                  draft.api_req_res_metadata.push(api_req_res_metadata);
+                  draft.last_edited = api_req_res_metadata_date.toISOString();
+                });
+
                 try {
                   //-- Start Transaction --//
                   mongoSession.startTransaction();
 
                   //-- Bundle operations into async 'transact' function --//
                   const transact = async () => {
-                    //-- Insert conversation --//
+                    //-- (1/3) Insert conversation --//
                     await Mongo.conversations.insertOne(
                       mongoize_conversation(conversation),
                       { session: mongoSession }
                     );
 
-                    //-- Update api_req_res_metadata --//
-                    await Mongo.conversations.updateOne(
-                      {
-                        _id: ObjectId.createFromHexString(
-                          new_message_node.conversation_id
-                        ),
-                      },
-                      {
-                        $addToSet: {
-                          api_req_res_metadata: api_req_res_metadata,
-                        },
-                        $set: { last_edited: api_req_res_metadata_date },
-                      },
-                      { session: mongoSession }
-                    );
-
-                    //-- Insert root_node --//
+                    //-- (2/3) Insert root_node --//
                     await Mongo.message_nodes.insertOne(
                       mongoize_message_node(root_node!), //-- Non-Null Assertion --//
                       { session: mongoSession }
                     );
 
-                    //-- Insert new_message_node --//
+                    //-- (3/3) Insert new_message_node --//
                     await Mongo.message_nodes.insertOne(
-                      mongoize_message_node(new_message_node)
+                      mongoize_message_node(new_message_node),
+                      { session: mongoSession }
                     );
 
                     //-- Commit transaction --//
-                    let res = await mongoSession.commitTransaction();
-                    console.log(res);
+                    await mongoSession.commitTransaction();
                   };
                   await transact();
                   //----//
@@ -655,32 +645,15 @@ export const chatCompletionsSSEController = async (
                   //-- End MongoClient session --//
                   mongoSession.endSession();
                 }
-              } else {
-                //-- Else for existing conversation --//
+              } //-- Else for existing conversation --//
+              else {
                 try {
                   //-- Start Transaction --//
                   mongoSession.startTransaction();
 
                   //-- Bundle operations into async 'transact' function --//
                   const transact = async () => {
-                    //-- Update parent node's children_node_ids --//
-                    await Mongo.message_nodes.updateOne(
-                      { _id: ObjectId.createFromHexString(parent_node_id!) }, //-- Non-Null Assertion --//
-                      {
-                        $addToSet: {
-                          children_node_ids: new_message_node._id,
-                        },
-                      },
-                      { session: mongoSession }
-                    );
-
-                    //-- Insert new_message_node --//
-                    await Mongo.message_nodes.insertOne(
-                      mongoize_message_node(new_message_node),
-                      { session: mongoSession }
-                    );
-
-                    //-- Update conversation with api_req_res_metadata --//
+                    //-- (1/3) Update conversation with api_req_res_metadata --//
                     await Mongo.conversations.updateOne(
                       {
                         _id: ObjectId.createFromHexString(
@@ -696,9 +669,25 @@ export const chatCompletionsSSEController = async (
                       { session: mongoSession }
                     );
 
+                    //-- (2/3) Update parent node's children_node_ids --//
+                    await Mongo.message_nodes.updateOne(
+                      { _id: ObjectId.createFromHexString(parent_node_id!) }, //-- Non-Null Assertion --//
+                      {
+                        $addToSet: {
+                          children_node_ids: new_message_node._id,
+                        },
+                      },
+                      { session: mongoSession }
+                    );
+
+                    //-- (3/3) Insert new_message_node --//
+                    await Mongo.message_nodes.insertOne(
+                      mongoize_message_node(new_message_node),
+                      { session: mongoSession }
+                    );
+
                     //-- Commit transaction --//
-                    let res = await mongoSession.commitTransaction();
-                    console.log(res);
+                    await mongoSession.commitTransaction();
                   };
                   await transact();
                   //----//
