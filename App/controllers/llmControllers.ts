@@ -36,51 +36,24 @@ export const listConversationsController = async (
   }
 
   try {
-    let conversationsArray: IConversation_Mongo[] = await Mongo.conversations
-      .find({ user_db_id: user_db_id }) //-- Security --//
-      .skip(skipInt)
-      .limit(25) //-- arbitrary number --//
-      .sort({ [sort_param]: -1 })
-      .toArray();
+    await retry(
+      async () => {
+        let conversationsArray: IConversation_Mongo[] =
+          await Mongo.conversations
+            .find({ user_db_id: user_db_id }) //-- Security --//
+            .skip(skipInt)
+            .limit(25) //-- arbitrary number --//
+            .sort({ [sort_param]: -1 })
+            .toArray();
 
-    //-- Lazy Migration to add last_edited --//
-    const bulkUpdateOperations = [];
-    for (let conversation of conversationsArray) {
-      //-- If no 'last_edited', use time of last API req. --//
-      if (!conversation.last_edited) {
-        conversation.api_req_res_metadata.sort((a, b) => {
-          const timestampA = new Date(a.created_at).getTime();
-          const timestampB = new Date(b.created_at).getTime();
-          return timestampB - timestampA; //-- Descending --//
-        });
-        const newestMetadata = conversation.api_req_res_metadata[0];
-
-        //-- Update in conversationsArray --//
-        conversation.last_edited = new Date(newestMetadata.created_at);
-
-        //-- Add to bulkWrite array to update MongoDB --//
-        bulkUpdateOperations.push({
-          updateOne: {
-            filter: { _id: conversation._id },
-            update: { $set: { last_edited: conversation.last_edited } },
-          },
-        });
+        return res.status(200).json(conversationsArray);
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
       }
-    }
-
-    res.status(200).json(conversationsArray);
-
-    //-- Execute bulk write --//
-    if (bulkUpdateOperations.length > 0) {
-      try {
-        console.log("bulk update conversation last_edited"); // DEV
-        await Mongo.conversations.bulkWrite(bulkUpdateOperations);
-      } catch (err) {
-        console.log(err);
-      }
-    }
-
-    return;
+    );
   } catch (error) {
     if (error instanceof CustomError) {
       return res.status(400).send(error.message);
@@ -102,50 +75,72 @@ export const getConversationAndMessagesController = async (
 
   //--Fetch conversation --//
   try {
-    let conversation: IConversation_Mongo | null =
-      await Mongo.conversations.findOne({
-        user_db_id: user_db_id, //-- Security --//
-        _id: ObjectId.createFromHexString(conversation_id),
-      });
-
-    if (conversation) {
-      try {
-        let message_nodes: IMessageNode_Mongo[] = await Mongo.message_nodes
-          .find({
+    await retry(
+      async () => {
+        let conversation: IConversation_Mongo | null =
+          await Mongo.conversations.findOne({
             user_db_id: user_db_id, //-- Security --//
-            conversation_id: ObjectId.createFromHexString(conversation_id),
-          })
-          .toArray();
-
-        if (message_nodes) {
-          //-- Redact system message --//
-          message_nodes = produce(message_nodes, (draft) => {
-            let system_node = draft.find(
-              (node) => node.prompt.role === "system"
-            );
-            if (system_node) {
-              system_node.prompt.content = "redacted system message";
-            }
+            _id: ObjectId.createFromHexString(conversation_id),
           });
 
-          return res.status(200).json({ conversation, message_nodes });
-          //----//
+        if (conversation) {
+          try {
+            await retry(
+              async () => {
+                let message_nodes: IMessageNode_Mongo[] =
+                  await Mongo.message_nodes
+                    .find({
+                      user_db_id: user_db_id, //-- Security --//
+                      conversation_id:
+                        ObjectId.createFromHexString(conversation_id),
+                    })
+                    .toArray();
+
+                if (message_nodes) {
+                  //-- Redact system message --//
+                  message_nodes = produce(message_nodes, (draft) => {
+                    let system_node = draft.find(
+                      (node) => node.prompt.role === "system"
+                    );
+                    if (system_node) {
+                      system_node.prompt.content = "redacted system message";
+                    }
+                  });
+
+                  return res.status(200).json({ conversation, message_nodes });
+                  //----//
+                } else {
+                  return res
+                    .status(400)
+                    .send(
+                      `No messages found for conversation_id: ${conversation_id}`
+                    );
+                }
+              },
+              {
+                retries: 2,
+                minTimeout: 1000,
+                factor: 2,
+              }
+            );
+          } catch (err) {
+            console.log(err);
+            return res.status(500).send("Error while fetching messages");
+          }
         } else {
           return res
             .status(400)
-            .send(`No messages found for conversation_id: ${conversation_id}`);
+            .send(
+              "Conversation unavailable - either it doesn't exist or you lack permission to view it"
+            );
         }
-      } catch (err) {
-        console.log(err);
-        return res.status(500).send("Error while fetching messages");
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
       }
-    } else {
-      return res
-        .status(400)
-        .send(
-          "Conversation unavailable - either it doesn't exist or you lack permission to view it"
-        );
-    }
+    );
   } catch (error) {
     console.log(error);
     return res.status(500).send("Error while fetching conversation");
@@ -162,22 +157,40 @@ export const deleteConversationAndMessagesController = async (
   let user_db_id = getUserDbId(req);
 
   try {
-    await Mongo.message_nodes.deleteMany({
-      user_db_id: user_db_id, //-- security --//
-      conversation_id: ObjectId.createFromHexString(conversation_id),
-    });
-    try {
-      await Mongo.conversations.deleteOne({
-        user_db_id: user_db_id, //-- security --//
-        _id: ObjectId.createFromHexString(conversation_id),
-      });
-      return res
-        .status(200)
-        .send(`deleted ${conversation_id} and its messages`);
-    } catch (error) {
-      console.log(error);
-      return res.status(500).send("Error while deleting conversation");
-    }
+    await retry(
+      async () => {
+        await Mongo.message_nodes.deleteMany({
+          user_db_id: user_db_id, //-- security --//
+          conversation_id: ObjectId.createFromHexString(conversation_id),
+        });
+        try {
+          await retry(
+            async () => {
+              await Mongo.conversations.deleteOne({
+                user_db_id: user_db_id, //-- security --//
+                _id: ObjectId.createFromHexString(conversation_id),
+              });
+              return res
+                .status(200)
+                .send(`deleted ${conversation_id} and its messages`);
+            },
+            {
+              retries: 2,
+              minTimeout: 1000,
+              factor: 2,
+            }
+          );
+        } catch (error) {
+          console.log(error);
+          return res.status(500).send("Error while deleting conversation");
+        }
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
+      }
+    );
   } catch (error) {
     console.log(error);
     return res.status(500).send("error deleting conversation and messages");
@@ -198,14 +211,23 @@ export const retitle = async (req: IRequestWithAuth, res: Response) => {
     }
 
     try {
-      await Mongo.conversations.updateOne(
-        {
-          _id: ObjectId.createFromHexString(conversation_id),
-          user_db_id: user_db_id, //-- security --//
+      await retry(
+        async () => {
+          await Mongo.conversations.updateOne(
+            {
+              _id: ObjectId.createFromHexString(conversation_id),
+              user_db_id: user_db_id, //-- security --//
+            },
+            { $set: { title: new_title } }
+          );
+          return res.status(200).send(`title updated to: ${new_title}`);
         },
-        { $set: { title: new_title } }
+        {
+          retries: 2,
+          minTimeout: 1000,
+          factor: 2,
+        }
       );
-      return res.status(200).send(`title updated to: ${new_title}`);
     } catch (err) {
       console.log(err);
       return res.status(500).send("error setting title");

@@ -1,5 +1,6 @@
 //-- *************** Imports *************** --//
 import fs from "fs";
+import retry from "async-retry";
 
 //-- Database config --//
 import {
@@ -42,8 +43,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
 //-- Types --//
-import { Request, Response, NextFunction } from "express";
-import { IRequestWithAuth } from "./index.d";
+import { Request, Response } from "express";
 import {
   IConversation_Mongo,
   IMessageNode_Mongo,
@@ -128,10 +128,19 @@ const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   directConnection: true,
 });
 try {
-  await MongoClient.connect();
-  const res = await MongoClient.db().command({ serverStatus: 1 });
-  console.log("DocumentDB-MongoDB test query succeeded at:", res.localTime);
-  console.log("DocumentDB-MongoDB user is:", docDB_username);
+  await retry(
+    async () => {
+      await MongoClient.connect();
+      const res = await MongoClient.db().command({ serverStatus: 1 });
+      console.log("DocumentDB-MongoDB test query succeeded at:", res.localTime);
+      console.log("DocumentDB-MongoDB user is:", docDB_username);
+    },
+    {
+      retries: 2,
+      minTimeout: 1000,
+      factor: 2,
+    }
+  );
 } catch (error) {
   console.log("DocumentDB-MongoDB connection error");
   console.log(error);
