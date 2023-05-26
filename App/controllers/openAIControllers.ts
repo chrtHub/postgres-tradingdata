@@ -45,66 +45,6 @@ import {
   demongoize_message_node,
 } from "./chatson/mongoize.js";
 
-//-- Outline --//
-// (1) Receive:
-// // interface IChatCompletionRequestBody {
-// //   prompt: IMessage;
-// //   conversation_id_string: string | null;
-// //   parent_node_id_string: string | null;
-// // }
-
-// (2a) New conversation
-// // create a new conversation
-// (2b) Existing conversation:
-// // fetch conversation from MongoDB by conversation_id
-
-// // // TODO - check if conversation has a lock on it. if so, fail request and send error to client. notify client that the conversation can only have a single prompt at a time. if no lock, set a lock (TTL 60 seconds) and proceed.
-
-// // fetch message nodes from MongoDB by conversation_id
-// // find root node
-
-// (3) Create new message node based on received prompt, leaving completion as null
-
-// (4a) New conversation
-// // add new node's id to root node's children ids array
-// // write conversation object to MongoDB
-
-// // // TODO - lock conversation
-
-// // write root node to MongoDB
-// (4b) Existing conversation
-// // write new node's id to parent node's children ids array in MongoDB
-
-// (5) create request_messages array
-// // start with root node prompt content (system message) and new nodes's prompt content
-// // // count tokens for each message, add to token count
-// // traverse each parent node, adding the completion and the prompt, stopping at the root node or 3k tokens
-// // // count tokens for each message, add to token count
-
-// (6) Set headers, send to client. Make POST request to LLM. Create a readable stream and call parser for each received chunk.
-
-// (7a) New conversation - on first received chunk
-// // send the conversation object to the client
-
-// (7b) All conversations - on each chunk
-// // push the chunks content onto the completion_chunks string to be sent on [DONE]
-// // URI encode the chunk's content and write it to the client
-
-// (8) On the "[DONE]" event, handle the completion object:
-// // build the completion object including the concatenated completion_chunks, its token count, and the creation time
-// // add the completion object to the new_message_node
-// // write the new_message_node to the MongoDB
-// // send the completion object to the client
-
-// (9) Also on the "[DONE]" event, handle the api_req_res_metadata object:
-// // build the api_req_res_metatdata object
-// // write the api_req_res_metatdata object to the conversation's api_req_res_metatdata array in MongoDB
-// // send the api_req_res_metatdata object to the client
-
-// // // TODO - delete the lock on the conversation. send event to client to inform client. client-side use that event to allow another submission.
-
-// (10) Close the SSE connection to the client.
-
 class ErrorForClient extends Error {}
 
 //-- ***** ***** ***** Titles ***** ***** ***** --//
@@ -117,19 +57,27 @@ export const createTitleController = async (
   //-- Get data from params --//
   let { conversation_id } = req.body;
   let user_db_id = getUserDbId(req);
-  console.log("conversation_id: ", conversation_id); // DEV
-
+  let message_node: IMessageNode_Mongo[] = [];
   let new_title: string = "TODO - new title";
 
   try {
-    let message_node: IMessageNode_Mongo[] = await Mongo.message_nodes
-      .find({
-        conversation_id: ObjectId.createFromHexString(conversation_id),
-        user_db_id: user_db_id, //-- Security --//
-      })
-      .sort({ created_at: -1 })
-      .limit(1)
-      .toArray();
+    await retry(
+      async () => {
+        message_node = await Mongo.message_nodes
+          .find({
+            conversation_id: ObjectId.createFromHexString(conversation_id),
+            user_db_id: user_db_id, //-- Security --//
+          })
+          .sort({ created_at: -1 })
+          .limit(1)
+          .toArray();
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
+      }
+    );
 
     //-- Build request body --//
     const request_body: CreateChatCompletionRequest = {
@@ -155,18 +103,27 @@ export const createTitleController = async (
     //-- Make LLM request to generate a title --//
     let OPENAI_API_KEY = await getOpenAI_API_Key();
     try {
-      //-- Axios POST request to OpenAI --//
-      let chat_completion = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        request_body,
+      await retry(
+        async () => {
+          //-- Axios POST request to OpenAI --//
+          let chat_completion = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            request_body,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${OPENAI_API_KEY}`,
+              },
+            }
+          );
+          new_title = chat_completion.data.choices[0].message.content;
+        },
         {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
+          retries: 2,
+          minTimeout: 1000,
+          factor: 2,
         }
       );
-      new_title = chat_completion.data.choices[0].message.content;
     } catch (err) {
       console.log(err);
       return res
@@ -175,8 +132,8 @@ export const createTitleController = async (
     }
 
     //-- Clean up --//
-    //-- Remove quotation marks from start and end --//
-    new_title = new_title.replace(/^"|"$/g, "");
+    //-- Remove quotation marks from start and end, remove trailing period --//
+    new_title = new_title.replace(/^"|"$/g, "").replace(/\.$/g, "");
 
     //-- Enforce title max length 60 chars. If char 60 is whitespace, remove it. --//
     if (new_title.length > 60) {
@@ -186,15 +143,26 @@ export const createTitleController = async (
       }
       new_title += "...";
     }
+
+    //-- Update conversation --//
     try {
-      await Mongo.conversations.updateOne(
-        {
-          _id: ObjectId.createFromHexString(conversation_id),
-          user_db_id: user_db_id, //-- security --//
+      await retry(
+        async () => {
+          await Mongo.conversations.updateOne(
+            {
+              _id: ObjectId.createFromHexString(conversation_id),
+              user_db_id: user_db_id, //-- security --//
+            },
+            { $set: { title: new_title } }
+          );
+          return res.status(200).send(`title updated to: ${new_title}`);
         },
-        { $set: { title: new_title } }
+        {
+          retries: 2,
+          minTimeout: 1000,
+          factor: 2,
+        }
       );
-      return res.status(200).send(`title updated to: ${new_title}`);
     } catch (err) {
       console.log(err);
       return res

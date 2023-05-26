@@ -4,6 +4,7 @@ import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsAr
 
 //-- NPM Functions --//
 import { format } from "date-fns";
+import retry from "async-retry";
 
 //-- knex client --//
 import { knex } from "../../index.js";

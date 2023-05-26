@@ -18,6 +18,7 @@ import { getUUIDV4 } from "../utils/getUUIDV4.js";
 //-- NPM Functions --//
 import { IRequestWithAuth } from "../../index.d";
 import { Response } from "express";
+import retry from "async-retry";
 
 //-- Other --//
 const s3_client = new S3Client({

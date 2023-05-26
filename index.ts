@@ -75,9 +75,9 @@ let tlsCAFilepath = "/app/PUBLIC-rds-ca-bundle.pem";
 //-- NOTE - Currently using `npm run ssh` script to establish ssh tunnel --//
 if (process.env.NODE_ENV === "development") {
   rdsDB_host = "127.0.0.1";
-  rdsDB_port = 2222;
+  rdsDB_port = "2222";
   docDB_host = "127.0.0.1";
-  docDB_port = 22222;
+  docDB_port = "22222";
   tlsAllowInvalidHostnames = true;
   tlsCAFilepath = "./PUBLIC-rds-ca-bundle.pem";
 }

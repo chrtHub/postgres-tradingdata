@@ -1,3 +1,5 @@
+import retry from "async-retry";
+
 //-- Secrets Manager --//
 import {
   SecretsManagerClient,
@@ -10,73 +12,96 @@ const secretsManager_client = new SecretsManagerClient({
 
 //-- RDS PostgreSQL --//
 export const getRDSDatabaseConfigFromSecretsManager = async () => {
-  let rdsDB_host, rdsDB_port, rdsDB_dbname, rdsDB_username, rdsDB_password;
+  let SecretStringJSON = {
+    host: "",
+    port: "",
+    dbname: "",
+    username: "",
+    password: "",
+  };
 
   try {
-    console.log("AWS Secrets Manager - fetching rds-postgres config");
-    let getSecretValueResponse = await secretsManager_client.send(
-      new GetSecretValueCommand({
-        SecretId:
-          "/chrt/journal/prod/rds-postgres/user_app_server_read_write/credentials",
-        VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
-      })
-    );
+    await retry(
+      async () => {
+        console.log("AWS Secrets Manager - fetching rds-postgres config");
+        let getSecretValueResponse = await secretsManager_client.send(
+          new GetSecretValueCommand({
+            SecretId:
+              "/chrt/journal/prod/rds-postgres/user_app_server_read_write/credentials",
+            VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
+          })
+        );
 
-    //-- Parse string into JSON, store values into variables --//
-    if (getSecretValueResponse.SecretString) {
-      let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
-      rdsDB_host = SecretStringJSON.host;
-      rdsDB_port = SecretStringJSON.port;
-      rdsDB_dbname = SecretStringJSON.dbname;
-      rdsDB_username = SecretStringJSON.username;
-      rdsDB_password = SecretStringJSON.password;
-    } else {
-      throw new Error("rds-postgres SecretString is empty");
-    }
+        //-- Parse string into JSON --//
+        if (getSecretValueResponse.SecretString) {
+          SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
+        } else {
+          throw new Error("rds-postgres SecretString is empty");
+        }
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
+      }
+    );
   } catch (err) {
     console.log(err);
   }
+
+  const { host, port, dbname, username, password } = SecretStringJSON;
   return {
-    rdsDB_host,
-    rdsDB_port,
-    rdsDB_dbname,
-    rdsDB_username,
-    rdsDB_password,
+    rdsDB_host: host,
+    rdsDB_port: port,
+    rdsDB_dbname: dbname,
+    rdsDB_username: username,
+    rdsDB_password: password,
   };
 };
 
 //-- DocumentDB MongoDB --//
 export const getDocDBDatabaseConfigFromSecretsManager = async () => {
-  let docDB_host, docDB_port, docDB_dbname, docDB_username, docDB_password;
+  let SecretStringJSON = {
+    host: "",
+    port: "",
+    dbname: "",
+    username: "",
+    password: "",
+  };
 
   try {
-    console.log("AWS Secrets Manager - fetching docdb-mongodb config");
-    let getSecretValueResponse = await secretsManager_client.send(
-      new GetSecretValueCommand({
-        SecretId: "/chrt/docdb/prod/custom-app-server",
-        VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
-      })
-    );
+    await retry(
+      async () => {
+        console.log("AWS Secrets Manager - fetching docdb-mongodb config");
+        let getSecretValueResponse = await secretsManager_client.send(
+          new GetSecretValueCommand({
+            SecretId: "/chrt/docdb/prod/custom-app-server",
+            VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
+          })
+        );
 
-    //-- Parse string into JSON, store values into variables --//
-    if (getSecretValueResponse.SecretString) {
-      let SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
-      docDB_host = SecretStringJSON.host;
-      docDB_port = SecretStringJSON.port;
-      docDB_dbname = SecretStringJSON.dbname || "";
-      docDB_username = SecretStringJSON.username;
-      docDB_password = SecretStringJSON.password;
-    } else {
-      throw new Error("docdb-mongodb SecretString is empty");
-    }
+        //-- Parse string into JSON --//
+        if (getSecretValueResponse.SecretString) {
+          SecretStringJSON = JSON.parse(getSecretValueResponse.SecretString);
+        } else {
+          throw new Error("docdb-mongodb SecretString is empty");
+        }
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
+      }
+    );
   } catch (err) {
     console.log(err);
   }
+  const { host, port, dbname, username, password } = SecretStringJSON;
   return {
-    docDB_host,
-    docDB_port,
-    docDB_dbname,
-    docDB_username,
-    docDB_password,
+    docDB_host: host,
+    docDB_port: port,
+    docDB_dbname: dbname,
+    docDB_username: username,
+    docDB_password: password,
   };
 };
