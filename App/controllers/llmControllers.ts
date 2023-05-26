@@ -199,7 +199,6 @@ export const deleteConversationAndMessagesController = async (
 
 //-- ********************* Retitle Conversation ********************* --//
 export const retitle = async (req: IRequestWithAuth, res: Response) => {
-  console.log("----- retitle -----");
   //-- Get data from params --//
   let { conversation_id, new_title } = req.body;
   let user_db_id = getUserDbId(req);
