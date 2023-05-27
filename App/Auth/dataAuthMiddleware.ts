@@ -21,6 +21,6 @@ export const dataAuthMiddleware = async (
   } else {
     return res
       .status(401)
-      .send("JWT received and valid, but did not find 'read:data' permission");
+      .send("Your account is missing the following permissions: 'read:data'");
   }
 };

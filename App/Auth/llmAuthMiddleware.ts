@@ -21,6 +21,6 @@ export const llmAuthMiddleware = async (
   } else {
     return res
       .status(401)
-      .send("JWT received and valid, but did not find 'chat:llm' permission");
+      .send("Your account is missing the following permissions: “chat:llm”");
   }
 };

@@ -25,7 +25,7 @@ export const journalAuthMiddleware = async (
     return res
       .status(401)
       .send(
-        "JWT received and valid, but did not find 'read:journal' && 'write:journal' permissions"
+        "Your account is missing one/both of the following permissions: 'read:journal' and 'write:journal'"
       );
   }
 };
