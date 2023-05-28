@@ -1,7 +1,7 @@
 //-- AWS client(s) --//
 
 //-- knex client --//
-import { knex } from "../../index.ts";
+import { knex } from "../index";
 
 //-- Utility Functions --//
 import getUserDbId from "../Util/getUserDbId.js";
@@ -9,8 +9,6 @@ import getUserDbId from "../Util/getUserDbId.js";
 //-- NPM Functions --//
 
 //-- ********************* Some Controller ********************* --//
-import getUserDbId from "../Util/getUserDbId.js";
-
 export const some_Function = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { foo } = req.params; // for route like 'some_route/:foo'
