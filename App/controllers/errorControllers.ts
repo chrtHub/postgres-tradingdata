@@ -6,7 +6,7 @@ import { IRequestWithAuth } from "../../index.d";
 export const backend400Error = async (req: IRequestWithAuth, res: Response) => {
   try {
     throw new Error();
-  } catch (e) {
+  } catch (err) {
     res.status(400).send("hello, this is a test backend 400 error");
   }
 };
@@ -20,7 +20,7 @@ export const backend401Error = async (req: IRequestWithAuth, res: Response) => {
 export const backend403Error = async (req: IRequestWithAuth, res: Response) => {
   try {
     throw new Error();
-  } catch (e) {
+  } catch (err) {
     res.status(403).send("hello, this is a test backend 403 error");
   }
 };
@@ -29,7 +29,7 @@ export const backend403Error = async (req: IRequestWithAuth, res: Response) => {
 export const backend418Error = async (req: IRequestWithAuth, res: Response) => {
   try {
     throw new Error();
-  } catch (e) {
+  } catch (err) {
     res.status(418).send("hello, this is a test backend 418 error");
   }
 };
@@ -38,7 +38,7 @@ export const backend418Error = async (req: IRequestWithAuth, res: Response) => {
 export const backend500Error = async (req: IRequestWithAuth, res: Response) => {
   try {
     throw new Error();
-  } catch (e) {
+  } catch (err) {
     res.status(500).send("hello, this is a test backend 500 error");
   }
 };

@@ -23,31 +23,40 @@ export const plLast45CalendarDays = async (
   let user_db_id = getUserDbId(req);
 
   try {
-    let rows: any = await knex("tradingdata02")
-      .select("trade_date", knex.raw("SUM(net_proceeds) as profit"))
-      .whereRaw("trade_date >= NOW() - INTERVAL '45 days'")
-      .andWhere("user_db_id", user_db_id) //-- SECURITY --//
-      .groupBy("trade_date")
-      .orderBy("trade_date");
+    await retry(
+      async () => {
+        let rows: any = await knex("tradingdata02")
+          .select("trade_date", knex.raw("SUM(net_proceeds) as profit"))
+          .whereRaw("trade_date >= NOW() - INTERVAL '45 days'")
+          .andWhere("user_db_id", user_db_id) //-- SECURITY --//
+          .groupBy("trade_date")
+          .orderBy("trade_date");
 
-    //-- Get array of actual Market Days from the past 45 calendar days --//
-    const datesAndProfits = getTradingDatesAndProfitsArray(45);
+        //-- Get array of actual Market Days from the past 45 calendar days --//
+        const datesAndProfits = getTradingDatesAndProfitsArray(45);
 
-    //-- Write data from Postgres into the datesAndProfits --//
-    rows.forEach((row: any) => {
-      //-- format date --//
-      const date = format(new Date(row.trade_date), "yyyy-MM-dd");
-      //-- Get each date's index in the datesAndProfits --//
-      const index = datesAndProfits.findIndex((item) => item.date === date);
-      //-- Write the date's profit into the datesAndProfits --//
-      if (index !== -1) {
-        datesAndProfits[index].profit = row.profit;
+        //-- Write data from Postgres into the datesAndProfits --//
+        rows.forEach((row: any) => {
+          //-- format date --//
+          const date = format(new Date(row.trade_date), "yyyy-MM-dd");
+          //-- Get each date's index in the datesAndProfits --//
+          const index = datesAndProfits.findIndex((item) => item.date === date);
+          //-- Write the date's profit into the datesAndProfits --//
+          if (index !== -1) {
+            datesAndProfits[index].profit = row.profit;
+          }
+        });
+
+        res.json(datesAndProfits);
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
       }
-    });
-
-    res.json(datesAndProfits);
-  } catch (e) {
-    console.log(e);
+    );
+  } catch (err) {
+    console.log(err);
     return res.status(500).send("error during knex query");
   }
 };
@@ -65,15 +74,24 @@ export const tradeUUIDsByDate = async (
   }
 
   try {
-    let rows: any = await knex("tradingdata02")
-      .select("trade_uuid")
-      .distinct()
-      .where("trade_date", date)
-      .andWhere("user_db_id", user_db_id); //-- SECURITY --//
+    await retry(
+      async () => {
+        let rows: any = await knex("tradingdata02")
+          .select("trade_uuid")
+          .distinct()
+          .where("trade_date", date)
+          .andWhere("user_db_id", user_db_id); //-- SECURITY --//
 
-    return res.json(rows);
-  } catch (e) {
-    console.log(e);
+        return res.json(rows);
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
+      }
+    );
+  } catch (err) {
+    console.log(err);
     return res.status(500).send("error during knex query");
   }
 };
@@ -92,40 +110,49 @@ export const tradeSummaryByTradeUUID = async (
   }
 
   try {
-    const rows = await knex
-      .with("trade", (querybuilder: any) => {
-        querybuilder
+    await retry(
+      async () => {
+        const rows = await knex
+          .with("trade", (querybuilder: any) => {
+            querybuilder
+              .select(
+                "trade_uuid",
+                "trade_date",
+                "side",
+                "symbol",
+                "quantity",
+                "price",
+                "execution_time",
+                "net_proceeds"
+              )
+              .from("tradingdata02")
+              .where("trade_uuid", trade_uuid)
+              .andWhere("user_db_id", user_db_id); //-- SECURITY --//
+          })
           .select(
             "trade_uuid",
             "trade_date",
-            "side",
             "symbol",
-            "quantity",
-            "price",
-            "execution_time",
-            "net_proceeds"
+            "side",
+            knex.raw("MIN(execution_time) AS first_execution_time"),
+            knex.raw("MAX(execution_time) AS last_execution_time"),
+            knex.raw("SUM(quantity) AS quantity"),
+            knex.raw("SUM(quantity * price) AS quantity_times_price"),
+            knex.raw("SUM(net_proceeds) AS net_proceeds")
           )
-          .from("tradingdata02")
-          .where("trade_uuid", trade_uuid)
-          .andWhere("user_db_id", user_db_id); //-- SECURITY --//
-      })
-      .select(
-        "trade_uuid",
-        "trade_date",
-        "symbol",
-        "side",
-        knex.raw("MIN(execution_time) AS first_execution_time"),
-        knex.raw("MAX(execution_time) AS last_execution_time"),
-        knex.raw("SUM(quantity) AS quantity"),
-        knex.raw("SUM(quantity * price) AS quantity_times_price"),
-        knex.raw("SUM(net_proceeds) AS net_proceeds")
-      )
-      .from("trade")
-      .groupBy("trade_uuid", "trade_date", "symbol", "side");
+          .from("trade")
+          .groupBy("trade_uuid", "trade_date", "symbol", "side");
 
-    res.json(rows);
-  } catch (e) {
-    console.log(e);
+        res.json(rows);
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
+      }
+    );
+  } catch (err) {
+    console.log(err);
     return res.status(500).send("error during knex query");
   }
 };
@@ -141,29 +168,38 @@ export const txnsByTradeUUID = async (req: IRequestWithAuth, res: Response) => {
   }
 
   try {
-    const rows = await knex
-      .select(
-        "uuid",
-        "brokerage",
-        "filename",
-        "import_timestamp",
-        "import_uuid",
-        "trade_uuid",
-        "trade_date",
-        "side",
-        "symbol",
-        "quantity",
-        "price",
-        "execution_time",
-        "net_proceeds"
-      )
-      .from("tradingdata02")
-      .where("trade_uuid", trade_uuid)
-      .andWhere("user_db_id", user_db_id) //-- SECURITY --//
-      .orderBy("execution_time", "asc");
-    res.json(rows);
-  } catch (e) {
-    console.log(e);
+    await retry(
+      async () => {
+        const rows = await knex
+          .select(
+            "uuid",
+            "brokerage",
+            "filename",
+            "import_timestamp",
+            "import_uuid",
+            "trade_uuid",
+            "trade_date",
+            "side",
+            "symbol",
+            "quantity",
+            "price",
+            "execution_time",
+            "net_proceeds"
+          )
+          .from("tradingdata02")
+          .where("trade_uuid", trade_uuid)
+          .andWhere("user_db_id", user_db_id) //-- SECURITY --//
+          .orderBy("execution_time", "asc");
+        res.json(rows);
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
+      }
+    );
+  } catch (err) {
+    console.log(err);
     return res.status(500).send("error during knex query");
   }
 };

@@ -12,7 +12,7 @@ import { MongoClient as _MongoClient } from "mongodb";
 // import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
 
 //-- Express server --//
-import express from "express";
+import express, { NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import bodyParser from "body-parser";
@@ -124,8 +124,10 @@ const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
     username: docDB_username,
     password: docDB_password,
   },
-  retryWrites: false, //-- Works here, by don't declare retryWrites: false when using Mongo Shell --//
+  // replicaSet: "rs0",
+  retryWrites: false, //-- Okay to declare here, by don't declare retryWrites: false when using Mongo Shell --//
   directConnection: true,
+  serverSelectionTimeoutMS: 5000, //-- Default: 30,000ms --//
 });
 try {
   await retry(
@@ -276,14 +278,15 @@ app.use("/error", jwtCheck, errorRoutes);
 
 //-- *************** Error Handler *************** --//
 /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-const errorHandler = (err: any, res: Response) => {
-  //-- DEV --//
+const errorHandler = (
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   if (err instanceof AxiosError) {
-    const axiosError = err as AxiosError;
     console.log("AxiosError: ", err);
-  }
-  //----//
-  if (err.name === "UnauthorizedError") {
+  } else if (err?.name === "UnauthorizedError") {
     return res
       .status(401)
       .send(

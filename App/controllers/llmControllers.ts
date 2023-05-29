@@ -18,6 +18,7 @@ import {
   IMessageNode_Mongo,
 } from "./chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
+
 class CustomError extends Error {}
 
 //-- ********************* List Conversations ********************* --//
@@ -49,7 +50,7 @@ export const listConversationsController = async (
         return res.status(200).json(conversationsArray);
       },
       {
-        retries: 2,
+        retries: 1,
         minTimeout: 1000,
         factor: 2,
       }
@@ -118,7 +119,7 @@ export const getConversationAndMessagesController = async (
                 }
               },
               {
-                retries: 2,
+                retries: 1,
                 minTimeout: 1000,
                 factor: 2,
               }
@@ -136,7 +137,7 @@ export const getConversationAndMessagesController = async (
         }
       },
       {
-        retries: 2,
+        retries: 1,
         minTimeout: 1000,
         factor: 2,
       }
@@ -175,7 +176,7 @@ export const deleteConversationAndMessagesController = async (
                 .send(`deleted ${conversation_id} and its messages`);
             },
             {
-              retries: 2,
+              retries: 1,
               minTimeout: 1000,
               factor: 2,
             }
@@ -186,7 +187,7 @@ export const deleteConversationAndMessagesController = async (
         }
       },
       {
-        retries: 2,
+        retries: 1,
         minTimeout: 1000,
         factor: 2,
       }
@@ -222,7 +223,7 @@ export const retitle = async (req: IRequestWithAuth, res: Response) => {
           return res.status(200).send(`title updated to: ${new_title}`);
         },
         {
-          retries: 2,
+          retries: 1,
           minTimeout: 1000,
           factor: 2,
         }

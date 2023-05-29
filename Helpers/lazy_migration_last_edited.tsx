@@ -32,7 +32,7 @@ if (bulkUpdateOperations.length > 0) {
         await Mongo.conversations.bulkWrite(bulkUpdateOperations);
       },
       {
-        retries: 2,
+        retries: 1,
         minTimeout: 1000,
         factor: 2,
       }

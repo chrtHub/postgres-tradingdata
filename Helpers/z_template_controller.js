@@ -20,8 +20,8 @@ export const some_Function = async (req, res) => {
   try {
     // let data = fetchData()
     // return res.json(data)
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    console.log(err);
     return res.status(500).send("error message while trying to beep boop");
   }
 };

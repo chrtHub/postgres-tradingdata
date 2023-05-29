@@ -1,9 +1,9 @@
 //-- MongoDB Client --//
-import { Mongo, MongoClient } from "../../index.js";
+import { Mongo, MongoClient } from "../../../index.js";
 
 //-- OpenAI Client --//
-import { getOpenAI_API_Key } from "../config/OpenAIConfig.js";
-import { tiktoken } from "./chatson/tiktoken.js";
+import { getOpenAI_API_Key } from "../../config/OpenAIConfig.js";
+import { tiktoken } from "../chatson/tiktoken.js";
 
 //-- Node Functions --//
 import { Readable } from "stream";
@@ -15,12 +15,12 @@ import { createParser } from "eventsource-parser";
 import retry from "async-retry";
 
 //-- Utility Functions --//
-import getUserDbId from "../utils/getUserDbId.js";
-import { createConversation } from "./chatson/createConversation.js";
+import getUserDbId from "../../utils/getUserDbId.js";
+import { createConversation } from "../chatson/createConversation.js";
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../index.d";
+import { IRequestWithAuth } from "../../../index.d";
 import {
   IAPIReqResMetadata,
   IMessage,
@@ -29,153 +29,19 @@ import {
   ChatCompletionRequestMessage,
   CreateChatCompletionRequest,
   IMessageNode,
-  IMessageNode_Mongo,
   APIProviderNames,
   ModelDeveloperNames,
-  ModelAPINames,
   TokenLimit,
-} from "./chatson/chatson_types.js";
+} from "../chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
-import { getSHA256Hash } from "../utils/getSHA256Hash.js";
+import { getSHA256Hash } from "../../utils/getSHA256Hash.js";
 import {
   mongoize_conversation,
   mongoize_message_node,
   demongoize_message_nodes,
-  demongoize_conversation,
-  demongoize_message_node,
-} from "./chatson/mongoize.js";
+} from "../chatson/mongoize.js";
 
 class ErrorForClient extends Error {}
-
-//-- ***** ***** ***** Titles ***** ***** ***** --//
-export const createTitleController = async (
-  req: IRequestWithAuth,
-  res: Response
-) => {
-  console.log("----- createTitle -----");
-
-  //-- Get data from params --//
-  let { conversation_id } = req.body;
-  let user_db_id = getUserDbId(req);
-  let message_node: IMessageNode_Mongo[] = [];
-  let new_title: string = "TODO - new title";
-
-  try {
-    await retry(
-      async () => {
-        message_node = await Mongo.message_nodes
-          .find({
-            conversation_id: ObjectId.createFromHexString(conversation_id),
-            user_db_id: user_db_id, //-- Security --//
-          })
-          .sort({ created_at: -1 })
-          .limit(1)
-          .toArray();
-      },
-      {
-        retries: 2,
-        minTimeout: 1000,
-        factor: 2,
-      }
-    );
-
-    //-- Build request body --//
-    const request_body: CreateChatCompletionRequest = {
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Please create a chat conversation title by capturing the essence of the following message(s). Use approximately 50 characters or less. Do not include anything else in your response - only include the exact text of the chat conversation title.",
-        },
-        {
-          role: "user",
-          content: `User's prompt: ${
-            message_node[0].prompt.content
-          }. Assistant's first completion: ${
-            message_node[0].completion?.content || ""
-          }`,
-        },
-      ],
-      user: await getSHA256Hash(user_db_id),
-    };
-
-    //-- Make LLM request to generate a title --//
-    let OPENAI_API_KEY = await getOpenAI_API_Key();
-    try {
-      await retry(
-        async () => {
-          //-- Axios POST request to OpenAI --//
-          let chat_completion = await axios.post(
-            "https://api.openai.com/v1/chat/completions",
-            request_body,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${OPENAI_API_KEY}`,
-              },
-            }
-          );
-          new_title = chat_completion.data.choices[0].message.content;
-        },
-        {
-          retries: 2,
-          minTimeout: 1000,
-          factor: 2,
-        }
-      );
-    } catch (err) {
-      console.log(err);
-      return res
-        .status(500)
-        .send("Error calling LLM to create title, please try again");
-    }
-
-    //-- Clean up --//
-    //-- Remove quotation marks from start and end, remove trailing period --//
-    new_title = new_title.replace(/^"|"$/g, "").replace(/\.$/g, "");
-
-    //-- Enforce title max length 60 chars. If char 60 is whitespace, remove it. --//
-    if (new_title.length > 60) {
-      new_title = new_title.substring(0, 60).trim();
-      if (new_title.endsWith(" ")) {
-        new_title = new_title.substring(0, new_title.length - 1);
-      }
-      new_title += "...";
-    }
-
-    //-- Update conversation --//
-    try {
-      await retry(
-        async () => {
-          await Mongo.conversations.updateOne(
-            {
-              _id: ObjectId.createFromHexString(conversation_id),
-              user_db_id: user_db_id, //-- security --//
-            },
-            { $set: { title: new_title } }
-          );
-          return res.status(200).send(`title updated to: ${new_title}`);
-        },
-        {
-          retries: 2,
-          minTimeout: 1000,
-          factor: 2,
-        }
-      );
-    } catch (err) {
-      console.log(err);
-      return res
-        .status(500)
-        .send("Error writing title to database, please try again");
-    }
-  } catch (err) {
-    console.log(err);
-    return res
-      .status(500)
-      .send("Error fetching most recent message node, please try again");
-  }
-};
 
 //-- Token Limit per model --//
 const BUFFER: number = 96;
@@ -190,7 +56,7 @@ const TOKEN_LIMITS: TokenLimit = {
 };
 
 //-- ***** ***** ***** Chat Completions SSE ***** ***** ***** --//
-export const chatCompletionsSSEController = async (
+export const chatCompletionsSSE = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
@@ -260,58 +126,88 @@ export const chatCompletionsSSEController = async (
     } else {
       //-- Fetch conversation --//
       try {
-        let response = await Mongo.conversations.findOne({
-          _id: ObjectId.createFromHexString(conversation_id),
-          user_db_id: user_db_id, //-- Security --//
-        });
-        if (response) {
-          conversation = {
-            _id: response._id.toHexString(),
-            created_at: response.created_at.toISOString(),
-            last_edited: response.last_edited?.toISOString(),
-            api_provider_name: response.api_provider_name,
-            model_developer_name: response.model_developer_name,
-            user_db_id: response.user_db_id,
-            title: response.title,
-            root_node_id: response.root_node_id,
-            schema_version: response.schema_version,
-            api_req_res_metadata: response.api_req_res_metadata,
-            system_tags: response.system_tags,
-            user_tags: response.user_tags,
-          };
-        } else {
-          return res
-            .status(400)
-            .send(`unknown conversation_id: ${conversation_id}`);
-        }
+        await retry(
+          async () => {
+            if (!conversation_id) {
+              return res.status(400).send(`missing conversation_id`);
+            }
+            let response = await Mongo.conversations.findOne({
+              _id: ObjectId.createFromHexString(conversation_id),
+              user_db_id: user_db_id, //-- Security --//
+            });
+            if (response) {
+              conversation = {
+                _id: response._id.toHexString(),
+                created_at: response.created_at.toISOString(),
+                last_edited: response.last_edited?.toISOString(),
+                api_provider_name: response.api_provider_name,
+                model_developer_name: response.model_developer_name,
+                user_db_id: response.user_db_id,
+                title: response.title,
+                root_node_id: response.root_node_id,
+                schema_version: response.schema_version,
+                api_req_res_metadata: response.api_req_res_metadata,
+                system_tags: response.system_tags,
+                user_tags: response.user_tags,
+              };
+            } else {
+              return res
+                .status(400)
+                .send(
+                  `no conversation found for conversation_id: ${conversation_id}`
+                );
+            }
+          },
+          {
+            retries: 1,
+            minTimeout: 1000,
+            factor: 2,
+          }
+        );
       } catch (err) {
         console.log(err);
         return res
           .status(500)
           .send("error finding conversation, please try again");
       }
+
       //-- Fetch existing_conversation_nodes --//
       try {
-        let response = await Mongo.message_nodes
-          .find(
-            {
-              conversation_id: ObjectId.createFromHexString(conversation_id),
-              user_db_id: user_db_id, //-- Security --//
+        await retry(
+          async () => {
+            if (!conversation_id) {
+              return res.status(400).send(`missing conversation_id`);
             }
-            //-- NOTE - tradeoffs here. Currently choosing (a). --//
-            //-- (a) always fetching all message nodes incurs perfomance cost for fetching large conversations --//
-            //-- (b) compound index on {conversation_id: 1, created_at: -1} with numerical limit per fetch results in potentially missing conversation context for a highly-branched conversation which needs to have a message with an old created_at that puts it beyond the fetch limit--//
-          )
-          .toArray();
-        if (response) {
-          //-- set existing_conversation_message_nodes --//
-          existing_conversation_message_nodes =
-            demongoize_message_nodes(response);
-        } else {
-          return res
-            .status(400)
-            .send(`no messages found for conversation_id: ${conversation_id}`);
-        }
+            let response = await Mongo.message_nodes
+              .find(
+                {
+                  conversation_id:
+                    ObjectId.createFromHexString(conversation_id),
+                  user_db_id: user_db_id, //-- Security --//
+                }
+                //-- NOTE - tradeoffs here. Currently choosing (a). --//
+                //-- (a) always fetching all message nodes incurs perfomance cost for fetching large conversations --//
+                //-- (b) compound index on {conversation_id: 1, created_at: -1} with numerical limit per fetch results in potentially missing conversation context for a highly-branched conversation which needs to have a message with an old created_at that puts it beyond the fetch limit--//
+              )
+              .toArray();
+            if (response) {
+              //-- set existing_conversation_message_nodes --//
+              existing_conversation_message_nodes =
+                demongoize_message_nodes(response);
+            } else {
+              return res
+                .status(400)
+                .send(
+                  `no messages found for conversation_id: ${conversation_id}`
+                );
+            }
+          },
+          {
+            retries: 1,
+            minTimeout: 1000,
+            factor: 2,
+          }
+        );
       } catch (err) {
         console.log(err);
         return res
