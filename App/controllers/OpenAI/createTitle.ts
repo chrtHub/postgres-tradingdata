@@ -25,8 +25,6 @@ import { getSHA256Hash } from "../../utils/getSHA256Hash.js";
 
 //-- ***** ***** ***** Titles ***** ***** ***** --//
 export const createTitle = async (req: IRequestWithAuth, res: Response) => {
-  console.log("----- createTitle -----");
-
   //-- Get data from params --//
   let { conversation_id } = req.body;
   let user_db_id = getUserDbId(req);

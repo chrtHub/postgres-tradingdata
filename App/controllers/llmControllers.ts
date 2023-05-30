@@ -12,7 +12,7 @@ import retry from "async-retry";
 
 //-- Types --//
 import { IRequestWithAuth } from "../../index.d";
-import { NextFunction, Response } from "express";
+import { Response } from "express";
 import {
   IConversation_Mongo,
   IMessageNode_Mongo,
