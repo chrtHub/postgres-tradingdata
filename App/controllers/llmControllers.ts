@@ -205,9 +205,13 @@ export const retitle = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
 
   if (new_title) {
-    //-- Enforce title max length 60 chars --//
+    //-- Enforce title max length 60 chars. If char 60 is whitespace, remove it. --//
     if (new_title.length > 60) {
-      new_title = new_title.substring(0, 60) + "...";
+      new_title = new_title.substring(0, 60).trim();
+      if (new_title.endsWith(" ")) {
+        new_title = new_title.substring(0, new_title.length - 1);
+      }
+      new_title += "...";
     }
 
     try {
