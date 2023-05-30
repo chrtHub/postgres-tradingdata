@@ -9,8 +9,6 @@ import {
 } from "./App/config/dbConfig.js";
 import { MongoClient as _MongoClient } from "mongodb";
 
-// import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
-
 //-- Express server --//
 import express, { NextFunction } from "express";
 import cors from "cors";
@@ -20,6 +18,9 @@ import bodyParser from "body-parser";
 //-- OpenAI --//
 import { getOpenAI_API_Key } from "./App/config/OpenAIConfig.js";
 import { Configuration, OpenAIApi } from "openai";
+
+//-- Wrapper for async controllers, calls next(err) for uncaught errors --//
+import "express-async-errors"; //-- Must import before importing routes --//
 
 //-- Routes --//
 import dataRoutes from "./App/routes/dataRoutes.js";
@@ -38,10 +39,6 @@ import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware.js";
 //-- OpenAPI Spec --//
 import swaggerJsdoc from "swagger-jsdoc";
 
-//-- Allow for a CommonJS "require" (inside ES Modules file) --//
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-
 //-- Types --//
 import { Request, Response } from "express";
 import {
@@ -49,6 +46,10 @@ import {
   IMessageNode_Mongo,
 } from "./App/controllers/chatson/chatson_types.js";
 import { AxiosError } from "axios";
+
+//-- Allow for a CommonJS "require" (inside ES Modules file) --//
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
@@ -272,9 +273,7 @@ app.use("/journal", jwtCheck, journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
 app.use("/openai", jwtCheck, llmAuthMiddleware, openAIRoutes);
 app.use("/llm", jwtCheck, llmAuthMiddleware, llmRoutes);
-
-//-- errors thrown in route logic --//
-app.use("/error", jwtCheck, errorRoutes);
+app.use("/error", jwtCheck, errorRoutes); //-- test errors purposely thrown in route logic --//
 
 //-- *************** Error Handler *************** --//
 /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
