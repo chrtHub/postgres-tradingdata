@@ -31,7 +31,6 @@ import {
   IMessageNode,
   APIProviderNames,
   ModelDeveloperNames,
-  TokenLimit,
 } from "../chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
 import { getSHA256Hash } from "../../utils/getSHA256Hash.js";
@@ -41,19 +40,9 @@ import {
   demongoize_message_nodes,
 } from "../chatson/mongoize.js";
 
-class ErrorForClient extends Error {}
+import { TOKEN_LIMITS } from "../chatson/chatson_vals.js";
 
-//-- Token Limit per model --//
-const BUFFER: number = 96;
-const TOKEN_LIMITS: TokenLimit = {
-  "gpt-3.5-turbo": 4096 - BUFFER,
-  "gpt-4": 4096 - BUFFER,
-  "gpt-4-32k": 0,
-  claude: 0,
-  "jurrasic-2": 0,
-  "amazon-titan": 0,
-  "google-palm-2": 0,
-};
+class ErrorForClient extends Error {}
 
 //-- ***** ***** ***** Chat Completions SSE ***** ***** ***** --//
 export const chatCompletionsSSE = async (
