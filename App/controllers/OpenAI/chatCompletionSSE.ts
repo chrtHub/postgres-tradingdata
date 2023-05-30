@@ -8,6 +8,9 @@ import { tiktoken } from "../chatson/tiktoken.js";
 //-- Node Functions --//
 import { Readable } from "stream";
 
+//-- TypeScript Functions --//
+import { RESPONSE_BUFFERS, TOKEN_LIMITS } from "../chatson/chatson_vals.js";
+
 //-- NPM Functions --//
 import axios from "axios";
 import produce from "immer";
@@ -17,6 +20,11 @@ import retry from "async-retry";
 //-- Utility Functions --//
 import getUserDbId from "../../utils/getUserDbId.js";
 import { createConversation } from "../chatson/createConversation.js";
+import {
+  mongoize_conversation,
+  mongoize_message_node,
+  demongoize_message_nodes,
+} from "../chatson/mongoize.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -34,15 +42,19 @@ import {
 } from "../chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
 import { getSHA256Hash } from "../../utils/getSHA256Hash.js";
-import {
-  mongoize_conversation,
-  mongoize_message_node,
-  demongoize_message_nodes,
-} from "../chatson/mongoize.js";
-
-import { TOKEN_LIMITS } from "../chatson/chatson_vals.js";
-
 class ErrorForClient extends Error {}
+
+//-- Steps --//
+//== (1) get request data, check prompt + LLM params against limits ==//
+//== (2) create conversation. or fetch existing conversation + messages + root node ==//
+//== (3) create new message node ==//
+//== (4) build request messages ==//
+//== (5) set and send headers ==//
+//== (6) start SSE request ==//
+//== (7) on each data event, parse data and send to client ==//
+//== (8) on [DONE] event, build full completion and req_res_metadata objects and send to client ==//
+//== (9) for new conversations, insert conversation, root node, and new message node ==//
+//== (10) for existing conversations, update conversation and parent node, insert new message node ==//
 
 //-- ***** ***** ***** Chat Completions SSE ***** ***** ***** --//
 export const chatCompletionsSSE = async (
@@ -51,7 +63,8 @@ export const chatCompletionsSSE = async (
 ) => {
   //-- Controller Try --//
   try {
-    //-- Cosntants based on route --//
+    //== (1) get request data, check prompt + LLM params against limits ==//
+    //-- Constants based on route --//
     const api_provider_name: APIProviderNames = "openai";
     const model_developer_name: ModelDeveloperNames = "openai";
 
@@ -72,14 +85,11 @@ export const chatCompletionsSSE = async (
         );
     }
 
-    //-- Variables for on new/existing conversation --//
-    let { conversation_id_string, parent_node_id_string, temperature } = body;
-
-    //-- Other --//
+    //-- Existing conversation if conversation_id_string && parent_node_id_string. Else new. --//
+    let { conversation_id_string, parent_node_id_string } = body;
     let conversation_id: string | null = null;
     let parent_node_id: string | null = null;
     let new_conversation: boolean = false;
-
     if (conversation_id_string && parent_node_id_string) {
       conversation_id = conversation_id_string;
       parent_node_id = parent_node_id_string;
@@ -87,6 +97,8 @@ export const chatCompletionsSSE = async (
       new_conversation = true;
     }
 
+    //-- LLM Parameters (just temperature for now) --//
+    let { temperature } = body;
     if (temperature) {
       if (temperature < 0) {
         temperature = 0;
@@ -95,7 +107,7 @@ export const chatCompletionsSSE = async (
       }
     }
 
-    //-- New or existing conversation? --//
+    //== (2) create conversation. or fetch existing conversation + messages + root node ==//
     let conversation: IConversation;
     let existing_conversation_message_nodes: IMessageNode[] = [];
     let root_node: IMessageNode | null = null;
@@ -159,8 +171,7 @@ export const chatCompletionsSSE = async (
           .status(500)
           .send("error finding conversation, please try again");
       }
-
-      //-- Fetch existing_conversation_nodes --//
+      //-- Fetch messages --//
       try {
         await retry(
           async () => {
@@ -205,7 +216,7 @@ export const chatCompletionsSSE = async (
             `error fetching messages for conversation_id: ${conversation_id}, please try again`
           );
       }
-      //-- Find root_node for existing conversations --//
+      //-- Find root_node (for existing conversations) --//
       let response = existing_conversation_message_nodes.find(
         (message_node) => message_node._id === conversation.root_node_id
       );
@@ -220,7 +231,7 @@ export const chatCompletionsSSE = async (
       }
     }
 
-    //-- Create new message_node --//
+    //== (3) create new message node ==//
     let new_message_node: IMessageNode = {
       _id: new ObjectId().toHexString(),
       user_db_id: user_db_id,
@@ -232,7 +243,7 @@ export const chatCompletionsSSE = async (
       completion: null,
     };
 
-    //-- For new conversation  --//
+    //-- For new conversations only --//
     if (new_conversation) {
       //-- Update root_node by adding message_node to its children --//
       root_node = produce(root_node, (draft) => {
@@ -252,7 +263,7 @@ export const chatCompletionsSSE = async (
       },
     ];
 
-    //-- Build request_messages and request_message_node_ids. Count tokens. --//
+    //== (4) build request messages ==//
     const request_messages_node_ids: string[] = [];
     request_messages_node_ids.push(new_message_node._id);
     let request_tokens: number = 0;
@@ -276,8 +287,11 @@ export const chatCompletionsSSE = async (
         let completion_content = node.completion?.content;
         if (completion_content) {
           let completionTokens: number = tiktoken(completion_content);
-
-          if (request_tokens + completionTokens < 3000) {
+          if (
+            request_tokens + completionTokens <
+            TOKEN_LIMITS[prompt.model.model_api_name] -
+              RESPONSE_BUFFERS[prompt.model.model_api_name]
+          ) {
             let completion_request_message: ChatCompletionRequestMessage = {
               content: completion_content,
               role: "assistant",
@@ -292,7 +306,11 @@ export const chatCompletionsSSE = async (
         //-- Add prompt --//
         let prompt_content = node.prompt.content;
         let promptTokens = tiktoken(prompt_content);
-        if (request_tokens + promptTokens < 3000) {
+        if (
+          request_tokens + promptTokens <
+          TOKEN_LIMITS[prompt.model.model_api_name] -
+            RESPONSE_BUFFERS[prompt.model.model_api_name]
+        ) {
           let prompt_request_message: ChatCompletionRequestMessage = {
             content: prompt_content,
             role: "user",
@@ -309,7 +327,7 @@ export const chatCompletionsSSE = async (
 
     let api_req_res_metadata: IAPIReqResMetadata;
 
-    //-- Set headers --//
+    //== (5) set and send headers ==//
     res.set({
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
@@ -330,6 +348,7 @@ export const chatCompletionsSSE = async (
     //-- Send headers immediately (don't wait for first chunk or message end) --//
     res.flushHeaders();
 
+    //== (6) start SSE request ==//
     //-- Axios Send Request Try --//
     try {
       //-- Get API Key --//
@@ -383,7 +402,7 @@ export const chatCompletionsSSE = async (
       //-- Use array to save response to MongoDB when streaming finishes --//
       const completion_chunks: string[] = [];
 
-      //-- Inside parser, send each chunk to the client, then close the connection --//
+      //== (7) on each data event, parse data and send to client ==//
       let conversation_sent: boolean = false;
       async function onParse(event: any) {
         try {
@@ -408,7 +427,9 @@ export const chatCompletionsSSE = async (
               //-- Send data to the client --//
               res.write(`data: ${uriEncodedData}\n\n`);
               //----//
-            } else if (event.data === "[DONE]") {
+            }
+            //== (8) on [DONE] event, build full completion and req_res_metadata objects and send to client ==//
+            else if (event.data === "[DONE]") {
               //-- Build completion --//
               const completion_content = completion_chunks.join("");
               const completion_tokens = tiktoken(completion_content.toString());
@@ -446,19 +467,25 @@ export const chatCompletionsSSE = async (
                 request_messages_node_ids: request_messages_node_ids,
               };
 
+              //-- Send api_req_res_metatdata to client --//
+              const api_req_res_metadata_string =
+                JSON.stringify(api_req_res_metadata);
+              res.write(
+                `id: api_req_res_metadata\ndata: ${api_req_res_metadata_string}\n\n`
+              );
+
               //-- Start MongoClient session to use for transactions --//
               const mongoSession = MongoClient.startSession({
                 causalConsistency: false,
               });
 
-              //-- For new conversation --//
+              //== (9) for new conversations, insert conversation, root node, and new message node ==//
               if (new_conversation) {
                 //-- Before inserting conversation, update (a) api_req_res_metadata, (b) last_edited --//
                 conversation = produce(conversation, (draft) => {
                   draft.api_req_res_metadata.push(api_req_res_metadata);
                   draft.last_edited = api_req_res_metadata_date.toISOString();
                 });
-
                 try {
                   await retry(
                     async () => {
@@ -513,7 +540,8 @@ export const chatCompletionsSSE = async (
                   //-- End MongoClient session --//
                   await mongoSession.endSession();
                 }
-              } //-- Else for existing conversation --//
+              }
+              //== (10) for existing conversations, update conversation and parent node, insert new message node ==//
               else {
                 try {
                   await retry(
@@ -587,13 +615,6 @@ export const chatCompletionsSSE = async (
                   await mongoSession.endSession();
                 }
               }
-
-              //-- Send api_req_res_metatdata to client --//
-              const api_req_res_metadata_string =
-                JSON.stringify(api_req_res_metadata);
-              res.write(
-                `id: api_req_res_metadata\ndata: ${api_req_res_metadata_string}\n\n`
-              );
 
               //-- Close connection (end of event.data === "[DONE]" section) --//
               res.end();
