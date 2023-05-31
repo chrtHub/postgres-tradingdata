@@ -61,6 +61,19 @@ export const chatCompletionsSSE = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
+  //-- Abort Controller for aborting outbound request to OpenAI LLM --//
+  const controller = new AbortController(); // NEW
+  controller.signal.addEventListener("abort", () => {
+    console.log("aborting SSE request to OpenAI");
+    completionDoneHandler(); // NEW
+  });
+
+  //-- Detect abort signal (or other closures) --//
+  res.on("close", () => {
+    console.log("client closed response connection"); // DEV
+    controller.abort();
+  });
+
   //== (1) get request data, check prompt + LLM params against limits ==//
   //-- Constants based on route --//
   const api_provider_name: APIProviderNames = "openai";
@@ -364,12 +377,10 @@ export const chatCompletionsSSE = async (
     };
 
     //-- Axios POST SSE request to OpenAI --//
-    const controller = new AbortController(); // NEW
     let response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       request_body,
       {
-        // signal: AbortSignal.timeout(5000), // DEV
         signal: controller.signal, // NEW
         headers: {
           "Content-Type": "application/json",
@@ -428,7 +439,8 @@ export const chatCompletionsSSE = async (
           }
           //== (8) on [DONE] event, build full completion and req_res_metadata objects and send to client ==//
           else if (event.data === "[DONE]") {
-            completionDoneHandler(); // TODO - also if stop generation fires, run this handler
+            console.log("[DONE]"); // DEV
+            completionDoneHandler();
           }
         } else if (event.type === "reconnect-interval") {
           console.log("%d milliseconds reconnect interval", event.value); // TODO - how to handle this? is a retry needed?
@@ -444,20 +456,26 @@ export const chatCompletionsSSE = async (
         }
       }
     } //-- end of onParse function --//
+
+    // call completionDoneHandler() here??
+    console.log("4");
+
     //----//
   } catch (err) {
-    //-- Axios Send Request Catch --//
-    // DEV - perhaps this one can be non res.write??
-    res.write(
-      `id: error\ndata: ${JSON.stringify({
-        message: `LLM request failed, please try again`,
-      })}\n\n`
-    );
+    if (err instanceof Error) {
+      //-- Axios Send Request Catch --//
+      res.write(
+        `id: error\ndata: ${JSON.stringify({
+          message: `LLM request failed, please try again`,
+        })}\n\n` // DEV - perhaps this one can be non res.write??
+      );
+    }
     res.end(); //-- Close connection --//
   }
 
-  // NEW
+  //-- ***** ***** ***** Completion Done Handler ***** ***** ***** --//
   const completionDoneHandler = async () => {
+    console.log("completionDoneHandler"); // DEv
     //-- Build completion --//
     const completion_content = completion_chunks.join("");
     const completion_tokens = tiktoken(completion_content.toString());
@@ -556,6 +574,7 @@ export const chatCompletionsSSE = async (
             },
           }
         );
+        console.log("new conversation stored in MongoDB"); // DEV
         //----//
       } catch (err) {
         //-- Abort transaction --//
@@ -630,6 +649,7 @@ export const chatCompletionsSSE = async (
             },
           }
         );
+        console.log("existing conversation updated in MongoDB"); // DEV
         //----//
       } catch (err) {
         //-- Abort transaction, end session --//
