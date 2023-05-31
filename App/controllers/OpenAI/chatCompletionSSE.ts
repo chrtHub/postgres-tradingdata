@@ -61,11 +61,16 @@ export const chatCompletionsSSE = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
+  //-- Accumulate completion in an array --//
+  const completion_chunks: string[] = [];
+
   //-- Abort Controller for aborting outbound request to OpenAI LLM --//
-  const controller = new AbortController(); // NEW
+  const controller = new AbortController();
   controller.signal.addEventListener("abort", () => {
-    console.log("aborting SSE request to OpenAI");
-    completionDoneHandler(); // NEW
+    console.log("aborting SSE request to OpenAI"); // DEV
+    if (completion_chunks.length > 0) {
+      completionDoneHandler(); // NEW
+    }
   });
 
   //-- Detect abort signal (or other closures) --//
@@ -261,9 +266,6 @@ export const chatCompletionsSSE = async (
     });
   }
 
-  //-- Use array to save response to MongoDB when streaming finishes --//
-  const completion_chunks: string[] = [];
-
   //== (4) build request messages ==//
   //-- Start request_messages with system message + prompt --//
   let request_messages: ChatCompletionRequestMessage[] = [
@@ -447,19 +449,9 @@ export const chatCompletionsSSE = async (
         }
       } catch (err) {
         //-- onParse Catch --//
-        if (err instanceof ErrorForClient) {
-          res.write(
-            `id: error\ndata: ${JSON.stringify({
-              message: `${err}`,
-            })}\n\n`
-          );
-        }
+        console.log(err); // TODO - what to do here?
       }
     } //-- end of onParse function --//
-
-    // call completionDoneHandler() here??
-    console.log("4");
-
     //----//
   } catch (err) {
     if (err instanceof Error) {
@@ -475,7 +467,7 @@ export const chatCompletionsSSE = async (
 
   //-- ***** ***** ***** Completion Done Handler ***** ***** ***** --//
   const completionDoneHandler = async () => {
-    console.log("completionDoneHandler"); // DEv
+    console.log("completionDoneHandler"); // DEV
     //-- Build completion --//
     const completion_content = completion_chunks.join("");
     const completion_tokens = tiktoken(completion_content.toString());
@@ -579,8 +571,11 @@ export const chatCompletionsSSE = async (
       } catch (err) {
         //-- Abort transaction --//
         await mongoSession.abortTransaction();
-        throw new ErrorForClient(
-          "error saving new conversation and messages, please open a new conversation and submit the prompt again"
+        res.write(
+          `id: error\ndata: ${JSON.stringify({
+            message:
+              "error saving new conversation and messages, please open a new conversation and submit the prompt again",
+          })}\n\n`
         );
       } finally {
         //-- End MongoClient session --//
@@ -654,8 +649,11 @@ export const chatCompletionsSSE = async (
       } catch (err) {
         //-- Abort transaction, end session --//
         await mongoSession.abortTransaction();
-        throw new ErrorForClient(
-          "error saving new messages, please submit the prompt again"
+        res.write(
+          `id: error\ndata: ${JSON.stringify({
+            message:
+              "error saving new messages, please submit the prompt again",
+          })}\n\n`
         );
       } finally {
         //-- End MongoClient session --//
