@@ -1,3 +1,5 @@
+import retry from "async-retry";
+
 //-- Secrets Manager --//
 import {
   SecretsManagerClient,
@@ -17,23 +19,32 @@ export const getOpenAI_API_Key = async () => {
   }
 
   try {
-    console.log("AWS Secrets Manager - fetching OpenAI API Key");
-    let res = await secretsManager_client.send(
-      new GetSecretValueCommand({
-        SecretId: "OpenAI/APIKey/0tRy",
-        VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
-      })
+    await retry(
+      async () => {
+        console.log("AWS Secrets Manager - fetching OpenAI API Key");
+        let res = await secretsManager_client.send(
+          new GetSecretValueCommand({
+            SecretId: "OpenAI/APIKey/0tRy",
+            VersionStage: "AWSCURRENT", //-- defaults to AWSCURRENT if unspecified --//
+          })
+        );
+
+        //-- Parse Secret String in res as JSON --//
+        if (res.SecretString) {
+          const SecretStringJSON = JSON.parse(res.SecretString);
+
+          //-- Set Open API Key value --//
+          OPENAI_API_KEY = SecretStringJSON.OPENAI_API_KEY;
+        } else {
+          throw new Error("OpenAI SecretString is empty");
+        }
+      },
+      {
+        retries: 2,
+        minTimeout: 1000,
+        factor: 2,
+      }
     );
-
-    //-- Parse Secret String in res as JSON --//
-    if (res.SecretString) {
-      const SecretStringJSON = JSON.parse(res.SecretString);
-
-      //-- Set Open API Key value --//
-      OPENAI_API_KEY = SecretStringJSON.OPENAI_API_KEY;
-    } else {
-      throw new Error("OpenAI SecretString is empty");
-    }
   } catch (err) {
     console.log(err);
   }

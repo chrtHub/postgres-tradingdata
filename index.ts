@@ -1,17 +1,16 @@
 //-- *************** Imports *************** --//
 import fs from "fs";
+import retry from "async-retry";
 
 //-- Database config --//
 import {
   getRDSDatabaseConfigFromSecretsManager,
   getDocDBDatabaseConfigFromSecretsManager,
 } from "./App/config/dbConfig.js";
-import { MongoClient, ReadPreference } from "mongodb";
-
-// import { Client as SSH_Client } from "ssh2"; //-- Dev mode, ssh tunnel to RDS instance --//
+import { MongoClient as _MongoClient } from "mongodb";
 
 //-- Express server --//
-import express from "express";
+import express, { NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import bodyParser from "body-parser";
@@ -20,28 +19,37 @@ import bodyParser from "body-parser";
 import { getOpenAI_API_Key } from "./App/config/OpenAIConfig.js";
 import { Configuration, OpenAIApi } from "openai";
 
+//-- Wrapper for async controllers, calls next(err) for uncaught errors --//
+import "express-async-errors"; //-- Must import before importing routes --//
+
 //-- Routes --//
 import dataRoutes from "./App/routes/dataRoutes.js";
 import journalRoutes from "./App/routes/journalRoutes.js";
 import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 import openAIRoutes from "./App/routes/openAIRoutes.js";
+import llmRoutes from "./App/routes/llmRoutes.js";
+import errorRoutes from "./App/routes/errorRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
 import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
 import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
-import { openAIAuthMiddleware } from "./App/Auth/openAIAuthMiddleware.js";
+import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware.js";
 
 //-- OpenAPI Spec --//
 import swaggerJsdoc from "swagger-jsdoc";
 
+//-- Types --//
+import { Request, Response } from "express";
+import {
+  IConversation_Mongo,
+  IMessageNode_Mongo,
+} from "./App/controllers/chatson/chatson_types.js";
+import { AxiosError } from "axios";
+
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-
-//-- Types --//
-import { Request, Response, NextFunction } from "express";
-import { IRequestWithAuth } from "./index.d";
 
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
@@ -68,9 +76,9 @@ let tlsCAFilepath = "/app/PUBLIC-rds-ca-bundle.pem";
 //-- NOTE - Currently using `npm run ssh` script to establish ssh tunnel --//
 if (process.env.NODE_ENV === "development") {
   rdsDB_host = "127.0.0.1";
-  rdsDB_port = 2222;
+  rdsDB_port = "2222";
   docDB_host = "127.0.0.1";
-  docDB_port = 22222;
+  docDB_port = "22222";
   tlsAllowInvalidHostnames = true;
   tlsCAFilepath = "./PUBLIC-rds-ca-bundle.pem";
 }
@@ -89,7 +97,6 @@ const knex = require("knex")({
     database: rdsDB_dbname,
   },
 });
-export { knex };
 try {
   const res = await knex.raw('SELECT NOW() as "current_time"');
   const currentTime = res.rows[0].current_time;
@@ -100,6 +107,7 @@ try {
   console.log("PostgreSQL-knex connection error");
   console.log(error);
 }
+export { knex };
 
 //-- Establish DocDB-MongoDB connection using MongoClient --//
 console.log(
@@ -109,7 +117,7 @@ console.log(
 console.log(
   `DocumentDB-MongoDB requesting connection at ${docDB_host}:${docDB_port}`
 );
-const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
+const MongoClient = new _MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
   tls: true,
   tlsCAFile: tlsCAFilepath,
   tlsAllowInvalidHostnames: tlsAllowInvalidHostnames,
@@ -117,19 +125,40 @@ const mongoClient = new MongoClient(`mongodb://${docDB_host}:${docDB_port}`, {
     username: docDB_username,
     password: docDB_password,
   },
-  directConnection: true, // NOTE - will this be unnecessary once a replica set is being used?
+  // replicaSet: "rs0",
+  retryWrites: false, //-- Okay to declare here, by don't declare retryWrites: false when using Mongo Shell --//
+  directConnection: true,
+  serverSelectionTimeoutMS: 5000, //-- Default: 30,000ms --//
 });
-export { mongoClient }; // TODO - is this good?
 try {
-  await mongoClient.connect();
-  const res = await mongoClient.db().command({ serverStatus: 1 });
-  const currentTime = res.localTime;
-  console.log("DocumentDB-MongoDB test query succeeded at:", currentTime);
-  console.log("DocumentDB-MongoDB user is:", docDB_username);
+  await retry(
+    async () => {
+      await MongoClient.connect();
+      const res = await MongoClient.db().command({ serverStatus: 1 });
+      console.log("DocumentDB-MongoDB test query succeeded at:", res.localTime);
+      console.log("DocumentDB-MongoDB user is:", docDB_username);
+    },
+    {
+      retries: 2,
+      minTimeout: 1000,
+      factor: 2,
+    }
+  );
 } catch (error) {
   console.log("DocumentDB-MongoDB connection error");
   console.log(error);
 }
+const Mongo = {
+  conversations:
+    MongoClient.db("chrtgpt-journal").collection<IConversation_Mongo>(
+      "conversations"
+    ),
+  message_nodes:
+    MongoClient.db("chrtgpt-journal").collection<IMessageNode_Mongo>(
+      "message_nodes"
+    ),
+};
+export { Mongo, MongoClient };
 
 //-- OpenAI --//
 let OPENAI_API_KEY: string = await getOpenAI_API_Key();
@@ -220,14 +249,6 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
 
-//-- Emits 'Request' with shape 'IRequestWithAuth' by adding: --//
-//-- Request.auth.header, Request.auth.payload --//
-const jwtCheck = auth({
-  audience: "https://chrt.com",
-  issuerBaseURL: "https://chrt-prod.us.auth0.com/",
-  tokenSigningAlg: "RS256",
-});
-
 //-- Dev utility for logging token --//
 // app.use((req, res, next) => {
 //   let { header, payload, token } = req.auth;
@@ -237,24 +258,41 @@ const jwtCheck = auth({
 //   next();
 // });
 
+//-- Emits 'Request' with shape 'IRequestWithAuth' by adding: --//
+//-- Request.auth.header, Request.auth.payload --//
+const jwtCheck = auth({
+  audience: "https://chrt.com",
+  issuerBaseURL: "https://chrt-prod.us.auth0.com/",
+  tokenSigningAlg: "RS256",
+});
+
 //-- *************** Routes w/ authentication *************** --//
 //-- Routes --//
 app.use("/data", jwtCheck, dataAuthMiddleware, dataRoutes);
 app.use("/journal", jwtCheck, journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
-app.use("/openai", jwtCheck, openAIAuthMiddleware, openAIRoutes);
+app.use("/openai", jwtCheck, llmAuthMiddleware, openAIRoutes);
+app.use("/llm", jwtCheck, llmAuthMiddleware, llmRoutes);
+app.use("/error", jwtCheck, errorRoutes); //-- test errors purposely thrown in route logic --//
 
 //-- *************** Error Handler *************** --//
 /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-const errorHandler = (err: any, res: Response) => {
-  if (err.name === "UnauthorizedError") {
+const errorHandler = (
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (err instanceof AxiosError) {
+    console.log("AxiosError: ", err);
+  } else if (err?.name === "UnauthorizedError") {
     return res
       .status(401)
       .send(
-        "Authentication failed OR resource not found beep boop. Everything except '/', '/spec', and '/docs' requires a Bearer token."
+        "Authentication failed OR resource not found beep boop. Everything except '/' and '/spec.json' requires a Bearer token."
       );
   } else {
-    return res.status(500).send("Internal server error beep boop");
+    return res.status(500).send("unexpected error, beep boop");
   }
 };
 app.use(errorHandler);

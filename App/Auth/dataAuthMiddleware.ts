@@ -19,8 +19,8 @@ export const dataAuthMiddleware = async (
     res.append("CHRT-JWT-permission-read_data", "verified");
     next();
   } else {
-    return res.status(401).json({
-      error: "JWT received and valid, but did not find 'read:data' permission",
-    });
+    return res
+      .status(401)
+      .send("Your account is missing the following permissions: 'read:data'");
   }
 };

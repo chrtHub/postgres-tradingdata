@@ -1,7 +1,7 @@
 //-- AWS client(s) --//
 
 //-- knex client --//
-import { knex } from "../../index.ts";
+import { knex } from "../index";
 
 //-- Utility Functions --//
 import getUserDbId from "../Util/getUserDbId.js";
@@ -9,8 +9,6 @@ import getUserDbId from "../Util/getUserDbId.js";
 //-- NPM Functions --//
 
 //-- ********************* Some Controller ********************* --//
-import getUserDbId from "../Util/getUserDbId.js";
-
 export const some_Function = async (req, res) => {
   let user_db_id = getUserDbId(req);
   let { foo } = req.params; // for route like 'some_route/:foo'
@@ -22,8 +20,8 @@ export const some_Function = async (req, res) => {
   try {
     // let data = fetchData()
     // return res.json(data)
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    console.log(err);
     return res.status(500).send("error message while trying to beep boop");
   }
 };

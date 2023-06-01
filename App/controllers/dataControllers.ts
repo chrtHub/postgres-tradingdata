@@ -13,8 +13,8 @@ export const fetchData = async (req: IRequestWithAuth, res: Response) => {
   try {
     let rows = { foo: "bar", user_db_id: user_db_id };
     res.json(rows);
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    console.log(err);
     res.status(500).send("Error fetching data");
   }
 };

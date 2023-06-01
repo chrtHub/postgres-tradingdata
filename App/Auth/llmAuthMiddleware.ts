@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import { IRequestWithAuth } from "../../index.d";
 
-export const openAIAuthMiddleware = async (
+export const llmAuthMiddleware = async (
   req: IRequestWithAuth,
   res: Response,
   next: NextFunction
@@ -19,8 +19,8 @@ export const openAIAuthMiddleware = async (
     res.append("CHRT-JWT-permission-chat-llm", "verified");
     next();
   } else {
-    return res.status(401).json({
-      error: "JWT received and valid, but did not find 'chat:llm' permission",
-    });
+    return res
+      .status(401)
+      .send("Your account is missing the following permissions: “chat:llm”");
   }
 };
