@@ -87,7 +87,6 @@ export const chatCompletionsSSE = async (
   const body: IChatCompletionRequestBody_OpenAI = req.body;
   const { prompt } = body;
   const model = prompt.model;
-  // const incomingPromptTokens = tiktoken(prompt.content);
   const incomingPromptTokens = countTokens(prompt.content);
 
   //-- Check token count against token limit --//
