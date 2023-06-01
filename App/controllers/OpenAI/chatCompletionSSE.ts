@@ -67,7 +67,6 @@ export const chatCompletionsSSE = async (
   //-- Abort Controller for aborting outbound request to OpenAI LLM --//
   const controller = new AbortController();
   controller.signal.addEventListener("abort", () => {
-    console.log("aborting SSE request to OpenAI"); // DEV
     if (completion_chunks.length > 0) {
       completionDoneHandler();
     }
@@ -75,7 +74,6 @@ export const chatCompletionsSSE = async (
 
   //-- Detect abort signal (or other closures) --//
   res.on("close", () => {
-    console.log("client closed response connection"); // DEV
     controller.abort();
   });
 
@@ -442,7 +440,6 @@ export const chatCompletionsSSE = async (
           }
           //== (8) on [DONE] event, build full completion and req_res_metadata objects and send to client ==//
           else if (event.data === "[DONE]") {
-            console.log("[DONE]"); // DEV
             completionDoneHandler();
           }
         } else if (event.type === "reconnect-interval") {
@@ -468,7 +465,6 @@ export const chatCompletionsSSE = async (
 
   //-- ***** ***** ***** Completion Done Handler ***** ***** ***** --//
   const completionDoneHandler = async () => {
-    console.log("completionDoneHandler"); // DEV
     //-- Build completion --//
     const completion_content = completion_chunks.join("");
     const completion_tokens = countTokens(completion_content.toString());
@@ -567,7 +563,6 @@ export const chatCompletionsSSE = async (
             },
           }
         );
-        console.log("new conversation stored in MongoDB"); // DEV
         //----//
       } catch (err) {
         //-- Abort transaction --//
@@ -645,7 +640,6 @@ export const chatCompletionsSSE = async (
             },
           }
         );
-        console.log("existing conversation updated in MongoDB"); // DEV
         //----//
       } catch (err) {
         //-- Abort transaction, end session --//
