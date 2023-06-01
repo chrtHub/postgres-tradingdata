@@ -69,7 +69,7 @@ export const chatCompletionsSSE = async (
   controller.signal.addEventListener("abort", () => {
     console.log("aborting SSE request to OpenAI"); // DEV
     if (completion_chunks.length > 0) {
-      completionDoneHandler(); // NEW
+      completionDoneHandler();
     }
   });
 
@@ -383,7 +383,7 @@ export const chatCompletionsSSE = async (
       "https://api.openai.com/v1/chat/completions",
       request_body,
       {
-        signal: controller.signal, // NEW
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_API_KEY}`,
