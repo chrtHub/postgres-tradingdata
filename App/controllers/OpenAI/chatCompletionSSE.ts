@@ -3,7 +3,6 @@ import { Mongo, MongoClient } from "../../../index.js";
 
 //-- OpenAI Client --//
 import { getOpenAI_API_Key } from "../../config/OpenAIConfig.js";
-import { tiktoken } from "../chatson/tiktoken.js";
 
 //-- Node Functions --//
 import { Readable } from "stream";
@@ -25,6 +24,7 @@ import {
   mongoize_message_node,
   demongoize_message_nodes,
 } from "../chatson/mongoize.js";
+import { countTokens } from "../chatson/countTokens.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -89,7 +89,8 @@ export const chatCompletionsSSE = async (
   const body: IChatCompletionRequestBody_OpenAI = req.body;
   const { prompt } = body;
   const model = prompt.model;
-  const incomingPromptTokens = tiktoken(prompt.content);
+  // const incomingPromptTokens = tiktoken(prompt.content);
+  const incomingPromptTokens = countTokens(prompt.content);
 
   //-- Check token count against token limit --//
   const tokenLimit = TOKEN_LIMITS[prompt.model.model_api_name];
@@ -282,8 +283,8 @@ export const chatCompletionsSSE = async (
   const request_messages_node_ids: string[] = [];
   request_messages_node_ids.push(new_message_node._id);
   let request_tokens: number = 0;
-  request_tokens += tiktoken(root_node.prompt.content);
-  request_tokens += tiktoken(new_message_node.prompt.content);
+  request_tokens += countTokens(root_node.prompt.content);
+  request_tokens += countTokens(new_message_node.prompt.content);
 
   //-- Create node_map for O(1) lookups inside the while loop --//
   let node_map: Record<string, IMessageNode> = {};
@@ -301,7 +302,7 @@ export const chatCompletionsSSE = async (
       //-- Add completion if it exists --//
       let completion_content = node.completion?.content;
       if (completion_content) {
-        let completionTokens: number = tiktoken(completion_content);
+        let completionTokens: number = countTokens(completion_content);
         if (
           request_tokens + completionTokens <
           TOKEN_LIMITS[prompt.model.model_api_name] -
@@ -320,7 +321,7 @@ export const chatCompletionsSSE = async (
 
       //-- Add prompt --//
       let prompt_content = node.prompt.content;
-      let promptTokens = tiktoken(prompt_content);
+      let promptTokens = countTokens(prompt_content);
       if (
         request_tokens + promptTokens <
         TOKEN_LIMITS[prompt.model.model_api_name] -
@@ -470,7 +471,7 @@ export const chatCompletionsSSE = async (
     console.log("completionDoneHandler"); // DEV
     //-- Build completion --//
     const completion_content = completion_chunks.join("");
-    const completion_tokens = tiktoken(completion_content.toString());
+    const completion_tokens = countTokens(completion_content.toString());
     const completion_created_at = new Date().toISOString();
     const completion: IMessage = {
       author: model.model_api_name,
