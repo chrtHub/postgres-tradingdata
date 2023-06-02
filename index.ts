@@ -165,7 +165,7 @@ let OPENAI_API_KEY: string = await getOpenAI_API_Key();
 const configuration = new Configuration({
   apiKey: OPENAI_API_KEY,
 });
-export const openai = new OpenAIApi(configuration); // Does this expire / timeout?
+export const OpenAIClient = new OpenAIApi(configuration); // Does this expire / timeout?
 
 //-- *************** Express Server, Middleware, Swagger-JSDoc *************** --//
 const PORT = 8080;
