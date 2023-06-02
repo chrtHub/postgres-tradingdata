@@ -3,6 +3,7 @@
 import express from "express";
 // import * as ctrl from "../controllers/openAICreateTitle.js";
 import { createTitle } from "../controllers/OpenAI/createTitle.js";
+import { createImage } from "../controllers/OpenAI/createImage.js";
 import { chatCompletionsSSE } from "../controllers/OpenAI/chatCompletionSSE.js";
 
 //-- Express router --//
@@ -25,6 +26,8 @@ router.post("/v1/chat/completions", (req: IRequestWithAuth, res: Response) => {
 });
 
 router.post("/create_title", createTitle);
+
+router.post("/create_image", createImage);
 
 //-- ********** Export ********** --//
 export default router;
