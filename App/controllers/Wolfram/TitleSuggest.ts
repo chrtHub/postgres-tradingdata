@@ -20,19 +20,18 @@ export const TitleSuggest = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
   console.log(user_db_id); // DEV
 
-  const body: { title: string } = req.body;
-  const { title } = body;
+  const body: { prompt: string } = req.body;
+  const { prompt } = body;
 
-  if (!title) {
+  if (!prompt) {
     return res.status(400).send("Missing title param");
   }
 
   try {
     await retry(
       async () => {
-        // axios, knex, or mongo call
-        // return res.json(data)
-        return res.status(200).json({ title: title });
+        // TODO - run the Wolfram Language LLMFunction "TitleSuggest"
+        return res.status(200).json({ title: "todo" });
       },
       {
         retries: 1,
