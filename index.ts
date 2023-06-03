@@ -26,6 +26,7 @@ import "express-async-errors"; //-- Must import before importing routes --//
 import journalRoutes from "./App/routes/journalRoutes.js";
 import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 import openAIRoutes from "./App/routes/openAIRoutes.js";
+import wolframRoutes from "./App/routes/wolframRoutes.js";
 import conversationRoutes from "./App/routes/conversationRoutes.js";
 import errorRoutes from "./App/routes/errorRoutes.js";
 
@@ -269,6 +270,7 @@ const jwtCheck = auth({
 app.use("/journal", jwtCheck, journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
 app.use("/openai", jwtCheck, openAIRoutes); //-- middleware in routes --//
+app.use("/wolfram", jwtCheck, wolframRoutes); //-- middleware in routes --//
 app.use("/conversation", jwtCheck, llmAuthMiddleware, conversationRoutes);
 app.use("/error", jwtCheck, errorRoutes); //-- test errors purposely thrown in route logic --//
 

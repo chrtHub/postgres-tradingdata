@@ -1,30 +1,28 @@
 import { Response, NextFunction } from "express";
 import { IRequestWithAuth } from "../../index.d";
 
-export const stableDiffusionAuthMiddleware = async (
+export const wolframAuthMiddleware = async (
   req: IRequestWithAuth,
   res: Response,
   next: NextFunction
 ) => {
   let payload = req?.auth?.payload;
-  let generate_diffusion_image: boolean = false;
+  let invoke_wolfram_all: boolean = false;
 
   //-- Check for necessary permissions to access route(s) guarded by this middleware --//
   if (payload && payload.permissions) {
-    generate_diffusion_image = payload.permissions.includes(
-      "generate:diffusion-image"
-    );
+    invoke_wolfram_all = payload.permissions.includes("invoke:wolfram-all");
   }
 
   //-- Only proceed via 'next()' if necessary permissions are present, otherwise send 401 --//
-  if (generate_diffusion_image) {
-    res.append("CHRT-JWT-permission-generate-diffusion-image", "verified");
+  if (invoke_wolfram_all) {
+    res.append("CHRT-JWT-permission-invoke-wolfram-all", "verified");
     next();
   } else {
     return res
       .status(401)
       .send(
-        "Your account is missing the following permissions: “generate:diffusion-image”"
+        "Your account is missing the following permissions: “invoke:wolfram-all”"
       );
   }
 };
