@@ -77,7 +77,7 @@ async function main() {
   });
   const OpenAIClient = new OpenAIApi(configuration);
 
-  let style = [
+  let styles = [
     "claymation",
     "award winning 4K photography",
     "flat art",
@@ -89,7 +89,7 @@ async function main() {
     "synthwave",
     "vector",
   ];
-  let animal = [
+  let animals = [
     "dog",
     "cat",
     "squirrel",
@@ -98,7 +98,7 @@ async function main() {
     "penguin",
     "sloth",
   ];
-  let emotion = [
+  let emotions = [
     "sad",
     "perplexed",
     "confused",
@@ -108,39 +108,36 @@ async function main() {
     "irritated",
   ];
 
-  let styleIdx = 0;
-  let animalIdx = 0;
-  let emotionIdx = 0;
+  //-- End index --//
+  // let styleLoopStopper = 1;
+  // let animallLoopStopper = 1;
+  // let emotionLoopStopper = 2;
 
-  let styleLoopStopper = 1;
-  let animallLoopStopper = animal.length;
-  let emotionLoopStopper = emotion.length;
-
-  // let emotionLoopStopper = emotion.length;
-  // let animallLoopStopper = animal.length;
-  // let styleLoopStopper = style.length;
+  let styleLoopStopper = styles.length;
+  let animallLoopStopper = animals.length;
+  let emotionLoopStopper = emotions.length;
 
   //-- Function Loops --//
-  for (emotionIdx = 0; emotionIdx < emotionLoopStopper; emotionIdx++) {
-    let selectedEmotion = emotion[emotionIdx];
+  for (let emotionIdx = 0; emotionIdx < emotionLoopStopper; emotionIdx++) {
+    let emotion = emotions[emotionIdx];
 
-    for (animalIdx = 0; animalIdx < animallLoopStopper; animalIdx++) {
-      let selectedAnimal = animal[animalIdx];
+    for (let animalIdx = 0; animalIdx < animallLoopStopper; animalIdx++) {
+      let animal = animals[animalIdx];
 
-      for (styleIdx = 0; styleIdx < styleLoopStopper; styleIdx++) {
-        let selectedStyle = style[styleIdx];
+      for (let styleIdx = 1; styleIdx < styleLoopStopper; styleIdx++) {
+        let style = styles[styleIdx];
 
         const bucket = "sad-animal-404-images";
-        const key = `${selectedStyle}/${selectedAnimal}/${selectedEmotion}`;
+        const key = `${style}/${animal}/${emotion}`;
         console.log(
-          `about to create image for ${selectedStyle}, ${selectedAnimal}, ${selectedEmotion}`
+          `about to create image for ${style}, ${animal}, ${emotion}`
         );
         try {
           await retry(
             async () => {
               //-- Call OpenAI API to Generate Image --//
               const response = await OpenAIClient.createImage({
-                prompt: `a cute ${selectedAnimal} that is feeling ${selectedEmotion} because its computer crashed, ${selectedStyle}`,
+                prompt: `a cute ${animal} that is feeling ${emotion} because its computer crashed, ${style}`,
                 n: 1,
                 size: "512x512",
                 response_format: "b64_json",

@@ -54,7 +54,7 @@ var s3_client = new client_s3_1.S3Client({
 console.log("----- before main -----"); // DEV
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var getOpenAI_API_Key, OPENAI_API_KEY, configuration, OpenAIClient, style, animal, emotion, styleIdx, animalIdx, emotionIdx, styleLoopStopper, animallLoopStopper, emotionLoopStopper, _loop_1;
+        var getOpenAI_API_Key, OPENAI_API_KEY, configuration, OpenAIClient, styles, animals, emotions, styleLoopStopper, animallLoopStopper, emotionLoopStopper, _loop_1, emotionIdx;
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -118,7 +118,7 @@ function main() {
                         apiKey: OPENAI_API_KEY
                     });
                     OpenAIClient = new openai_1.OpenAIApi(configuration);
-                    style = [
+                    styles = [
                         "claymation",
                         "award winning 4K photography",
                         "flat art",
@@ -130,7 +130,7 @@ function main() {
                         "synthwave",
                         "vector",
                     ];
-                    animal = [
+                    animals = [
                         "dog",
                         "cat",
                         "squirrel",
@@ -139,7 +139,7 @@ function main() {
                         "penguin",
                         "sloth",
                     ];
-                    emotion = [
+                    emotions = [
                         "sad",
                         "perplexed",
                         "confused",
@@ -148,33 +148,30 @@ function main() {
                         "furious",
                         "irritated",
                     ];
-                    styleIdx = 0;
-                    animalIdx = 0;
-                    emotionIdx = 0;
-                    styleLoopStopper = 1;
-                    animallLoopStopper = animal.length;
-                    emotionLoopStopper = emotion.length;
-                    _loop_1 = function () {
-                        var selectedEmotion, _loop_2;
+                    styleLoopStopper = styles.length;
+                    animallLoopStopper = animals.length;
+                    emotionLoopStopper = emotions.length;
+                    _loop_1 = function (emotionIdx) {
+                        var emotion, _loop_2, animalIdx;
                         return __generator(this, function (_b) {
                             switch (_b.label) {
                                 case 0:
-                                    selectedEmotion = emotion[emotionIdx];
-                                    _loop_2 = function () {
-                                        var selectedAnimal, _loop_3;
+                                    emotion = emotions[emotionIdx];
+                                    _loop_2 = function (animalIdx) {
+                                        var animal, _loop_3, styleIdx;
                                         return __generator(this, function (_c) {
                                             switch (_c.label) {
                                                 case 0:
-                                                    selectedAnimal = animal[animalIdx];
-                                                    _loop_3 = function () {
-                                                        var selectedStyle, bucket, key, err_2;
+                                                    animal = animals[animalIdx];
+                                                    _loop_3 = function (styleIdx) {
+                                                        var style, bucket, key, err_2;
                                                         return __generator(this, function (_d) {
                                                             switch (_d.label) {
                                                                 case 0:
-                                                                    selectedStyle = style[styleIdx];
+                                                                    style = styles[styleIdx];
                                                                     bucket = "sad-animal-404-images";
-                                                                    key = "".concat(selectedStyle, "/").concat(selectedAnimal, "/").concat(selectedEmotion);
-                                                                    console.log("about to create image for ".concat(selectedStyle, ", ").concat(selectedAnimal, ", ").concat(selectedEmotion));
+                                                                    key = "".concat(style, "/").concat(animal, "/").concat(emotion);
+                                                                    console.log("about to create image for ".concat(style, ", ").concat(animal, ", ").concat(emotion));
                                                                     _d.label = 1;
                                                                 case 1:
                                                                     _d.trys.push([1, 3, , 4]);
@@ -184,7 +181,7 @@ function main() {
                                                                             return __generator(this, function (_a) {
                                                                                 switch (_a.label) {
                                                                                     case 0: return [4 /*yield*/, OpenAIClient.createImage({
-                                                                                            prompt: "a cute ".concat(selectedAnimal, " that is feeling ").concat(selectedEmotion, " because its computer crashed, ").concat(selectedStyle),
+                                                                                            prompt: "a cute ".concat(animal, " that is feeling ").concat(emotion, " because its computer crashed, ").concat(style),
                                                                                             n: 1,
                                                                                             size: "512x512",
                                                                                             response_format: "b64_json"
@@ -247,11 +244,11 @@ function main() {
                                                             }
                                                         });
                                                     };
-                                                    styleIdx = 0;
+                                                    styleIdx = 1;
                                                     _c.label = 1;
                                                 case 1:
                                                     if (!(styleIdx < styleLoopStopper)) return [3 /*break*/, 4];
-                                                    return [5 /*yield**/, _loop_3()];
+                                                    return [5 /*yield**/, _loop_3(styleIdx)];
                                                 case 2:
                                                     _c.sent();
                                                     _c.label = 3;
@@ -266,7 +263,7 @@ function main() {
                                     _b.label = 1;
                                 case 1:
                                     if (!(animalIdx < animallLoopStopper)) return [3 /*break*/, 4];
-                                    return [5 /*yield**/, _loop_2()];
+                                    return [5 /*yield**/, _loop_2(animalIdx)];
                                 case 2:
                                     _b.sent();
                                     _b.label = 3;
@@ -281,7 +278,7 @@ function main() {
                     _a.label = 2;
                 case 2:
                     if (!(emotionIdx < emotionLoopStopper)) return [3 /*break*/, 5];
-                    return [5 /*yield**/, _loop_1()];
+                    return [5 /*yield**/, _loop_1(emotionIdx)];
                 case 3:
                     _a.sent();
                     _a.label = 4;
