@@ -23,16 +23,14 @@ import { Configuration, OpenAIApi } from "openai";
 import "express-async-errors"; //-- Must import before importing routes --//
 
 //-- Routes --//
-import dataRoutes from "./App/routes/dataRoutes.js";
 import journalRoutes from "./App/routes/journalRoutes.js";
 import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 import openAIRoutes from "./App/routes/openAIRoutes.js";
-import llmRoutes from "./App/routes/llmRoutes.js";
+import conversationRoutes from "./App/routes/conversationRoutes.js";
 import errorRoutes from "./App/routes/errorRoutes.js";
 
 //-- Auth & Middleware --//
 import { auth } from "express-oauth2-jwt-bearer";
-import { dataAuthMiddleware } from "./App/Auth/dataAuthMiddleware.js";
 import { journalAuthMiddleware } from "./App/Auth/journalAuthMiddleware.js";
 import { llmAuthMiddleware } from "./App/Auth/llmAuthMiddleware.js";
 
@@ -268,11 +266,10 @@ const jwtCheck = auth({
 
 //-- *************** Routes w/ authentication *************** --//
 //-- Routes --//
-app.use("/data", jwtCheck, dataAuthMiddleware, dataRoutes);
 app.use("/journal", jwtCheck, journalAuthMiddleware, journalRoutes);
 app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
-app.use("/openai", jwtCheck, llmAuthMiddleware, openAIRoutes);
-app.use("/llm", jwtCheck, llmAuthMiddleware, llmRoutes);
+app.use("/openai", jwtCheck, openAIRoutes); //-- middleware in routes --//
+app.use("/conversation", jwtCheck, llmAuthMiddleware, conversationRoutes);
 app.use("/error", jwtCheck, errorRoutes); //-- test errors purposely thrown in route logic --//
 
 //-- *************** Error Handler *************** --//

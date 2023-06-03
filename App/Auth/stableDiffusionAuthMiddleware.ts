@@ -1,26 +1,28 @@
 import { Response, NextFunction } from "express";
 import { IRequestWithAuth } from "../../index.d";
 
-export const dataAuthMiddleware = async (
+export const stableDiffusionAuthMiddleware = async (
   req: IRequestWithAuth,
   res: Response,
   next: NextFunction
 ) => {
   let payload = req?.auth?.payload;
-  let read_data: boolean = false;
+  let chat_llm: boolean = false;
 
   //-- Check for necessary permissions to access route(s) guarded by this middleware --//
   if (payload && payload.permissions) {
-    read_data = payload.permissions.includes("read:data");
+    chat_llm = payload.permissions.includes("generate:diffusion-image");
   }
 
   //-- Only proceed via 'next()' if necessary permissions are present, otherwise send 401 --//
-  if (read_data) {
-    res.append("CHRT-JWT-permission-read_data", "verified");
+  if (chat_llm) {
+    res.append("CHRT-JWT-permission-generate:diffusion-image", "verified");
     next();
   } else {
     return res
       .status(401)
-      .send("Your account is missing the following permissions: 'read:data'");
+      .send(
+        "Your account is missing the following permissions: “generate:diffusion-image”"
+      );
   }
 };
