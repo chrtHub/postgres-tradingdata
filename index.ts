@@ -28,6 +28,7 @@ import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 import openAIRoutes from "./App/routes/openAIRoutes.js";
 import wolframRoutes from "./App/routes/wolframRoutes.js";
 import conversationRoutes from "./App/routes/conversationRoutes.js";
+import auth0Routes from "./App/routes/auth0Routes.js";
 import errorRoutes from "./App/routes/errorRoutes.js";
 
 //-- Auth & Middleware --//
@@ -272,6 +273,7 @@ app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
 app.use("/openai", jwtCheck, openAIRoutes); //-- middleware in routes --//
 app.use("/wolfram", jwtCheck, wolframRoutes); //-- middleware in routes --//
 app.use("/conversation", jwtCheck, llmAuthMiddleware, conversationRoutes);
+app.use("/auth0", jwtCheck, auth0Routes); //-- middleware in routes --//
 app.use("/error", jwtCheck, errorRoutes); //-- test errors purposely thrown in route logic --//
 
 //-- *************** Error Handler *************** --//
