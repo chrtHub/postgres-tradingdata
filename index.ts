@@ -164,12 +164,21 @@ const Mongo = {
 export { Mongo, MongoClient };
 
 //-- *************** Auth0 Client *************** --//
-//-- Only connect to this client in production because there's a 1,000 M2M access token per month limit for Auth0 basic subscription --//
+//-- NOTE - When in Dev, use a static test token from the Auth0 Management API page --> Test --> Express Server. This prevents having many refreshes which count against the 1,000 M2M access tokens monthly limit for the Auht0 "Essentials" subscription plan (link - https://manage.auth0.com/dashboard/us/chrt-prod/apis/63deb97098e5943185f2e769/test) --//
 let auth0ManagementClient: ManagementClient | undefined;
 if (process.env.NODE_ENV === "development") {
-  console.log(
-    "Skipping Auth0 Client configuration - only using it when in production"
-  );
+  // console.log(
+  //   "Skipping Auth0 Client configuration - only using it when in production"
+  // );
+  console.log("Configuring Auth0 Client using static token");
+  auth0ManagementClient = new ManagementClient({
+    domain: "chrt-prod.us.auth0.com",
+    clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
+    token:
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg1OTE1NDEzLCJleHAiOjE2ODU5MzcwMTMsImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.adFvQ4tl0xzsczL8h_7FvnP0SxgIzU69FVq-uwUF3ZMw-xPmyaEh5HPpPcvLDoBQJFqib-HMtocCnAxcojVMPkTPIbfcEvjean5iCa_rwKDD-X7wgzktQ-kDaTQVvAXgjzxwh49vJXXHsBTmz7Gn_bd3lfn9Z5TiBMlG1xvJ-Z9hKnGNpWPUOrnsZUmJm8JmgyYjf5ULkIKh3hudBcM6NYDySMEzHJiw1ZOgSp7_DlA01eraCNfgsj-_pKvt7a0hqAaM4ogkt5DFGF2pGfUuxp3VGpnah9UGL-ibOyeH4uIVi117DVEL5FgeHFjkFhWaqlxJJsZK1uWRA9zIZiT8zw", //-- 2023-06-04 --//
+    telemetry: false,
+    //-- NOTE - scope is determiend by the Express Server application's Management API permissions --//
+  });
 }
 if (process.env.NODE_ENV === "production") {
   const auth0ClientSecret = await getAuth0ClientSecretFromSecretsManager();
@@ -178,7 +187,7 @@ if (process.env.NODE_ENV === "production") {
     clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
     clientSecret: auth0ClientSecret,
     telemetry: false,
-    //-- NOTE - scope is from the Express Server application's Management API permissions --//
+    //-- NOTE - scope is determiend by the Express Server application's Management API permissions --//
   });
 }
 export { auth0ManagementClient };
