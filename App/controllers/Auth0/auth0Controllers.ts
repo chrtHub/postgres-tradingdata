@@ -13,6 +13,7 @@ import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../../index.d";
+import getUserDbId from "../../utils/getUserDbId.js";
 
 // TODO - with all requests, can provide a X-Correlation-ID as HTTP header for tracking purposes, up to 64 chars
 // // how to do this with the management client?
@@ -27,102 +28,52 @@ export const getUserPermissions = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
+  console.log("getUserPermissions"); // DEV
   let user_auth0_id = getUserAuth0Id(req);
 
-  auth0ManagementClient.getUserPermissions(
-    { id: user_auth0_id },
-    (err, permissions) => {
-      if (err) {
-        console.log(err);
-        return res.status(500).send("error getting user permissions");
-      } else {
-        console.log(
-          `user with id ${user_auth0_id} has permissions: `,
-          permissions
-        );
-        return res.status(200).send(permissions); // parse this client-side
+  //-- Get user permissions --//
+  if (auth0ManagementClient) {
+    auth0ManagementClient.getUserPermissions(
+      { id: user_auth0_id },
+      (err, userPermissions) => {
+        if (err) {
+          console.log(err); //- prod --//
+          return res.status(500).send("error getting user permissions");
+        } else {
+          return res.status(200).send(userPermissions); // TODO - parse this client-side
+        }
       }
-    }
-  );
+    );
+  } else {
+    return res
+      .status(500)
+      .send("Auth0 Client not configured when NODE_ENV is development");
+  }
 };
 
 //-- ********************* Get User roles ********************* --//
 export const getUserRoles = async (req: IRequestWithAuth, res: Response) => {
+  console.log("getUserRoles"); // DEV
   let user_auth0_id = getUserAuth0Id(req);
 
-  auth0ManagementClient.getUserRoles(
-    {
-      id: user_auth0_id,
-    },
-    (err, userRoles) => {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log(`user with id ${user_auth0_id} has roles: `, userRoles);
+  //-- Get user roles --//
+  if (auth0ManagementClient) {
+    auth0ManagementClient.getUserRoles(
+      { id: user_auth0_id },
+      (err, userRoles) => {
+        if (err) {
+          console.log(err); //- prod --//
+          return res.status(500).send("error getting user permissions");
+        } else {
+          return res.status(200).send(userRoles); // TODO - parse this client-side
+        }
       }
-    }
-  );
-};
-
-//-- ********************* Assign Roles to User ********************* --//
-export const assignRolesToUser = async (
-  req: IRequestWithAuth,
-  res: Response
-) => {
-  let user_auth0_id = getUserAuth0Id(req);
-
-  const body: { namesOfRolesToAssign: string[] } = req.body;
-  console.log(body); // DEV
-  const { namesOfRolesToAssign } = body; // DEV - e.g. ["Free-Preview-Access"]
-
-  if (!namesOfRolesToAssign) {
-    return res.status(400).send("Missing namesOfRolesToAssign in body");
+    );
+  } else {
+    return res
+      .status(500)
+      .send("Auth0 Client not configured when NODE_ENV is development");
   }
-
-  //-- Assign Roles to User --//
-  auth0ManagementClient.assignRolestoUser(
-    { id: user_auth0_id },
-    { roles: namesOfRolesToAssign.map((role) => ROLE_IDS[role]) },
-    function (err) {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log(
-          `Added ${namesOfRolesToAssign} to user with id ${user_auth0_id}`
-        );
-      }
-    }
-  );
-};
-
-//-- ********************* Remove Roles from User ********************* --//
-export const removeRolesFromUser = async (
-  req: IRequestWithAuth,
-  res: Response
-) => {
-  let user_auth0_id = getUserAuth0Id(req);
-
-  const body: { namesOfRolesToRemove: string[] } = req.body;
-  console.log(body); // DEV
-  const { namesOfRolesToRemove } = body; // DEV - e.g. ["Free-Preview-Access"]
-
-  if (!namesOfRolesToRemove) {
-    return res.status(400).send("Missing namesOfRolesToRemove in body");
-  }
-
-  auth0ManagementClient.removeRolesFromUser(
-    { id: user_auth0_id },
-    { roles: namesOfRolesToRemove.map((role) => ROLE_IDS[role]) },
-    function (err) {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log(
-          `Removed ${namesOfRolesToRemove} from user with id ${user_auth0_id}`
-        );
-      }
-    }
-  );
 };
 
 // TODO - use promisified versions?

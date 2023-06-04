@@ -14,13 +14,21 @@ const router = express.Router();
 
 //-- Controllers --//
 import * as ctrl from "../controllers/Auth0/auth0Controllers.js";
+import { assignRolesToUserFreePreviewAccess } from "../controllers/Auth0/assignRolesToUserFreePreviewAccess.js";
+import { removeRolesFromUserFreePreviewAccess } from "../controllers/Auth0/removeRolesFromUserFreePreviewAccess.js";
 
 //-- ********** Routes ********** --//
 router.get("/get_user_permissions", ctrl.getUserPermissions); //-- No middleware --//
 router.get("/get_user_roles", ctrl.getUserRoles); //-- No middleware --//
 
-router.post("/assign_roles_to_user", ctrl.assignRolesToUser); //-- No middleware --//
-router.post("/remove_roles_from_user", ctrl.removeRolesFromUser); //-- No middleware --//
+router.post(
+  "/assign_roles_to_user/free_preview_access",
+  assignRolesToUserFreePreviewAccess
+); //-- No middleware --//
+router.delete(
+  "/remove_roles_from_user/free_preview_access",
+  removeRolesFromUserFreePreviewAccess
+); //-- No middleware --//
 
 //-- ********** Export ********** --//
 export default router;

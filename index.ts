@@ -164,16 +164,24 @@ const Mongo = {
 export { Mongo, MongoClient };
 
 //-- *************** Auth0 Client *************** --//
-const auth0ClientSecret = await getAuth0ClientSecretFromSecretsManager();
-export const auth0ManagementClient = new ManagementClient({
-  domain: "chrt-prod.us.auth0.com", // TEST THIS
-  clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
-  clientSecret: auth0ClientSecret,
-  // scope: "read:users, update:users, read:roles", // TODO - what to include?
-  // https://auth0.com/docs/get-started/apis/scopes/api-scopes
-  telemetry: false,
-  //   audience: "", // TODO - is this needed?
-});
+//-- Only connect to this client in production because there's a 1,000 M2M access token per month limit for Auth0 basic subscription --//
+let auth0ManagementClient: ManagementClient | undefined;
+if (process.env.NODE_ENV === "development") {
+  console.log(
+    "Skipping Auth0 Client configuration - only using it when in production"
+  );
+}
+if (process.env.NODE_ENV === "production") {
+  const auth0ClientSecret = await getAuth0ClientSecretFromSecretsManager();
+  auth0ManagementClient = new ManagementClient({
+    domain: "chrt-prod.us.auth0.com",
+    clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
+    clientSecret: auth0ClientSecret,
+    telemetry: false,
+    //-- NOTE - scope is from the Express Server application's Management API permissions --//
+  });
+}
+export { auth0ManagementClient };
 
 //-- *************** OpenAI Client *************** --//
 let OPENAI_API_KEY: string = await getOpenAI_API_Key();
