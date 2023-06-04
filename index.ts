@@ -15,7 +15,10 @@ import cors from "cors";
 import helmet from "helmet";
 import bodyParser from "body-parser";
 
-//-- OpenAI --//
+//-- Clients --//
+import { getAuth0ClientSecretFromSecretsManager } from "./App/config/auth0Config.js";
+import { ManagementClient } from "auth0";
+
 import { getOpenAI_API_Key } from "./App/config/OpenAIConfig.js";
 import { Configuration, OpenAIApi } from "openai";
 
@@ -54,7 +57,7 @@ const require = createRequire(import.meta.url);
 //-- Print current value of process.env.NODE_ENV --//
 console.log("process.env.NODE_ENV: " + process.env.NODE_ENV);
 
-//-- *************** PostgreSQL Client connection *************** --//
+//-- *************** Database Client Connections *************** --//
 //-- Get RDS PostgreSQL database config values --//
 const rdsDBConfig = await getRDSDatabaseConfigFromSecretsManager();
 const { rdsDB_username, rdsDB_password, rdsDB_dbname } = rdsDBConfig;
@@ -160,7 +163,19 @@ const Mongo = {
 };
 export { Mongo, MongoClient };
 
-//-- OpenAI --//
+//-- *************** Auth0 Client *************** --//
+const auth0ClientSecret = await getAuth0ClientSecretFromSecretsManager();
+export const auth0ManagementClient = new ManagementClient({
+  domain: "chrt-prod.us.auth0.com", // TEST THIS
+  clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
+  clientSecret: auth0ClientSecret,
+  // scope: "read:users, update:users, read:roles", // TODO - what to include?
+  // https://auth0.com/docs/get-started/apis/scopes/api-scopes
+  telemetry: false,
+  //   audience: "", // TODO - is this needed?
+});
+
+//-- *************** OpenAI Client *************** --//
 let OPENAI_API_KEY: string = await getOpenAI_API_Key();
 const configuration = new Configuration({
   apiKey: OPENAI_API_KEY,
@@ -273,7 +288,7 @@ app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
 app.use("/openai", jwtCheck, openAIRoutes); //-- middleware in routes --//
 app.use("/wolfram", jwtCheck, wolframRoutes); //-- middleware in routes --//
 app.use("/conversation", jwtCheck, llmAuthMiddleware, conversationRoutes);
-app.use("/auth0", jwtCheck, auth0Routes); //-- middleware in routes --//
+app.use("/auth0/api/v2", jwtCheck, auth0Routes); //-- middleware in routes --//
 app.use("/error", jwtCheck, errorRoutes); //-- test errors purposely thrown in route logic --//
 
 //-- *************** Error Handler *************** --//
