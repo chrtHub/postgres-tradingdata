@@ -18,8 +18,11 @@ import { assignRolesToUserFreePreviewAccess } from "../controllers/Auth0/assignR
 import { removeRolesFromUserFreePreviewAccess } from "../controllers/Auth0/removeRolesFromUserFreePreviewAccess.js";
 
 //-- ********** Routes ********** --//
-router.get("/get_user_permissions", ctrl.getUserPermissions); //-- No middleware --//
-router.get("/get_user_roles", ctrl.getUserRoles); //-- No middleware --//
+router.get(
+  "/get_user_roles_with_permissions",
+  ctrl.getUserRolesWithPermissions
+); //-- No middleware --//
+// router.get("/get_user_permissions", ctrl.getUserPermissions); //-- No middleware --//
 
 router.post(
   "/assign_roles_to_user/free_preview_access",
