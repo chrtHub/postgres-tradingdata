@@ -27,7 +27,7 @@ export const assignRolesToUserFreePreviewAccess = async (
   let user_auth0_id = getUserAuth0Id(req);
 
   //-- Name(s) --> ID(s) of role(s) --//
-  const namesOfRolesToAssign = ["Free-Preview-Access"]; //-- EXTREMELY SENSITIVE (SECURITY RISK) --//
+  const namesOfRolesToAssign = ["Free Preview Access"]; //-- EXTREMELY SENSITIVE (SECURITY RISK) --//
   const idsOfRolesToAssign = namesOfRolesToAssign.map(
     (roleName) => AUTH0_ROLE_IDS[roleName]
   );

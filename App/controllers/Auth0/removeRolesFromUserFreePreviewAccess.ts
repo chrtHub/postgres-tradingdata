@@ -27,7 +27,7 @@ export const removeRolesFromUserFreePreviewAccess = async (
   let user_auth0_id = getUserAuth0Id(req);
 
   //-- Name(s) --> ID(s) of role(s) --//
-  const namesOfRolesToRemove = ["Free-Preview-Access"];
+  const namesOfRolesToRemove = ["Free Preview Access"];
   const idsOfRolesToRemove = namesOfRolesToRemove.map(
     (role) => AUTH0_ROLE_IDS[role]
   );
