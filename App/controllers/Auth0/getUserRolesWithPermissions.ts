@@ -18,7 +18,6 @@ export const getUserRolesWithPermissions = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  console.log("getUserRoles"); // DEV
   let user_auth0_id = getUserAuth0Id(req);
 
   if (auth0ManagementClient) {
