@@ -24,7 +24,6 @@ export const removeRolesFromUserFreePreviewAccess = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  console.log("removeRolesFromUser"); // DEV
   let user_auth0_id = getUserAuth0Id(req);
 
   //-- Name(s) --> ID(s) of role(s) --//
