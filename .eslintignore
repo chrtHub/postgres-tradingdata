@@ -2,3 +2,4 @@ Helpers/*
 migrations/*
 sql/*
 dist/
+Template/*

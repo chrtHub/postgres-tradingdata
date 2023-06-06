@@ -1,7 +1,7 @@
 //-- ********** Imports ********** --//
 //-- ***** ***** ***** ***** ***** --//
 import express from "express";
-import * as ctrl from "../controllers/llmControllers.js";
+import * as ctrl from "../controllers/conversationControllers.js";
 
 //-- Express router --//
 const router = express.Router();

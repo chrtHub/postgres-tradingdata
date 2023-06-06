@@ -151,13 +151,13 @@ async function main() {
                   await retry(
                     async () => {
                       let base64Buffer = Buffer.from(base64JSON!, "base64"); //-- Non-null assertion --//
-                      await s3_client.send(
-                        new PutObjectCommand({
-                          Body: base64Buffer,
-                          Bucket: bucket,
-                          Key: key,
-                        })
-                      );
+                      // await s3_client.send(
+                      //   new PutObjectCommand({
+                      //     Body: base64Buffer,
+                      //     Bucket: bucket,
+                      //     Key: key,
+                      //   })
+                      // );
                     },
                     {
                       retries: 2,
