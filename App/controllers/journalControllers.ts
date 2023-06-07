@@ -47,7 +47,7 @@ export const plLast45CalendarDays = async (
           }
         });
 
-        res.json(datesAndProfits);
+        res.json(datesAndProfits); // DEV - "return" ??
       },
       {
         retries: 2,

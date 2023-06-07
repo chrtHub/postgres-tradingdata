@@ -167,17 +167,15 @@ export { Mongo, MongoClient };
 //-- NOTE - When in Dev, use a static test token from the Auth0 Management API page --> Test --> Express Server. This prevents having many refreshes which count against the 1,000 M2M access tokens monthly limit for the Auht0 "Essentials" subscription plan (link - https://manage.auth0.com/dashboard/us/chrt-prod/apis/63deb97098e5943185f2e769/test) --//
 let auth0ManagementClient: ManagementClient | undefined;
 if (process.env.NODE_ENV === "development") {
-  // console.log(
-  //   "Skipping Auth0 Client configuration - only using it when in production"
-  // );
   console.log("Configuring Auth0 Client using static token");
-  // auth0ManagementClient = new ManagementClient({
-  //   domain: "chrt-prod.us.auth0.com",
-  //   clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
-  //   token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiSzJscDlkWlhYWHQ5cnJWaFBKQVNwcnJBaVRqNm5PNUZAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg2MDk5NjQ0LCJleHAiOjE2ODYxMjEyNDQsImF6cCI6IksybHA5ZFpYWFh0OXJyVmhQSkFTcHJyQWlUajZuTzVGIiwic2NvcGUiOiJyZWFkOnVzZXJzIHJlYWQ6cm9sZXMiLCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMifQ.Uhk1qNZf35Ukr2A4W1i4keIzBXKNNe_buSEow_Q128W5kFCh-80mSvdfHbcWCOuaDfeGBF6M8CdoaTmE99uE7JXN2LZAqXjvJ06FTzcVrov0Cul16zlEEhhPkEUl4V9AGlG_xhPcaVHtSulmC-sQKrp5BL3bkIYjLelB6LOAZvQmWPSmI2XyJsh-nvYPDRev80NudJu8sVn8RXWPuNOVZJUlwXueyGgAyImDtPJ6THgVF_XxCLOUTWimzGDOEbvCNIccGP5eBOJTKjhoVp3ADpwgz1fvUn-RZJGmexHnTqehB10xtHm3Y_JOpPOY8Oud_YTh0LuZQDxCXTEGejhKHQ",
-  //   telemetry: false,
-  //   //-- NOTE - scope is determiend by the Express Server application's Management API permissions --//
-  // });
+  auth0ManagementClient = new ManagementClient({
+    domain: "chrt-prod.us.auth0.com",
+    clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
+    token:
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg2MTE2MjY2LCJleHAiOjE2ODYxMzc4NjYsImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.mvIkVjqGoi8c7p6U-JRnuQpabw5ytxyO3p5TBCeQAniJODIMg5tWTVIqcOFO_StgjFBedFIAMZiJCIeSl2noOd0hTyqMuwEghKqICpxbGPcMnMNshiWf2l0HbC3eI8C9e0bW3S4tHL1A8K2-y9grqlMkmdwKs3uk75LliNjDO_haGhLP53t8pfiyFtk42E7dmp3M8Fhs8yVIexyEH9L4czbp3B6RXzbY22ol0Kx3s2XVMOuwELq-tDGGDz1B_k9ia4g-Ic52t8Si0NDBVygbhsl24e0OjrqIEuIVh3SRxbdnVCgCNBXCRIMiDFlHIzIYOX_5tve9C8xZePc6KR2dBQ",
+    telemetry: false,
+    //-- NOTE - scope is determiend by the Express Server application's Management API permissions --//
+  });
 }
 if (process.env.NODE_ENV === "production") {
   const auth0ClientSecret = await getAuth0ClientSecretFromSecretsManager();
