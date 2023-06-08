@@ -290,7 +290,6 @@ app.get("/", (req: Request, res: Response) => {
 //-- Request.auth.header, Request.auth.payload --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
-  // issuerBaseURL: "https://chrt-prod.us.auth0.com/",
   issuerBaseURL: "https://auth.chrt.com/",
   tokenSigningAlg: "RS256",
 });
