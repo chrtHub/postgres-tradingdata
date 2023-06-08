@@ -5,8 +5,6 @@ import { auth0ManagementClient } from "../../../index.js";
 import { AUTH0_ROLE_IDS } from "./Auth0Roles.js";
 
 //-- NPM Functions --//
-// import axios from "axios";
-// import retry from "async-retry";
 
 //-- Utility Functions --//
 import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
@@ -20,7 +18,7 @@ import getUserDbId from "../../utils/getUserDbId.js";
 // // how to do this with the management client?
 
 //-- ********************* Assign Roles to User ********************* --//
-export const assignRolesToUserFreePreviewAccess = async (
+export const assignFreePreviewAccess = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
@@ -35,7 +33,7 @@ export const assignRolesToUserFreePreviewAccess = async (
   //-- Assign Roles to User --//
   if (auth0ManagementClient) {
     auth0ManagementClient.assignRolestoUser(
-      { id: user_auth0_id },
+      { id: user_auth0_id }, //-- Security --//
       { roles: idsOfRolesToAssign },
       function (err) {
         if (err) {
@@ -45,13 +43,11 @@ export const assignRolesToUserFreePreviewAccess = async (
           return res.status(200).json({
             roles: namesOfRolesToAssign,
             user_db_id: getUserDbId(req),
-          }); // TODO - parse this client-side
+          });
         }
       }
     );
   } else {
-    return res
-      .status(500)
-      .send("Auth0 Client not configured when NODE_ENV is development");
+    return res.status(500).send("Request to Auth0 failed");
   }
 };

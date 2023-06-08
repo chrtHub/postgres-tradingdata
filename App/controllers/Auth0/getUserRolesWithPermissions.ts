@@ -2,8 +2,6 @@
 import { auth0ManagementClient } from "../../../index.js";
 
 //-- NPM Functions --//
-// import axios from "axios";
-// import retry from "async-retry";
 
 //-- Utility Functions --//
 import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
@@ -52,19 +50,17 @@ export const getUserRolesWithPermissions = async (
               permissions: permissions,
             });
           } catch (err) {
-            console.log(err);
+            console.log(err); //-- prod --//
           }
         }
       }
       return res.status(200).send(rolesWithPermissions);
       //----//
     } catch (err) {
-      console.log(err);
+      console.log(err); //-- prod --//
       return res.status(500).send("error getting user permissions");
     }
   } else {
-    return res
-      .status(500)
-      .send("Auth0 Client not configured when NODE_ENV is development");
+    return res.status(500).send("Request to Auth0 failed");
   }
 };
