@@ -167,17 +167,13 @@ export { Mongo, MongoClient };
 //-- NOTE - When in Dev, use a static test token from the Auth0 Management API page --> Test --> Express Server. This prevents having many refreshes which count against the 1,000 M2M access tokens monthly limit for the Auht0 "Essentials" subscription plan (link - https://manage.auth0.com/dashboard/us/chrt-prod/apis/63deb97098e5943185f2e769/test) --//
 let auth0ManagementClient: ManagementClient | undefined;
 if (process.env.NODE_ENV === "development") {
-  // console.log(
-  //   "Skipping Auth0 Client configuration - only using it when in production"
-  // );
   console.log("Configuring Auth0 Client using static token");
   auth0ManagementClient = new ManagementClient({
     domain: "chrt-prod.us.auth0.com",
     clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
     token:
-      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg1OTg1NjM0LCJleHAiOjE2ODYwMDcyMzQsImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.UsAduiR1NMoazWy4RgEODof0q0F6vIawQkatI_dVG62KjwkUgxxQ9oCGPaB9kdcbH6KbP1k9Mm_9pJ2CYLHrJOERlbaFtO17JuDg5gukxmBEpvGoOpYRk9vpPPG-QAEOlDKIMj9OL_S4Ppxt9lvF3dVJnIhRvti2qvcv1zVmPmB3PEthdjhHCVB3pwyBxJ3ccjTJ27XHYoXW3la39LeMiW9FljBzDq1FvfFGMmyAwy2M1lEl4QIKlESaq9-HOPVC9ftt6ktRGlTg1amakHOyIdHtf2JVjclDy6MPCSuQsH9pZY7lKkDjEZBCTRs5sDonWtQi2alC6c_mQlGXjJ1Dhw", //-- 2023-06-04 --//
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg2MjAyMzI2LCJleHAiOjE2ODYyMjM5MjYsImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.biggfbA-Ge-JLGaGl3MOoLTqFLObz2iB5vn2gAj-xB4Ab8V__aE9C5kIBfgkkR8i8f3cmZft5RD6CRvXd9ANXi5J8W8rEF8cJEjHXnC3xCzfbH5j-ggoXej-G74Pxi89X3kivpQiL8CqjmqvAPp-xy-q5sZefk0e2wytsksXE9ueUnJn2CKpG7fZoRwXqolL_GE8obH5UYy_rPVQmEm9Em4qfBkwb25m0nbPB0TiAqEAtXsxFB0mg93tH9fnAhwjzQNA5A75J5pgiis6qcXfV-aF3x6vF7yRWv3zS6mi6EAlnYMI43ovPt3S9ruOuBs_eaOpBHy8_Ku862O5qDZVjg",
     telemetry: false,
-    //-- NOTE - scope is determiend by the Express Server application's Management API permissions --//
   });
 }
 if (process.env.NODE_ENV === "production") {
@@ -294,7 +290,8 @@ app.get("/", (req: Request, res: Response) => {
 //-- Request.auth.header, Request.auth.payload --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
-  issuerBaseURL: "https://chrt-prod.us.auth0.com/",
+  // issuerBaseURL: "https://chrt-prod.us.auth0.com/",
+  issuerBaseURL: "https://auth.chrt.com/",
   tokenSigningAlg: "RS256",
 });
 

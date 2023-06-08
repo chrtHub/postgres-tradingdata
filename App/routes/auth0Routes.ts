@@ -14,20 +14,20 @@ const router = express.Router();
 
 //-- Controllers --//
 import { getUserRolesWithPermissions } from "../controllers/Auth0/getUserRolesWithPermissions.js";
-import { assignRolesToUserFreePreviewAccess } from "../controllers/Auth0/assignRolesToUserFreePreviewAccess.js";
-import { removeRolesFromUserFreePreviewAccess } from "../controllers/Auth0/removeRolesFromUserFreePreviewAccess.js";
+import { assignFreePreviewAccess } from "../controllers/Auth0/assignFreePreviewAccess.js";
+import { removeFreePreviewAccess } from "../controllers/Auth0/removeFreePreviewAccess.js";
 
 //-- ********** Routes ********** --//
 router.get("/get_user_roles_with_permissions", getUserRolesWithPermissions); //-- No middleware --//
 
 router.post(
   "/assign_roles_to_user/free_preview_access",
-  assignRolesToUserFreePreviewAccess
+  assignFreePreviewAccess
 ); //-- No middleware --//
 
 router.delete(
   "/remove_roles_from_user/free_preview_access",
-  removeRolesFromUserFreePreviewAccess
+  removeFreePreviewAccess
 ); //-- No middleware --//
 
 //-- ********** Export ********** --//
