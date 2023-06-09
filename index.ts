@@ -46,6 +46,10 @@ import swaggerJsdoc from "swagger-jsdoc";
 //-- Types --//
 import { Request, Response } from "express";
 import {
+  IClickwrapLog,
+  IClickwrapUserStatus,
+} from "./App/controllers/Legal/clickwrap_types.js";
+import {
   IConversation_Mongo,
   IMessageNode_Mongo,
 } from "./App/controllers/chatson/chatson_types.js";
@@ -53,6 +57,7 @@ import { AxiosError } from "axios";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
+
 const require = createRequire(import.meta.url);
 
 //-- Print current value of process.env.NODE_ENV --//
@@ -153,10 +158,11 @@ try {
   console.log(error);
 }
 const Mongo = {
-  clickwrapLogs: MongoClient.db("legal").collection("clickwrapLogs"), // TODO - add data type interface?
-  clickwrapUserStatus: MongoClient.db("legal").collection(
+  clickwrapLogs:
+    MongoClient.db("legal").collection<IClickwrapLog>("clickwrapLogs"),
+  clickwrapUserStatus: MongoClient.db("legal").collection<IClickwrapUserStatus>(
     "clickwrapUserStatus"
-  ), // TODO - add data type interface?
+  ),
   conversations:
     MongoClient.db("chrtgpt-journal").collection<IConversation_Mongo>(
       "conversations"
