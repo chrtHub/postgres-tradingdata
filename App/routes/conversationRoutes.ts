@@ -1,7 +1,7 @@
 //-- ********** Imports ********** --//
 //-- ***** ***** ***** ***** ***** --//
 import express from "express";
-import * as ctrl from "../controllers/conversationControllers.js";
+import * as ctrl from "../controllers/ChrtGPT/conversationControllers.js";
 
 //-- Express router --//
 const router = express.Router();

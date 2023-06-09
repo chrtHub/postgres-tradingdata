@@ -1,8 +1,8 @@
 //-- MongoDB Client --//
-import { Mongo } from "../../index.js";
+import { Mongo } from "../../../index.js";
 
 //-- Utility Functions --//
-import getUserDbId from "../utils/getUserDbId.js";
+import getUserDbId from "../../utils/getUserDbId.js";
 
 //-- NPM Functions --//
 import produce from "immer";
@@ -11,12 +11,12 @@ import retry from "async-retry";
 //-- Utility Functions --//
 
 //-- Types --//
-import { IRequestWithAuth } from "../../index.d";
+import { IRequestWithAuth } from "../../../index.d";
 import { Response } from "express";
 import {
   IConversation_Mongo,
   IMessageNode_Mongo,
-} from "./chatson/chatson_types.js";
+} from "../chatson/chatson_types.js";
 import { ObjectId } from "mongodb";
 
 class CustomError extends Error {}
