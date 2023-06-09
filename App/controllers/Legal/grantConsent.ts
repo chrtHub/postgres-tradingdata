@@ -76,7 +76,7 @@ export const grantConsent = async (req: IRequestWithAuth, res: Response) => {
 
   let clickwrapUserStatus: IClickwrapUserStatus_Mongo = {
     _id: new ObjectId(),
-    last_edited: new Date(), // always update
+    last_edited: new Date(),
     user_db_id: user_db_id, //-- Security --//
     activeAgreement: true,
   };
@@ -94,12 +94,12 @@ export const grantConsent = async (req: IRequestWithAuth, res: Response) => {
             //-- (1/2) Write to MongoDB clickwrapLogs --//
             Mongo.clickwrapLogs.insertOne(clickwrapLog, {
               session: mongoSession,
-            }); // TODO
+            });
             //-- (2/2) Write to MongoDB clickwrapUserStatus --//
-            Mongo.clickwrapUserStatus.updateOne(
-              {},
-              {}, // TODO
-              { session: mongoSession }
+            Mongo.clickwrapUserStatus.replaceOne(
+              { _id: clickwrapUserStatus._id },
+              clickwrapUserStatus,
+              { session: mongoSession, upsert: true } // TODO - TEST UPSERT
             );
           };
           //-- Execute transaction --//
