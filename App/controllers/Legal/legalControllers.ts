@@ -1,9 +1,5 @@
-//-- AWS client(s) --//
-
-//-- Database Clients --//
-import { knex } from "../../../index";
+//-- Clients --//
 import { Mongo, MongoClient } from "../../../index.js";
-import axios from "axios";
 import retry from "async-retry";
 
 //-- NPM Functions --//
@@ -16,10 +12,12 @@ import { Response } from "express";
 import { IRequestWithAuth } from "../../../index.d";
 import { IClickwrapLog, IClickwrapUserStatus } from "./clickwrap_types";
 import { ObjectId } from "bson";
+import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
 
 //-- ********************* Grant Consent ********************* --//
 export const grant_consent = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
+  let user_auth0_id = getUserAuth0Id(req);
   const body: { title: string } = req.body;
   const { title } = body;
 
@@ -107,9 +105,6 @@ export const grant_consent = async (req: IRequestWithAuth, res: Response) => {
       //-- End MongoClient session --//
       await mongoSession.endSession();
     }
-
-    //-- Update user's metatdata in their Auth0 access token --//
-    // TODO
 
     // return res.json(data)
   } catch (err) {
