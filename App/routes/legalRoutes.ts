@@ -13,13 +13,14 @@ const router = express.Router();
 //-- Middleware --//
 
 //-- Controllers --//
-import * as ctrl from "../controllers/Legal/legalControllers";
+import { grantConsent } from "../controllers/Legal/grantConsent";
+import { withdrawConsent } from "../controllers/Legal/withdrawConsent";
 
 //-- ********** Routes ********** --//
 
-router.post("/grant_consent", ctrl.grant_consent);
+router.post("/grant_consent", grantConsent);
 
-router.get("/withdraw_consent", ctrl.withdraw_consent);
+router.get("/withdraw_consent", withdrawConsent);
 
 //-- ********** Export ********** --//
 export default router;

@@ -46,8 +46,8 @@ import swaggerJsdoc from "swagger-jsdoc";
 //-- Types --//
 import { Request, Response } from "express";
 import {
-  IClickwrapLog,
-  IClickwrapUserStatus,
+  IClickwrapLog_Mongo,
+  IClickwrapUserStatus_Mongo,
 } from "./App/controllers/Legal/clickwrap_types.js";
 import {
   IConversation_Mongo,
@@ -158,11 +158,13 @@ try {
   console.log(error);
 }
 const Mongo = {
+  //-- Clickwrap --//
   clickwrapLogs:
-    MongoClient.db("legal").collection<IClickwrapLog>("clickwrapLogs"),
-  clickwrapUserStatus: MongoClient.db("legal").collection<IClickwrapUserStatus>(
-    "clickwrapUserStatus"
-  ),
+    MongoClient.db("legal").collection<IClickwrapLog_Mongo>("clickwrapLogs"),
+  clickwrapUserStatus: MongoClient.db(
+    "legal"
+  ).collection<IClickwrapUserStatus_Mongo>("clickwrapUserStatus"),
+  //-- ChrtGPT --//
   conversations:
     MongoClient.db("chrtgpt-journal").collection<IConversation_Mongo>(
       "conversations"
