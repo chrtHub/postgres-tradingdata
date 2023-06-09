@@ -26,7 +26,7 @@ import {
 } from "./currentAgreements.js";
 
 //-- ********************* Grant Consent ********************* --//
-export const grantConsent = async (req: IRequestWithAuth, res: Response) => {
+export const grantClickwrap = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
 
   //-- Receive agreement details --//

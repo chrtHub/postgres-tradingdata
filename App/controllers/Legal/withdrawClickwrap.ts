@@ -20,7 +20,10 @@ import { ObjectId } from "bson";
 import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
 
 //-- ********************* Withdraw Consent ********************* --//
-export const withdrawConsent = async (req: IRequestWithAuth, res: Response) => {
+export const withdrawClickwrap = async (
+  req: IRequestWithAuth,
+  res: Response
+) => {
   let user_db_id = getUserDbId(req);
   let { foo } = req.params; // for route like 'some_route/:foo'
   const body: { title: string } = req.body;

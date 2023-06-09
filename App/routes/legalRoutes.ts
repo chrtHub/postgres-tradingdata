@@ -13,12 +13,14 @@ const router = express.Router();
 //-- Middleware --//
 
 //-- Controllers --//
-import { grantConsent } from "../controllers/Legal/grantConsent.js";
-import { withdrawConsent } from "../controllers/Legal/withdrawConsent.js";
+import { grantClickwrap } from "../controllers/Legal/grantClickwrap.js";
+import { withdrawClickwrap } from "../controllers/Legal/withdrawClickwrap.js";
+import { checkClickwrapStatus } from "../controllers/Legal/checkClickwrapStatus.js";
 
 //-- ********** Routes ********** --//
-router.post("/grant_consent", grantConsent);
-router.get("/withdraw_consent", withdrawConsent);
+router.get("/check_clickwrap_status", checkClickwrapStatus);
+router.post("/grant_clickwrap", grantClickwrap);
+router.get("/withdraw_clickwrap", withdrawClickwrap);
 
 //-- ********** Export ********** --//
 export default router;
