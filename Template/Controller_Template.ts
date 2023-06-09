@@ -2,7 +2,7 @@
 
 //-- Database Clients --//
 import { knex } from "../index";
-import { Mongo } from "../index.js";
+import { Mongo, MongoClient } from "../index.js";
 import axios from "axios";
 import retry from "async-retry";
 

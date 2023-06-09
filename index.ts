@@ -31,6 +31,7 @@ import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 import openAIRoutes from "./App/routes/openAIRoutes.js";
 import wolframRoutes from "./App/routes/wolframRoutes.js";
 import conversationRoutes from "./App/routes/conversationRoutes.js";
+import legalRoutes from "./App/routes/legalRoutes.js";
 import auth0Routes from "./App/routes/auth0Routes.js";
 import errorRoutes from "./App/routes/errorRoutes.js";
 
@@ -152,6 +153,10 @@ try {
   console.log(error);
 }
 const Mongo = {
+  clickwrapLogs: MongoClient.db("legal").collection("clickwrapLogs"), // TODO - add data type interface?
+  clickwrapUserStatus: MongoClient.db("legal").collection(
+    "clickwrapUserStatus"
+  ), // TODO - add data type interface?
   conversations:
     MongoClient.db("chrtgpt-journal").collection<IConversation_Mongo>(
       "conversations"
@@ -172,7 +177,7 @@ if (process.env.NODE_ENV === "development") {
     domain: "chrt-prod.us.auth0.com",
     clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
     token:
-      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg2MjAyMzI2LCJleHAiOjE2ODYyMjM5MjYsImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.biggfbA-Ge-JLGaGl3MOoLTqFLObz2iB5vn2gAj-xB4Ab8V__aE9C5kIBfgkkR8i8f3cmZft5RD6CRvXd9ANXi5J8W8rEF8cJEjHXnC3xCzfbH5j-ggoXej-G74Pxi89X3kivpQiL8CqjmqvAPp-xy-q5sZefk0e2wytsksXE9ueUnJn2CKpG7fZoRwXqolL_GE8obH5UYy_rPVQmEm9Em4qfBkwb25m0nbPB0TiAqEAtXsxFB0mg93tH9fnAhwjzQNA5A75J5pgiis6qcXfV-aF3x6vF7yRWv3zS6mi6EAlnYMI43ovPt3S9ruOuBs_eaOpBHy8_Ku862O5qDZVjg",
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg2MjQ4MTUyLCJleHAiOjE2ODYzMzQ1NTIsImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.QUI3wTAeBRBa04unU0WrrpuQSrAYuwcjI_Opocvjm18HVZhTgEXKxLcezg0MjrNKFxiKQzd3ZJDkS2PJM8pO67fmWUMKUwVor-5x6Sl4oywDPpC8tXFA3yUTvOTBb5cBDYHKi1vvPT481I8sk2ODdov4L9yY7dPusINIQE0bI3JCxuTKKEtyDWmu6Xbnv4fLtQ8jMCNtYqg1MGjbcRUfnGUFEMPGzGuIaUc9Uvngb5SU2QIO4z1l6I97oHjDp_wea89cUq2SUdWOdj-cDDZgbMgiQm3RWQdKquP_y1ALxP-o1zjzXXDzJ5nEfUPGjPu0inympYlBydh_UnoSI14ghg",
     telemetry: false,
   });
 }
@@ -301,6 +306,7 @@ app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
 app.use("/openai", jwtCheck, openAIRoutes); //-- middleware in routes --//
 app.use("/wolfram", jwtCheck, wolframRoutes); //-- middleware in routes --//
 app.use("/conversation", jwtCheck, llmAuthMiddleware, conversationRoutes);
+app.use("/legal", jwtCheck, legalRoutes); //-- middleware in routes --//
 app.use("/auth0/api/v2", jwtCheck, auth0Routes); //-- middleware in routes --//
 app.use("/error", jwtCheck, errorRoutes); //-- test errors purposely thrown in route logic --//
 
