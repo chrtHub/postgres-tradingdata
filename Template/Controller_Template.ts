@@ -1,10 +1,10 @@
-//-- AWS client(s) --//
-
-//-- Database Clients --//
+//-- Clients --//
 import { knex } from "../index";
 import { Mongo, MongoClient } from "../index.js";
 import axios from "axios";
 import retry from "async-retry";
+
+//-- TypeScript --//
 
 //-- NPM Functions --//
 
@@ -14,6 +14,8 @@ import getUserDbId from "../App/utils/getUserDbId.js";
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../index.d";
+
+//-- Data --//
 
 //-- ********************* Some Controller ********************* --//
 export const some_Function = async (req: IRequestWithAuth, res: Response) => {

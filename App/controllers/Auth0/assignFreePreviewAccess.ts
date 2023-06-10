@@ -32,22 +32,20 @@ export const assignFreePreviewAccess = async (
 
   //-- Assign Roles to User --//
   if (auth0ManagementClient) {
-    auth0ManagementClient.assignRolestoUser(
-      { id: user_auth0_id }, //-- Security --//
-      { roles: idsOfRolesToAssign },
-      function (err) {
-        if (err) {
-          console.log(err); //- prod --//
-          return res.status(500).send("error assigning role to user");
-        } else {
-          return res.status(200).json({
-            roles: namesOfRolesToAssign,
-            user_db_id: getUserDbId(req),
-          });
-        }
-      }
-    );
+    try {
+      await auth0ManagementClient.assignRolestoUser(
+        { id: user_auth0_id }, //-- Security --//
+        { roles: idsOfRolesToAssign }
+      );
+
+      return res.status(200).json({
+        roles: namesOfRolesToAssign,
+        user_db_id: getUserDbId(req),
+      });
+    } catch (err) {
+      return res.status(500).send("error assigning role to user");
+    }
   } else {
-    return res.status(500).send("Request to Auth0 failed");
+    return res.status(500).send("No server connection to Auth0 established");
   }
 };

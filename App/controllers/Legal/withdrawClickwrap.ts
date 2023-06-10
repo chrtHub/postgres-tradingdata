@@ -1,11 +1,16 @@
 //-- Clients --//
 import { Mongo, MongoClient } from "../../../index.js";
 import retry from "async-retry";
+import { auth0ManagementClient } from "../../../index.js";
+
+//-- TypeScript --//
+import { getUserRoles } from "../Auth0/Util/getUserRoles.js";
 
 //-- NPM Functions --//
 
 //-- Utility Functions --//
 import getUserDbId from "../../utils/getUserDbId.js";
+import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -15,8 +20,11 @@ import {
   IClickwrapLog_Mongo,
   IClickwrapUserStatus_Mongo,
 } from "./clickwrap_types.js";
+import { Role } from "auth0";
 import { ObjectId } from "bson";
-import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
+
+//-- Data --//
+import { AUTH0_ROLE_IDS } from "../Auth0/Auth0Roles.js";
 
 //-- Current Version Effective Dates --//
 import {
@@ -32,9 +40,7 @@ export const withdrawClickwrap = async (
   res: Response
 ) => {
   let user_db_id = getUserDbId(req);
-  //
-  // TODO - write to auth0 - freeze any current roles / permissions
-  //
+  let user_auth0_id = getUserAuth0Id(req);
 
   //-- Receive agreement details --//
   const body: {
@@ -60,6 +66,28 @@ export const withdrawClickwrap = async (
     return res
       .status(400)
       .send("missing agreement or not current version effective dates");
+  }
+
+  //-- Remove all Auth0 Roles --//
+  let userRoles = await getUserRoles(req, res);
+
+  if (auth0ManagementClient && userRoles) {
+    const userRolesFiltered = userRoles.filter((role) => Boolean(role.name));
+    const idsOfRolesToRemove = userRolesFiltered
+      .map((role) => AUTH0_ROLE_IDS[role.name!]) //-- Non-null Assertion --//
+      .filter((roleId) => roleId !== undefined);
+
+    try {
+      await auth0ManagementClient.removeRolesFromUser(
+        { id: user_auth0_id }, //-- SECURITY --//
+        { roles: idsOfRolesToRemove }
+      );
+    } catch (err) {
+      console.log(err); //- prod --//
+      return res.status(500).send("error removing role(s) from user");
+    }
+  } else {
+    return res.status(500).send("No server connection to Auth0 established");
   }
 
   //-- Start MongoClient session to use for transactions --//
