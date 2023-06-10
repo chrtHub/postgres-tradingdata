@@ -19,9 +19,9 @@ import { ObjectId } from "bson";
 
 //-- Current Version Effective Dates --//
 import {
-  CURRENT_TERMS_DATE,
-  CURRENT_COOKIES_DATE,
-  CURRENT_PRIVACY_DATE,
+  CURRENT_TERMS_EFFECTIVE_DATE,
+  CURRENT_COOKIES_EFFECTIVE_DATE,
+  CURRENT_PRIVACY_EFFECTIVE_DATE,
   CURRENT_AGE_REQUIREMENT_STATEMENT,
 } from "./currentAgreements.js";
 
@@ -45,9 +45,9 @@ export const grantClickwrap = async (req: IRequestWithAuth, res: Response) => {
 
   //-- Verify all agreements were received, verify current Version Effective Dates, etc. --//
   if (
-    !(TERMS_VERSION_EFFECTIVE_DATE === CURRENT_TERMS_DATE) ||
-    !(PRIVACY_VERSION_EFFECTIVE_DATE === CURRENT_PRIVACY_DATE) ||
-    !(COOKIES_VERSION_EFFECTIVE_DATE === CURRENT_COOKIES_DATE) ||
+    !(TERMS_VERSION_EFFECTIVE_DATE === CURRENT_TERMS_EFFECTIVE_DATE) ||
+    !(PRIVACY_VERSION_EFFECTIVE_DATE === CURRENT_PRIVACY_EFFECTIVE_DATE) ||
+    !(COOKIES_VERSION_EFFECTIVE_DATE === CURRENT_COOKIES_EFFECTIVE_DATE) ||
     !(AGE_REQUIREMENT_STATEMENT === CURRENT_AGE_REQUIREMENT_STATEMENT)
   ) {
     return res
@@ -106,7 +106,7 @@ export const grantClickwrap = async (req: IRequestWithAuth, res: Response) => {
   let clickwrapUserStatus: IClickwrapUserStatus_Mongo = {
     last_edited: new Date(),
     user_db_id: user_db_id, //-- Security --//
-    activeAgreement: true,
+    activeAgreement: true, //-- Highly Sensitive - Security --//
     agreements: agreements,
   };
 
