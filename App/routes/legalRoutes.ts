@@ -15,12 +15,12 @@ const router = express.Router();
 //-- Controllers --//
 import { grantClickwrap } from "../controllers/Legal/grantClickwrap.js";
 import { withdrawClickwrap } from "../controllers/Legal/withdrawClickwrap.js";
-import { checkClickwrapStatus } from "../controllers/Legal/checkClickwrapStatus.js";
+import { clickwrapStatus } from "../controllers/Legal/clickwrapStatus.js";
 
 //-- ********** Routes ********** --//
-router.get("/check_clickwrap_status", checkClickwrapStatus);
+router.get("/clickwrap_status", clickwrapStatus);
 router.post("/grant_clickwrap", grantClickwrap);
-router.get("/withdraw_clickwrap", withdrawClickwrap);
+router.post("/withdraw_clickwrap", withdrawClickwrap);
 
 //-- ********** Export ********** --//
 export default router;

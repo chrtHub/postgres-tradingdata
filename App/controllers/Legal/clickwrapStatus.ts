@@ -9,17 +9,14 @@ import retry from "async-retry";
 //-- NPM Functions --//
 
 //-- Utility Functions --//
-import getUserDbId from "../../../App/utils/getUserDbId.js";
+import getUserDbId from "../../utils/getUserDbId.js";
 
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../../index.d";
 
 //-- ********************* Some Controller ********************* --//
-export const checkClickwrapStatus = async (
-  req: IRequestWithAuth,
-  res: Response
-) => {
+export const clickwrapStatus = async (req: IRequestWithAuth, res: Response) => {
   let user_db_id = getUserDbId(req);
 
   try {
