@@ -7,9 +7,9 @@
 - [GitHub Repo](https://github.com/chrtHub/postgres-tradingdata) - _(current page)_
 - [CodePipeline](https://us-east-1.console.aws.amazon.com/codesuite/codepipeline/pipelines/chrt-express-postgres-tradingdata/view?region=us-east-1)
   - [IAM - CodeBuild service role](https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/codebuild-chrt-express-postgres-tradingdata-service-role?section=permissions)
-- [ECS Task](https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/express-postgres?region=us-east-1)
+- [ECS Task Definitions](https://us-east-1.console.aws.amazon.com/ecs/v2/task-definitions/express-postgres?region=us-east-1)
   - [IAM - ECS task role](https://us-east-1.console.aws.amazon.com/iamv2/home#/roles/details/task-role-chrt-express-postgres-tradingdata?section=permissions)
-- [ECS Cluster](https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/node-postgres/services?region=us-east-1)
+- [ECS Cluster (Services, Tasks, etc.)](https://us-east-1.console.aws.amazon.com/ecs/v2/clusters/node-postgres/services?region=us-east-1)
 
 ### Contact
 
