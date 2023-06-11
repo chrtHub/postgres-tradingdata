@@ -1,19 +1,19 @@
 //-- Utility Functions --//
-import getUserDbId from "../utils/getUserDbId.js";
-import getTradingDatesAndProfitsArray from "../utils/getTradingDatesAndProfitsArray.js";
+import getUserDbId from "../../utils/getUserDbId.js";
+import getTradingDatesAndProfitsArray from "../../utils/getTradingDatesAndProfitsArray.js";
 
 //-- NPM Functions --//
 import { format } from "date-fns";
 import retry from "async-retry";
 
 //-- knex client --//
-import { knex } from "../../index.js";
+import { knex } from "../../../index.js";
 
 //-- AWS client(s) --//
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../index.d";
+import { IRequestWithAuth } from "../../../index.d";
 
 //-- ********************* Dashboard ********************* --//
 export const plLast45CalendarDays = async (

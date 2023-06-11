@@ -1,7 +1,7 @@
 //-- ********** Imports ********** --//
 //-- ***** ***** ***** ***** ***** --//
 import express from "express";
-import * as ctrl from "../controllers/journalControllers.js";
+import * as ctrl from "../controllers/Journal/journalControllers.js";
 
 //-- Express router --//
 const router = express.Router();

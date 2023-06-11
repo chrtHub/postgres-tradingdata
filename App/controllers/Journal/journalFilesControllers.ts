@@ -8,15 +8,15 @@ import {
 } from "@aws-sdk/client-s3";
 
 //-- knex client --//
-import { knex } from "../../index.js";
+import { knex } from "../../../index.js";
 
 //-- Utility Functions --//
-import getUserDbId from "../utils/getUserDbId.js";
+import getUserDbId from "../../utils/getUserDbId.js";
 import orderBy from "lodash/orderBy.js";
-import { getUUIDV4 } from "../utils/getUUIDV4.js";
+import { getUUIDV4 } from "../../utils/getUUIDV4.js";
 
 //-- NPM Functions --//
-import { IRequestWithAuth } from "../../index.d";
+import { IRequestWithAuth } from "../../../index.d";
 import { Response } from "express";
 import retry from "async-retry";
 

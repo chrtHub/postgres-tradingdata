@@ -31,6 +31,7 @@ import journalFilesRoutes from "./App/routes/journalFilesRoutes.js";
 import openAIRoutes from "./App/routes/openAIRoutes.js";
 import wolframRoutes from "./App/routes/wolframRoutes.js";
 import conversationRoutes from "./App/routes/conversationRoutes.js";
+import legalRoutes from "./App/routes/legalRoutes.js";
 import auth0Routes from "./App/routes/auth0Routes.js";
 import errorRoutes from "./App/routes/errorRoutes.js";
 
@@ -45,6 +46,10 @@ import swaggerJsdoc from "swagger-jsdoc";
 //-- Types --//
 import { Request, Response } from "express";
 import {
+  IClickwrapLog_Mongo,
+  IClickwrapUserStatus_Mongo,
+} from "./App/controllers/Legal/clickwrap_types.js";
+import {
   IConversation_Mongo,
   IMessageNode_Mongo,
 } from "./App/controllers/chatson/chatson_types.js";
@@ -52,6 +57,7 @@ import { AxiosError } from "axios";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
 import { createRequire } from "module";
+
 const require = createRequire(import.meta.url);
 
 //-- Print current value of process.env.NODE_ENV --//
@@ -152,6 +158,13 @@ try {
   console.log(error);
 }
 const Mongo = {
+  //-- Clickwrap --//
+  clickwrapLogs:
+    MongoClient.db("legal").collection<IClickwrapLog_Mongo>("clickwrapLogs"),
+  clickwrapUserStatus: MongoClient.db(
+    "legal"
+  ).collection<IClickwrapUserStatus_Mongo>("clickwrapUserStatus"),
+  //-- ChrtGPT --//
   conversations:
     MongoClient.db("chrtgpt-journal").collection<IConversation_Mongo>(
       "conversations"
@@ -172,7 +185,7 @@ if (process.env.NODE_ENV === "development") {
     domain: "chrt-prod.us.auth0.com",
     clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
     token:
-      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg2MjAyMzI2LCJleHAiOjE2ODYyMjM5MjYsImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.biggfbA-Ge-JLGaGl3MOoLTqFLObz2iB5vn2gAj-xB4Ab8V__aE9C5kIBfgkkR8i8f3cmZft5RD6CRvXd9ANXi5J8W8rEF8cJEjHXnC3xCzfbH5j-ggoXej-G74Pxi89X3kivpQiL8CqjmqvAPp-xy-q5sZefk0e2wytsksXE9ueUnJn2CKpG7fZoRwXqolL_GE8obH5UYy_rPVQmEm9Em4qfBkwb25m0nbPB0TiAqEAtXsxFB0mg93tH9fnAhwjzQNA5A75J5pgiis6qcXfV-aF3x6vF7yRWv3zS6mi6EAlnYMI43ovPt3S9ruOuBs_eaOpBHy8_Ku862O5qDZVjg",
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg2NDQ5NDM0LCJleHAiOjE2ODY1MzU4MzQsImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.mr_n9VfOu_fnSqSIFm7_5zOemEwkT-f8tU0Lp5Qpiu_gM5LAcp3ulJ4ZqhKhECX3jpiytN-AZRkWIyRyBsvbx86y3jDVMSBjhuX7G-n0BlDfpmy5kkMy7DrknXDbkyHt5m66CFoDzUN4hhGUXrZOYDKzebPs1N8KEM6jq5z5ITQLqGKcknm8f5VzJI4PhlptQpq4xdRZSxujnrfDgQ7tEqNLGalg5JP9QdToYHOsWBVYUxqmYr1UxaN1xRlIF9kHECBBwCSvVAEz8V6kr2GPQXq-gaS98iB5idGmxmZO7b3YLQWyP_r4LdZ1qfUUK7LkJ22RMjzW8kbwKL1nUndwOQ",
     telemetry: false,
   });
 }
@@ -290,7 +303,6 @@ app.get("/", (req: Request, res: Response) => {
 //-- Request.auth.header, Request.auth.payload --//
 const jwtCheck = auth({
   audience: "https://chrt.com",
-  // issuerBaseURL: "https://chrt-prod.us.auth0.com/",
   issuerBaseURL: "https://auth.chrt.com/",
   tokenSigningAlg: "RS256",
 });
@@ -302,6 +314,7 @@ app.use("/journal_files", jwtCheck, journalAuthMiddleware, journalFilesRoutes);
 app.use("/openai", jwtCheck, openAIRoutes); //-- middleware in routes --//
 app.use("/wolfram", jwtCheck, wolframRoutes); //-- middleware in routes --//
 app.use("/conversation", jwtCheck, llmAuthMiddleware, conversationRoutes);
+app.use("/legal", jwtCheck, legalRoutes); //-- middleware in routes --//
 app.use("/auth0/api/v2", jwtCheck, auth0Routes); //-- middleware in routes --//
 app.use("/error", jwtCheck, errorRoutes); //-- test errors purposely thrown in route logic --//
 
