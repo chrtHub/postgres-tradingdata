@@ -1,8 +1,9 @@
 {
   "editor.formatOnSave": true,
-  //   "window.autoDetectColorScheme": true,
-  "workbench.colorTheme": "Tomorrow Night Blue",
-  //   "workbench.preferredDarkColorTheme": "Solarized Dark",
-  //   "workbench.preferredLightColorTheme": "Solarized Light",
-  "material-icon-theme.activeIconPack": "react"
+  "window.autoDetectColorScheme": true,
+  // "workbench.colorTheme": "Tomorrow Night Blue",
+  "workbench.preferredDarkColorTheme": "Solarized Dark",
+  "workbench.preferredLightColorTheme": "Solarized Light",
+  "material-icon-theme.activeIconPack": "react",
+  "workbench.colorTheme": "Solarized Dark"
 }
