@@ -73,9 +73,11 @@ export const withdrawClickwrap = async (
 
   if (auth0ManagementClient && userRoles) {
     const userRolesFiltered = userRoles.filter((role) => Boolean(role.name));
-    const idsOfRolesToRemove = userRolesFiltered
-      .map((role) => AUTH0_ROLE_IDS[role.name!]) //-- Non-null Assertion --//
-      .filter((roleId) => roleId !== undefined);
+    const idsOfRolesToRemove = userRolesFiltered.map((role) =>
+      AUTH0_ROLE_IDS.find((x) => x.name === role.name)
+    ); //-- Non-null Assertion --//
+
+    console.log("idsOfRolesToRemove: ", idsOfRolesToRemove); // DEV
 
     try {
       await auth0ManagementClient.removeRolesFromUser(
