@@ -1,8 +1,7 @@
-// import { promisify } from "util";
-
 //-- Clients --//
+import { Mongo } from "../../../index.js";
 import { auth0ManagementClient } from "../../../index.js";
-import { AUTH0_ROLE_IDS } from "./Auth0Roles.js";
+import { AUTH0_ROLE_IDS } from "./AUTH0_ROLE_IDS.js";
 
 //-- NPM Functions --//
 
@@ -18,17 +17,30 @@ import getUserDbId from "../../utils/getUserDbId.js";
 // // how to do this with the management client?
 
 //-- ********************* Assign Roles to User ********************* --//
-export const assignFreePreviewAccess = async (
+export const assignFreePreview = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
-  let user_auth0_id = getUserAuth0Id(req);
+  const user_db_id = getUserDbId(req);
+  const user_auth0_id = getUserAuth0Id(req);
 
-  //-- Name(s) --> ID(s) of role(s) --//
-  const namesOfRolesToAssign = ["Free Preview Access"]; //-- EXTREMELY SENSITIVE (SECURITY RISK) --//
-  const idsOfRolesToAssign = namesOfRolesToAssign.map(
-    (roleName) => AUTH0_ROLE_IDS[roleName]
-  );
+  //-- check clickwrap status before assigning a role --//
+  let clickwrapUserStatus = await Mongo.clickwrapUserStatus.findOne({
+    user_db_id: user_db_id,
+  });
+  //-- SECURITY --//
+  if (!clickwrapUserStatus?.activeAgreement) {
+    return res
+      .status(403)
+      .send("clickwrap agreements must be in place to add a role");
+  }
+
+  const namesOfRolesToAssign = ["Free Preview"]; //-- EXTREMELY SENSITIVE (SECURITY RISK) --//
+
+  //-- Create array of role ids --//
+  const idsOfRolesToAssign = AUTH0_ROLE_IDS.filter((role) =>
+    namesOfRolesToAssign.includes(role.name)
+  ).map((role) => role.id);
 
   //-- Assign Roles to User --//
   if (auth0ManagementClient) {

@@ -24,7 +24,7 @@ import { Role } from "auth0";
 import { ObjectId } from "bson";
 
 //-- Data --//
-import { AUTH0_ROLE_IDS } from "../Auth0/Auth0Roles.js";
+import { AUTH0_ROLE_IDS } from "../Auth0/AUTH0_ROLE_IDS.js";
 
 //-- Current Version Effective Dates --//
 import {
@@ -68,17 +68,16 @@ export const withdrawClickwrap = async (
       .send("missing agreement or not current version effective dates");
   }
 
-  //-- Remove all Auth0 Roles --//
+  //-- Get list of all Auth0 Roles --//
   let userRoles = await getUserRoles(req, res);
 
-  if (auth0ManagementClient && userRoles) {
-    const userRolesFiltered = userRoles.filter((role) => Boolean(role.name));
-    const idsOfRolesToRemove = userRolesFiltered.map((role) =>
-      AUTH0_ROLE_IDS.find((x) => x.name === role.name)
-    ); //-- Non-null Assertion --//
+  //-- Create array of role ids - only works for roles in AUTH0_ROLE_IDS --//
+  const idsOfRolesToRemove = AUTH0_ROLE_IDS.filter((role) =>
+    userRoles?.some((userRole) => userRole.name === role.name)
+  ).map((role) => role.id);
 
-    console.log("idsOfRolesToRemove: ", idsOfRolesToRemove); // DEV
-
+  //-- Remove roles from user --//
+  if (auth0ManagementClient && idsOfRolesToRemove.length > 0) {
     try {
       await auth0ManagementClient.removeRolesFromUser(
         { id: user_auth0_id }, //-- SECURITY --//

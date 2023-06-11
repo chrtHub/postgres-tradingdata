@@ -4,5 +4,5 @@ interface Roles {
 }
 export const AUTH0_ROLE_IDS: Roles[] = [
   //-- Highly sensitivive - Security --//
-  { name: "Free Preview Access", id: "rol_7dV89O6JJGMOqfz1" },
+  { name: "Free Preview", id: "rol_7dV89O6JJGMOqfz1" },
 ];

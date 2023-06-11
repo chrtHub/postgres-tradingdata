@@ -14,23 +14,25 @@ import { IRequestWithAuth } from "../../../index.d";
 import getUserDbId from "../../utils/getUserDbId.js";
 
 //-- Data --//
-import { AUTH0_ROLE_IDS } from "./Auth0Roles.js";
+import { AUTH0_ROLE_IDS } from "./AUTH0_ROLE_IDS.js";
 
 // TODO - with all requests, can provide a X-Correlation-ID as HTTP header for tracking purposes, up to 64 chars
 // // how to do this with the management client?
 
 //-- ********************* Remove Roles from User ********************* --//
-export const removeFreePreviewAccess = async (
+export const removeFreePreview = async (
   req: IRequestWithAuth,
   res: Response
 ) => {
   let user_auth0_id = getUserAuth0Id(req);
 
-  //-- Name(s) --> ID(s) of role(s) --//
-  const namesOfRolesToRemove = ["Free Preview Access"];
-  const idsOfRolesToRemove = namesOfRolesToRemove.map(
-    (role) => AUTH0_ROLE_IDS[role]
-  );
+  //-- Create array of role ids - only works for roles in AUTH0_ROLE_IDS --//
+  const namesOfRolesToRemove = ["Free Preview"];
+
+  //-- Create array of role ids --//
+  const idsOfRolesToRemove = AUTH0_ROLE_IDS.filter((role) =>
+    namesOfRolesToRemove.includes(role.name)
+  ).map((role) => role.id);
 
   //-- Remove roles from user --//
   if (auth0ManagementClient) {
