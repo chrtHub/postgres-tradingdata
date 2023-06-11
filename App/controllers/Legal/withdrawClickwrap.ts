@@ -77,23 +77,21 @@ export const withdrawClickwrap = async (
   ).map((role) => role.id);
 
   //-- If no roles found, no need to remove roles --//
-  if (!idsOfRolesToRemove || idsOfRolesToRemove.length === 0) {
-    return res.status(200).send("Found no active roles needed removal");
-  }
-
-  //-- Remove roles from user --//
-  if (auth0ManagementClient) {
-    try {
-      await auth0ManagementClient.removeRolesFromUser(
-        { id: user_auth0_id }, //-- SECURITY --//
-        { roles: idsOfRolesToRemove }
-      );
-    } catch (err) {
-      console.log(err); //- prod --//
-      return res.status(500).send("error removing role(s) from user");
+  if (idsOfRolesToRemove.length !== 0) {
+    //-- Remove roles from user --//
+    if (auth0ManagementClient) {
+      try {
+        await auth0ManagementClient.removeRolesFromUser(
+          { id: user_auth0_id }, //-- SECURITY --//
+          { roles: idsOfRolesToRemove }
+        );
+      } catch (err) {
+        console.log(err); //- prod --//
+        return res.status(500).send("error removing role(s) from user");
+      }
+    } else {
+      return res.status(500).send("No server connection to Auth0 established");
     }
-  } else {
-    return res.status(500).send("No server connection to Auth0 established");
   }
 
   //-- Start MongoClient session to use for transactions --//
