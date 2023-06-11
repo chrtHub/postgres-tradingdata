@@ -76,8 +76,13 @@ export const withdrawClickwrap = async (
     userRoles?.some((userRole) => userRole.name === role.name)
   ).map((role) => role.id);
 
+  //-- If no roles found, no need to remove roles --//
+  if (!idsOfRolesToRemove || idsOfRolesToRemove.length === 0) {
+    return res.status(200).send("Found no active roles needed removal");
+  }
+
   //-- Remove roles from user --//
-  if (auth0ManagementClient && idsOfRolesToRemove.length > 0) {
+  if (auth0ManagementClient) {
     try {
       await auth0ManagementClient.removeRolesFromUser(
         { id: user_auth0_id }, //-- SECURITY --//
