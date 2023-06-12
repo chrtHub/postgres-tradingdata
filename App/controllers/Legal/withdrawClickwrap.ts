@@ -19,7 +19,7 @@ import {
   IClickwrapAgreement,
   IClickwrapLog_Mongo,
   IClickwrapUserStatus_Mongo,
-} from "./clickwrap_types.js";
+} from "./Types/clickwrap_types.js";
 import { Role } from "auth0";
 import { ObjectId } from "bson";
 
@@ -27,12 +27,7 @@ import { ObjectId } from "bson";
 import { AUTH0_ROLE_IDS } from "../Auth0/AUTH0_ROLE_IDS.js";
 
 //-- Current Version Effective Dates --//
-import {
-  CURRENT_TERMS_EFFECTIVE_DATE,
-  CURRENT_COOKIES_EFFECTIVE_DATE,
-  CURRENT_PRIVACY_EFFECTIVE_DATE,
-  CURRENT_AGE_REQUIREMENT_STATEMENT,
-} from "./currentAgreements.js";
+import { CURRENT_AGREEMENTS } from "./Util/CURRENT_AGREEMENTS.js";
 
 //-- ********************* Withdraw Consent ********************* --//
 export const withdrawClickwrap = async (

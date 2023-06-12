@@ -48,7 +48,7 @@ import { Request, Response } from "express";
 import {
   IClickwrapLog_Mongo,
   IClickwrapUserStatus_Mongo,
-} from "./App/controllers/Legal/clickwrap_types.js";
+} from "./App/controllers/Legal/Types/clickwrap_types.js";
 import {
   IConversation_Mongo,
   IMessageNode_Mongo,
