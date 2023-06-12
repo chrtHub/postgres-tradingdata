@@ -3,6 +3,7 @@ import { Mongo, MongoClient } from "../../../index.js";
 import retry from "async-retry";
 
 //-- NPM Functions --//
+import _ from "lodash";
 
 //-- Utility Functions --//
 import getUserDbId from "../../utils/getUserDbId.js";
@@ -14,16 +15,11 @@ import {
   IClickwrapAgreement,
   IClickwrapLog_Mongo,
   IClickwrapUserStatus_Mongo,
-} from "./clickwrap_types.js";
+} from "./Types/clickwrap_types.js";
 import { ObjectId } from "bson";
 
 //-- Current Version Effective Dates --//
-import {
-  CURRENT_TERMS_EFFECTIVE_DATE,
-  CURRENT_COOKIES_EFFECTIVE_DATE,
-  CURRENT_PRIVACY_EFFECTIVE_DATE,
-  CURRENT_AGE_REQUIREMENT_STATEMENT,
-} from "./currentAgreements.js";
+import { CURRENT_AGREEMENTS } from "./Util/CURRENT_AGREEMENTS.js";
 
 //-- ********************* Grant Consent ********************* --//
 export const grantClickwrap = async (req: IRequestWithAuth, res: Response) => {
@@ -31,62 +27,16 @@ export const grantClickwrap = async (req: IRequestWithAuth, res: Response) => {
 
   //-- Receive agreement details --//
   const body: {
-    TERMS_VERSION_EFFECTIVE_DATE: string;
-    PRIVACY_VERSION_EFFECTIVE_DATE: string;
-    COOKIES_VERSION_EFFECTIVE_DATE: string;
-    AGE_REQUIREMENT_STATEMENT: string;
+    CURRENT_AGREEMENTS: Record<string, IClickwrapAgreement>;
   } = req.body;
-  const {
-    TERMS_VERSION_EFFECTIVE_DATE,
-    PRIVACY_VERSION_EFFECTIVE_DATE,
-    COOKIES_VERSION_EFFECTIVE_DATE,
-    AGE_REQUIREMENT_STATEMENT,
-  } = body;
 
-  //-- Verify all agreements were received, verify current Version Effective Dates, etc. --//
-  if (
-    !(TERMS_VERSION_EFFECTIVE_DATE === CURRENT_TERMS_EFFECTIVE_DATE) ||
-    !(PRIVACY_VERSION_EFFECTIVE_DATE === CURRENT_PRIVACY_EFFECTIVE_DATE) ||
-    !(COOKIES_VERSION_EFFECTIVE_DATE === CURRENT_COOKIES_EFFECTIVE_DATE) ||
-    !(AGE_REQUIREMENT_STATEMENT === CURRENT_AGE_REQUIREMENT_STATEMENT)
-  ) {
-    return res
-      .status(400)
-      .send("missing agreement or not current version effective dates");
+  //-- Verify received agreements match current agreements --//
+  if (!_.isEqual(body.CURRENT_AGREEMENTS, CURRENT_AGREEMENTS)) {
+    return res.status(400).send("agreements versions mismatch");
   }
 
   //-- Build agreements array --//
-  const agreements: IClickwrapAgreement[] = [
-    {
-      name: "Terms of Service",
-      versionEffectiveDate: TERMS_VERSION_EFFECTIVE_DATE,
-      links: [
-        `https://chrt-legal-public.s3.amazonaws.com/${TERMS_VERSION_EFFECTIVE_DATE}-Terms.tsx`,
-        `https://chrt-legal-public.s3.amazonaws.com/${TERMS_VERSION_EFFECTIVE_DATE}-Terms.pdf`,
-      ],
-    },
-    {
-      name: "Privacy Statement",
-      versionEffectiveDate: PRIVACY_VERSION_EFFECTIVE_DATE,
-      links: [
-        `https://chrt-legal-public.s3.amazonaws.com/${PRIVACY_VERSION_EFFECTIVE_DATE}-PrivacyDoc.tsx`,
-        `https://chrt-legal-public.s3.amazonaws.com/${PRIVACY_VERSION_EFFECTIVE_DATE}-PrivacyDoc.pdf`,
-      ],
-    },
-    {
-      name: "Cookies Policy",
-      versionEffectiveDate: COOKIES_VERSION_EFFECTIVE_DATE,
-      links: [
-        `https://chrt-legal-public.s3.amazonaws.com/${COOKIES_VERSION_EFFECTIVE_DATE}-CookiesDoc.tsx`,
-        `https://chrt-legal-public.s3.amazonaws.com/${COOKIES_VERSION_EFFECTIVE_DATE}-CookiesDoc.pdf`,
-      ],
-    },
-    {
-      name: AGE_REQUIREMENT_STATEMENT,
-      versionEffectiveDate: "n/a",
-      links: [],
-    },
-  ];
+  const agreements: IClickwrapAgreement[] = Object.values(CURRENT_AGREEMENTS);
 
   //-- Start MongoClient session to use for transactions --//
   const mongoSession = MongoClient.startSession({
