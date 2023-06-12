@@ -48,7 +48,7 @@ export const grantClickwrap = async (req: IRequestWithAuth, res: Response) => {
     _id: new ObjectId(),
     created_at: new Date(),
     user_db_id: user_db_id, //-- Security --//
-    event: "grant_consent",
+    event: "grant_consent", //-- Security --//
     agreements: agreements,
   };
 

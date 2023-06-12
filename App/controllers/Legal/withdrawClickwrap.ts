@@ -82,7 +82,7 @@ export const withdrawClickwrap = async (
     _id: new ObjectId(),
     created_at: new Date(),
     user_db_id: user_db_id, //-- Security --//
-    event: "grant_consent",
+    event: "withdraw_consent", //-- Security --//
     agreements: agreements,
   };
 
