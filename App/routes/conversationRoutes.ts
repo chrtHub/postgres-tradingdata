@@ -7,7 +7,7 @@ import * as ctrl from "../controllers/ChrtGPT/conversationControllers.js";
 const router = express.Router();
 
 // import { Response } from "express";
-// import { IRequestWithAuth } from "../../index.d";
+// import { IRequestWithAuth } from "../../Types/index.js";
 
 //-- ********** Routes ********** --//
 //-- ***** ***** ***** ***** ***** --//

@@ -10,7 +10,7 @@ import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../../index.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
 import getUserDbId from "../../utils/getUserDbId.js";
 
 // TODO - with all requests, can provide a X-Correlation-ID as HTTP header for tracking purposes, up to 64 chars

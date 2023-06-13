@@ -18,7 +18,7 @@ import { llmAuthMiddleware } from "../Auth/llmAuthMiddleware.js";
 
 //-- Types ---//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../index.d";
+import { IRequestWithAuth } from "../..//Types/index.js";
 
 //-- ********** Proxy-ish Routes ********** --//
 router.post(

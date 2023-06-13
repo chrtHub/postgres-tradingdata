@@ -1,7 +1,7 @@
 //-- AWS client(s) --//
 
 //-- Database Clients --//
-import { knex } from "../../../index";
+import { knex } from "../../../index.js";
 import { Mongo, MongoClient } from "../../../index.js";
 import axios from "axios";
 import retry from "async-retry";
@@ -13,7 +13,7 @@ import getUserDbId from "../../utils/getUserDbId.js";
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../../index.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
 
 //-- ********************* Some Controller ********************* --//
 export const clickwrapStatus = async (req: IRequestWithAuth, res: Response) => {

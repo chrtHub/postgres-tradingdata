@@ -1,4 +1,4 @@
-import { IRequestWithAuth } from "../../index.d";
+import { IRequestWithAuth } from "../../Types/index.js";
 
 export default function getUserAuth0Id(req: IRequestWithAuth): string {
   const payload = req.auth?.payload;

@@ -1,6 +1,6 @@
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../index.d";
+import { IRequestWithAuth } from "../../Types/index.js";
 
 //-- 400 Error --//
 export const backend400Error = async (req: IRequestWithAuth, res: Response) => {

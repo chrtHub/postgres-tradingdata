@@ -10,8 +10,8 @@ import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../../index.d";
-import { RoleWithPermissions } from "./Auth0.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
+import { RoleWithPermissions } from "./Types/auth0_types.js";
 
 //-- ********************* Get User Roles With Permissions ********************* --//
 export const getUserRolesWithPermissions = async (

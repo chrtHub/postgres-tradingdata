@@ -5,13 +5,13 @@ import { Mongo } from "../../../index.js";
 import getUserDbId from "../../utils/getUserDbId.js";
 
 //-- NPM Functions --//
-import produce from "immer";
+import { produce } from "immer";
 import retry from "async-retry";
 
 //-- Utility Functions --//
 
 //-- Types --//
-import { IRequestWithAuth } from "../../../index.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
 import { Response } from "express";
 import {
   IConversation_Mongo,

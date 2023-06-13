@@ -1,4 +1,4 @@
-import { IClickwrapAgreement } from "../Types/clickwrap_types";
+import { IClickwrapAgreement } from "../Types/clickwrap_types.js";
 
 export const CURRENT_AGREEMENTS: Record<string, IClickwrapAgreement> = {
   termsOfService: {

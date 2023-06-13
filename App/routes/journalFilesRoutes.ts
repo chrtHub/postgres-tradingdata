@@ -1,7 +1,7 @@
 //-- ********** Imports ********** --//
 //-- ***** ***** ***** ***** ***** --//
 import express, { Request } from "express";
-import * as ctrl from "../controllers/Journal/journalFilesControllers.js";
+import * as ctrl from "../controllers/JournalFiles/journalFilesControllers.js";
 import multer from "multer";
 
 //-- With multer, memoryStorage() stores buffer in memory for lifetime of a 'req', then buffer gets garbage collected --//

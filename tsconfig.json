@@ -1,4 +1,5 @@
 {
+  //-- Defaults https://github.com/tsconfig/bases/blob/main/bases/node18.json --//
   "ts-node": {
     "transpileOnly": false, //-- use 'false' for ts-node typechecking, use 'true' to skip typechecking --//
     "files": true,
@@ -7,20 +8,19 @@
     }
   },
   "compilerOptions": {
-    //-- Below is from: https://github.com/tsconfig/bases/blob/main/bases/node18.json --//
     "lib": ["ES2022"],
-    // "module": "commonjs", //-- Default for node since it's not run in a browser --//
     "module": "ES2022", //-- Using to allow top-level await --//
     "target": "ES2022",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     //-- Below was added to extend the bases/node18.json compilerOptions --//
     "sourceMap": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["index.ts", "index.d.ts", "App/**/*"],
+  "include": ["index.ts", "Types/index.ts", "App/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
