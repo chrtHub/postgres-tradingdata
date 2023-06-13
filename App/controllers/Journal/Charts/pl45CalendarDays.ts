@@ -3,7 +3,7 @@ import { knex } from "../../../../index.js";
 import retry from "async-retry";
 
 //-- TypeScript --//
-import getTradingDatesAndProfitsArray from "../../../utils/getTradingDatesAndProfitsArray.js";
+import getTradingDatesAndProfitsArray from "../Util/getTradingDatesAndProfitsArray.js";
 
 //-- NPM Functions --//
 import { format } from "date-fns";
@@ -45,10 +45,10 @@ export const plLast45CalendarDays = async (
           const index = datesAndProfits.findIndex((item) => item.date === date);
           //-- Write the date's profit into the datesAndProfits --//
           if (index !== -1) {
-            datesAndProfits[index].profit = row.profit;
+            datesAndProfits[index].profit = row.profit.toString(); // NEW - toString()
           }
         });
-
+        console.log(datesAndProfits); // DEV
         return res.json(datesAndProfits);
       },
       {

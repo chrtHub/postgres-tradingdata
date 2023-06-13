@@ -1,9 +1,6 @@
 import { addDays, format, isWeekend } from "date-fns";
 
-interface DateAndProfitRow {
-  date: string;
-  profit: number;
-}
+import { DateAndProfitRow } from "../Types/journal_types.js";
 
 //-- Build array of trading dates from the past number of calendar days --//
 export default function getTradingDatesAndProfitsArray(
@@ -63,7 +60,7 @@ export default function getTradingDatesAndProfitsArray(
     //-- Add valid trading days to dateArray --//
     dateArray.push({
       date: date,
-      profit: 0,
+      profit: "0",
     });
   }
   return dateArray;
