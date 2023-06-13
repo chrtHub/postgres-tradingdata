@@ -1,5 +1,5 @@
 import { Response, NextFunction } from "express";
-import { IRequestWithAuth } from "../../index.d";
+import { IRequestWithAuth } from "../..//Types/index.js";
 
 export const errorAuthMiddleware = async (
   req: IRequestWithAuth,

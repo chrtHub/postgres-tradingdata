@@ -10,7 +10,7 @@ import retry from "async-retry";
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../../index.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
 import { OpenAIClient } from "../../../index.js";
 
 //-- ********************* Some Controller ********************* --//

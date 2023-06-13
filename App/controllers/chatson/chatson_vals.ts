@@ -1,4 +1,4 @@
-import { TokenLimit, ResponseBuffer } from "./chatson_types";
+import { TokenLimit, ResponseBuffer } from "./chatson_types.js";
 
 const BUFFER: number = 96;
 

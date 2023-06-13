@@ -15,7 +15,7 @@ import getUserDbId from "../../utils/getUserDbId.js";
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../../index.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
 import {
   CreateChatCompletionRequest,
   IMessageNode_Mongo,

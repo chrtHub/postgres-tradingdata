@@ -1,6 +1,8 @@
 import { JwtHeader, JwtPayload } from "jwt-decode";
 import { Request } from "express";
 
+export {}; //-- Cause this file to be treated as a module, enabling default ES Modules import/export behavior --//
+
 //-- Strangely, the Auth0 types for JwtPayload don't cover the properties returned within tokens, so this interface extends JwtPayload --//
 interface IExtendedJwtPayload extends JwtPayload {
   azp?: string;

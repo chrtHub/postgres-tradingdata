@@ -16,7 +16,7 @@ import orderBy from "lodash/orderBy.js";
 import { getUUIDV4 } from "../../utils/getUUIDV4.js";
 
 //-- NPM Functions --//
-import { IRequestWithAuth } from "../../../index.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
 import { Response } from "express";
 import retry from "async-retry";
 

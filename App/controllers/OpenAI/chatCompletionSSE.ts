@@ -12,7 +12,7 @@ import { RESPONSE_BUFFERS, TOKEN_LIMITS } from "../chatson/chatson_vals.js";
 
 //-- NPM Functions --//
 import axios from "axios";
-import produce from "immer";
+import { produce } from "immer";
 import { createParser } from "eventsource-parser";
 import retry from "async-retry";
 
@@ -28,7 +28,7 @@ import { countTokens } from "../chatson/countTokens.js";
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../../index.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
 import {
   IAPIReqResMetadata,
   IMessage,

@@ -3,7 +3,7 @@ import {
   IConversation_Mongo,
   IMessageNode,
   IMessageNode_Mongo,
-} from "./chatson_types";
+} from "./chatson_types.js";
 import { ObjectId } from "mongodb";
 
 //-- ***** ***** ***** ***** DMongoize ***** ***** ***** ***** --//

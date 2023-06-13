@@ -14,7 +14,7 @@ import getUserAuth0Id from "../../utils/getUserAuth0Id.js";
 
 //-- Types --//
 import { Response } from "express";
-import { IRequestWithAuth } from "../../../index.d";
+import { IRequestWithAuth } from "../../../Types/index.js";
 import {
   IClickwrapAgreement,
   IClickwrapLog_Mongo,
