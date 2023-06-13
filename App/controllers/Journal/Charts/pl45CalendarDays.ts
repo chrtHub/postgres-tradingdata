@@ -14,6 +14,7 @@ import getUserDbId from "../../../utils/getUserDbId.js";
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../../..//Types/index.js";
+import { DateAndProfitRow } from "../Types/journal_types.js";
 
 //-- Data --//
 
@@ -35,7 +36,8 @@ export const plLast45CalendarDays = async (
           .orderBy("trade_date");
 
         //-- Get array of actual Market Days from the past 45 calendar days --//
-        const datesAndProfits = getTradingDatesAndProfitsArray(45);
+        const datesAndProfits: DateAndProfitRow[] =
+          getTradingDatesAndProfitsArray(45);
 
         //-- Write data from Postgres into the datesAndProfits --//
         rows.forEach((row: any) => {
@@ -45,10 +47,10 @@ export const plLast45CalendarDays = async (
           const index = datesAndProfits.findIndex((item) => item.date === date);
           //-- Write the date's profit into the datesAndProfits --//
           if (index !== -1) {
-            datesAndProfits[index].profit = row.profit.toString(); // NEW - toString()
+            // datesAndProfits[index].profit = row.profit.toString()
+            datesAndProfits[index].profit = row.profit;
           }
         });
-        console.log(datesAndProfits); // DEV
         return res.json(datesAndProfits);
       },
       {
