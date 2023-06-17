@@ -173,22 +173,22 @@ const Mongo = {
     MongoClient.db("chrtgpt-journal").collection<IMessageNode_Mongo>(
       "message_nodes"
     ),
+  //-- Journal --//
 };
 export { Mongo, MongoClient };
 
 //-- *************** Auth0 Client *************** --//
 //-- NOTE - When in Dev, use a static test token from the Auth0 Management API page --> Test --> Express Server. This prevents having many refreshes which count against the 1,000 M2M access tokens monthly limit for the Auht0 "Essentials" subscription plan (link - https://manage.auth0.com/dashboard/us/chrt-prod/apis/63deb97098e5943185f2e769/test) --//
 let auth0ManagementClient: ManagementClient | undefined;
-if (process.env.NODE_ENV === "development") {
-  console.log("Configuring Auth0 Client using static token");
-  auth0ManagementClient = new ManagementClient({
-    domain: "chrt-prod.us.auth0.com",
-    clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
-    token:
-      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Imp6V2V3WGkyaV81WnpVSHpFZWwzRSJ9.eyJpc3MiOiJodHRwczovL2NocnQtcHJvZC51cy5hdXRoMC5jb20vIiwic3ViIjoiQmVSeVg4TVk5bkFHcHh2VklGRDNGS3FSVjBQZlZjU3VAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vY2hydC1wcm9kLnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaWF0IjoxNjg2NjgwMjQ4LCJleHAiOjE2ODY3NjY2NDksImF6cCI6IkJlUnlYOE1ZOW5BR3B4dlZJRkQzRktxUlYwUGZWY1N1Iiwic2NvcGUiOiJyZWFkOnVzZXJzIHVwZGF0ZTp1c2VycyByZWFkOnJvbGVzIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.F7FpF4aQwkkpWXXC8Foz4JX71sNHtcYPzqLp5axcA2mfmbhuncw2rAsk3nkIQ-HAK6co62npbaN23A2jsu6O2NB7roHgvELrJPmye4MPVGx5IHeUVOMHwLHpmeHIzKB59PVdHQ0S98uCfwjN1QU2rSUwdS7tHyjj0EksaBG2_lp4T5echmLs_BRBHsihUkZOPY1XSmQ0rj9vHG8DjDMM7pv9j0zJwoPYGE26jH0dwOorcuMJAlpKYaBunshMgGaYjcB5SiufxVjYZmJNq5V9CnM7aj4k3Ln9y425ApS0spnbU_nPbzl5_AeHZYntZ9W_QGVDOzdknRDU4mu7C03cQw",
-    telemetry: false,
-  });
-}
+// if (process.env.NODE_ENV === "development") {
+//   console.log("Configuring Auth0 Client using static token");
+//   auth0ManagementClient = new ManagementClient({
+//     domain: "chrt-prod.us.auth0.com",
+//     clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
+//     token: "",
+//     telemetry: false,
+//   });
+// }
 if (process.env.NODE_ENV === "production") {
   const auth0ClientSecret = await getAuth0ClientSecretFromSecretsManager();
   auth0ManagementClient = new ManagementClient({
@@ -258,34 +258,11 @@ const apiSpecOptions: swaggerJsdoc.Options = {
 const apiSpec = swaggerJsdoc(apiSpecOptions);
 fs.writeFileSync("./spec.json", JSON.stringify(apiSpec, null, 2));
 
-/**
- * @swagger
- * /spec:
- *   get:
- *     summary: Get OpenAPI Specification
- *     responses:
- *       200:
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- */
 app.get("/spec", (req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
   res.send(apiSpec);
 });
 
-//-- Health check route --//
-/**
- * @openapi
- * /:
- *   get:
- *     description: Health check route
- *     responses:
- *       200:
- *         description: Returns a Hello World message
- */
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });

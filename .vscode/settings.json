@@ -1,10 +1,12 @@
 {
   "editor.formatOnSave": true,
-  // "window.autoDetectColorScheme": true,
   // "workbench.colorTheme": "Solarized Light",
-  "workbench.colorTheme": "Monokai",
+  "workbench.colorTheme": "Solarized Dark",
   // "workbench.colorTheme": "Tomorrow Night Blue",
-  // "workbench.preferredLightColorTheme": "Solarized Light",
-  // "workbench.preferredDarkColorTheme": "Solarized Dark",
+  // "workbench.colorTheme": "Monokai",
   "material-icon-theme.activeIconPack": "react"
 }
+
+// "window.autoDetectColorScheme": true,
+// "workbench.preferredDarkColorTheme": "Solarized Dark",
+// "workbench.preferredLightColorTheme": "Solarized Light",
