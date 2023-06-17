@@ -24,9 +24,11 @@ export const statsAllTime = async (req: IRequestWithAuth, res: Response) => {
   try {
     await retry(
       async () => {
-        // axios, knex, or mongo call
-        // return res.json(data)
-        return res.status(200).send(`foo ${user_db_id}`); // dev
+        const result = await knex("tradingdata02").count(
+          "trade_uuid as total_trades"
+        );
+        const totalTrades = result[0].total_trades;
+        return res.status(200).json({ totalTrades: totalTrades });
       },
       {
         retries: 1,
