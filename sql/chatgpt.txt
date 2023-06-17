@@ -1,0 +1,48 @@
+Please write a knex query (or multiple queries) using async-await syntax, for the following situation. 
+
+Include a "where" clause for "user_db_id" that's set equal to a variable named "user_db_id".
+
+Here's the full PostgreSQL table schema:
+
+"table_name"	"column_name"	"data_type"
+"tradingdata02"	"uuid"	"uuid"
+"tradingdata02"	"user_db_id"	"character varying"
+"tradingdata02"	"brokerage"	"character varying"
+"tradingdata02"	"filename"	"character varying"
+"tradingdata02"	"import_timestamp"	"numeric"
+"tradingdata02"	"file_uuid"	"character varying"
+"tradingdata02"	"trade_uuid"	"character varying"
+"tradingdata02"	"account"	"character varying"
+"tradingdata02"	"trade_date"	"date"
+"tradingdata02"	"settlement_date"	"date"
+"tradingdata02"	"currency"	"character varying"
+"tradingdata02"	"trade_type"	"character varying"
+"tradingdata02"	"side"	"character varying"
+"tradingdata02"	"symbol"	"character varying"
+"tradingdata02"	"quantity"	"numeric"
+"tradingdata02"	"price"	"numeric"
+"tradingdata02"	"execution_time"	"time without time zone"
+"tradingdata02"	"commission"	"numeric"
+"tradingdata02"	"fees"	"numeric"
+"tradingdata02"	"gross_proceeds"	"numeric"
+"tradingdata02"	"net_proceeds"	"numeric"
+"tradingdata02"	"clearing_broker"	"character varying"
+"tradingdata02"	"liq"	"character varying"
+"tradingdata02"	"note"	"text"
+
+Find overall net proceeds.
+
+---
+
+A trade is defined by all rows which have the same trade_uuid. 
+
+Find all trades with net_proceeds greater than 0. Then, find the sum of the net_proceeds of those trades.
+
+---
+
+Find the number of trades for which the sum of net_proceeds is positive, the number of trades for which the sum of net_proceeds is negative, and the number trades for which the sum of net_proceeds is 0. A trade is defined as all of the rows with the same trade_uuid. 
+
+---
+
+Find the total commision for all rows. 
+
