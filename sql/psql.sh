@@ -3,4 +3,3 @@
 
 # list database users
 \du
-

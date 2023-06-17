@@ -10,6 +10,9 @@ import { txnsByTradeUUID } from "../controllers/Journal/TradesAndTxns/txnsByTrad
 //-- Charts Controllers --//
 import { plLast45CalendarDays } from "../controllers/Journal/Charts/pl45CalendarDays.js";
 
+//-- Stats Controllers --//
+import { statsAllTime } from "../controllers/Journal/Stats/statsAllTime.js";
+
 //-- ********** Routes ********** --//
 
 //-- Trades and Txns --//
@@ -18,7 +21,10 @@ router.get("/trade_summary_by_trade_uuid/:trade_uuid", tradeSummaryByTradeUUID);
 router.get("/txns_by_trade_uuid/:trade_uuid", txnsByTradeUUID);
 
 //-- Charts --//
-router.get("/dashboard/pl_last_45_calendar_days", plLast45CalendarDays);
+router.get("/pl_last_45_calendar_days", plLast45CalendarDays);
+
+//-- Stats --//
+router.get("/stats/all_time", statsAllTime);
 
 //-- ********** Export ********** --//
 export default router;

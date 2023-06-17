@@ -8,35 +8,7 @@
       "email": "support@chrt.com"
     }
   },
-  "paths": {
-    "/spec": {
-      "get": {
-        "summary": "Get OpenAPI Specification",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/": {
-      "get": {
-        "description": "Health check route",
-        "responses": {
-          "200": {
-            "description": "Returns a Hello World message"
-          }
-        }
-      }
-    }
-  },
+  "paths": {},
   "components": {},
   "tags": []
 }
