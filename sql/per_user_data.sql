@@ -1,8 +1,8 @@
 SELECT
     *
 FROM
-    tradingdata01
+    tradingdata02
 WHERE
-    user_db_id = "google-oauth2|113725528803072296942/"
+    user_db_id = 'google-oauth2|113725528803072296942'
 LIMIT
-    10
+    10;
