@@ -14,7 +14,7 @@ import getUserDbId from "../../../../App/utils/getUserDbId.js";
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../../../Types/index.js";
-import { LayoutsOption } from "../Types/journal_types.js";
+import { ILayoutsOption } from "../Types/journal_types.js";
 
 //-- Data --//
 
