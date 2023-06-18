@@ -53,6 +53,7 @@ import {
   IConversation_Mongo,
   IMessageNode_Mongo,
 } from "./App/controllers/chatson/chatson_types.js";
+import { LayoutsOption } from "./App/controllers/Journal/Types/journal_types.js";
 import { AxiosError } from "axios";
 
 //-- Allow for a CommonJS "require" (inside ES Modules file) --//
@@ -174,6 +175,8 @@ const Mongo = {
       "message_nodes"
     ),
   //-- Journal --//
+  layouts_options:
+    MongoClient.db("journal").collection<LayoutsOption>("layouts_options"),
 };
 export { Mongo, MongoClient };
 

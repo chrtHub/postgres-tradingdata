@@ -1,6 +1,6 @@
 import { addDays, format, isWeekend } from "date-fns";
 
-import { DateAndProfitRow } from "../Types/journal_types.js";
+import { IDateAndProfitRow } from "../Types/journal_types.js";
 
 //-- Build array of trading dates from the past number of calendar days --//
 export default function getTradingDatesAndProfitsArray(
@@ -8,7 +8,7 @@ export default function getTradingDatesAndProfitsArray(
 ) {
   const now = new Date();
 
-  const dateArray: DateAndProfitRow[] = [];
+  const dateArray: IDateAndProfitRow[] = [];
 
   //-- 2023 to 2025 market holidays --//
   //-- https://www.nyse.com/markets/hours-calendars --//

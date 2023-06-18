@@ -2,6 +2,12 @@
 import express from "express";
 const router = express.Router();
 
+//-- Layouts Controllers --//
+import {
+  getLayoutsOptions,
+  postLayoutsOptions,
+} from "../controllers/Journal/Layouts/layoutsOptions.js";
+
 //-- Trades And Txns Controllers --//
 import { tradeUUIDsByDate } from "../controllers/Journal/TradesAndTxns/tradeUUIDsByDate.js";
 import { tradeSummaryByTradeUUID } from "../controllers/Journal/TradesAndTxns/tradeSummaryByTradeUUID.js";
@@ -14,6 +20,10 @@ import { plLast45CalendarDays } from "../controllers/Journal/Charts/pl45Calendar
 import { statsAllTime } from "../controllers/Journal/Stats/statsAllTime.js";
 
 //-- ********** Routes ********** --//
+
+//-- Layouts --//
+router.get("/layouts_options", getLayoutsOptions);
+router.post("/layouts_options", postLayoutsOptions);
 
 //-- Trades and Txns --//
 router.get("/trade_uuids_by_date/:date", tradeUUIDsByDate);
