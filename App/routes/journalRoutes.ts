@@ -6,6 +6,7 @@ const router = express.Router();
 import {
   getLayoutsOptions,
   postLayoutsOptions,
+  deleteLayoutsOptions,
 } from "../controllers/Journal/Layouts/layoutsOptions.js";
 
 //-- Trades And Txns Controllers --//
@@ -24,6 +25,7 @@ import { statsAllTime } from "../controllers/Journal/Stats/statsAllTime.js";
 //-- Layouts --//
 router.get("/layouts_options", getLayoutsOptions);
 router.post("/layouts_options", postLayoutsOptions);
+router.delete("/layouts_options", deleteLayoutsOptions);
 
 //-- Trades and Txns --//
 router.get("/trade_uuids_by_date/:date", tradeUUIDsByDate);

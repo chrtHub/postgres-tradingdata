@@ -84,3 +84,38 @@ export const postLayoutsOptions = async (
       .send("error message while trying to post layouts options");
   }
 };
+
+//-- ********************* postLayoutsOptions ********************* --//
+export const deleteLayoutsOptions = async (
+  req: IRequestWithAuth,
+  res: Response
+) => {
+  let user_db_id = getUserDbId(req);
+  let { foo } = req.params; // for route like 'some_route/:foo'
+  const body: { title: string } = req.body;
+  const { title } = body;
+
+  if (!foo) {
+    return res.status(400).send("Missing foo param");
+  }
+
+  try {
+    await retry(
+      async () => {
+        // TODO - delete one of user's layouts options from MongoDB
+        // return res.json(data)
+        return res.status(200).send(`deleteLayoutsOptions, ${user_db_id}`); // DEV
+      },
+      {
+        retries: 1,
+        minTimeout: 1000,
+        factor: 2,
+      }
+    );
+  } catch (err) {
+    console.log(err);
+    return res
+      .status(500)
+      .send("error message while trying to post layouts options");
+  }
+};
