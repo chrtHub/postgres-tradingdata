@@ -12,6 +12,7 @@ import retry from "async-retry";
 
 //-- Utility Functions --//
 import getUserDbId from "../../utils/getUserDbId.js";
+import { getUpToXTokens } from "../chatson/countTokens.js";
 
 //-- Types --//
 import { Response } from "express";
@@ -61,9 +62,10 @@ export const createTitle = async (req: IRequestWithAuth, res: Response) => {
         },
         {
           role: "user",
-          content: `User's prompt: ${
-            message_node[0].prompt.content
-          }. Assistant's first completion: ${
+          content: `User's prompt: ${getUpToXTokens(
+            message_node[0].prompt.content,
+            3000
+          )}. Assistant's first completion: ${
             message_node[0].completion?.content || ""
           }`,
         },
