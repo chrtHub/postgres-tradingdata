@@ -14,7 +14,7 @@ import getUserDbId from "../../../../App/utils/getUserDbId.js";
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../../../Types/index.js";
-import { StatsAllTime } from "../Types/journal_types.js";
+import { IStatsAllTime } from "../Types/journal_types.js";
 
 //-- Data --//
 
@@ -104,7 +104,7 @@ export const statsAllTime = async (req: IRequestWithAuth, res: Response) => {
           .where("user_db_id", user_db_id); //-- SECURITY --//
         const total_net_proceeds = result[0].overall_net_proceeds;
 
-        const x: StatsAllTime = {
+        const x: IStatsAllTime = {
           total_trades: total_trades,
           total_symbols: total_symbols,
           breakeven_trades: breakeven_trades,

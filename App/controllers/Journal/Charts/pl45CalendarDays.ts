@@ -14,7 +14,7 @@ import getUserDbId from "../../../utils/getUserDbId.js";
 //-- Types --//
 import { Response } from "express";
 import { IRequestWithAuth } from "../../../..//Types/index.js";
-import { DateAndProfitRow } from "../Types/journal_types.js";
+import { IDateAndProfitRow } from "../Types/journal_types.js";
 
 //-- Data --//
 
@@ -36,7 +36,7 @@ export const plLast45CalendarDays = async (
           .orderBy("trade_date");
 
         //-- Get array of actual Market Days from the past 45 calendar days --//
-        const datesAndProfits: DateAndProfitRow[] =
+        const datesAndProfits: IDateAndProfitRow[] =
           getTradingDatesAndProfitsArray(45);
 
         //-- Write data from Postgres into the datesAndProfits --//
