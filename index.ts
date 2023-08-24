@@ -318,6 +318,7 @@ const errorHandler = (
         "Authentication failed OR resource not found beep boop. Everything except '/' and '/spec.json' requires a Bearer token."
       );
   } else {
+    console.log(err);
     return res.status(500).send("unexpected error, beep boop");
   }
 };
