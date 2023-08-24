@@ -1,7 +1,8 @@
 {
   "editor.formatOnSave": true,
   // "workbench.colorTheme": "Solarized Light",
-  "workbench.colorTheme": "Solarized Dark",
+  "workbench.colorTheme": "Default Dark Modern",
+  // "workbench.colorTheme": "Solarized Dark",
   // "workbench.colorTheme": "Tomorrow Night Blue",
   // "workbench.colorTheme": "Monokai",
   "material-icon-theme.activeIconPack": "react"

@@ -183,15 +183,18 @@ export { Mongo, MongoClient };
 //-- *************** Auth0 Client *************** --//
 //-- NOTE - When in Dev, use a static test token from the Auth0 Management API page --> Test --> Express Server. This prevents having many refreshes which count against the 1,000 M2M access tokens monthly limit for the Auht0 "Essentials" subscription plan (link - https://manage.auth0.com/dashboard/us/chrt-prod/apis/63deb97098e5943185f2e769/test) --//
 let auth0ManagementClient: ManagementClient | undefined;
+//-- Start of "Commented-Out" Code --//
 // if (process.env.NODE_ENV === "development") {
 //   console.log("Configuring Auth0 Client using static token");
 //   auth0ManagementClient = new ManagementClient({
 //     domain: "chrt-prod.us.auth0.com",
 //     clientId: "BeRyX8MY9nAGpxvVIFD3FKqRV0PfVcSu", //-- Application name: "Express Server" --//
-//     token: "",
+//     token:
+//       "",
 //     telemetry: false,
 //   });
 // }
+//-- End of "Commented-Out" Code --//
 if (process.env.NODE_ENV === "production") {
   const auth0ClientSecret = await getAuth0ClientSecretFromSecretsManager();
   auth0ManagementClient = new ManagementClient({
