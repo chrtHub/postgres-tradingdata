@@ -2,6 +2,11 @@
 
 - This repo is for a server available at [alb.chrt.com](https://alb.chrt.com)
 
+### Dev Setup
+
+- Terminal 1 - `npm run ssh`
+- Terminal 2 - `npm run dev`
+
 ### Dev Links
 
 - [GitHub Repo](https://github.com/chrtHub/postgres-tradingdata) - _(current page)_
