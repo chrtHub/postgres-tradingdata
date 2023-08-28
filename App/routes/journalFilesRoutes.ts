@@ -13,7 +13,8 @@ const fileFilter = (
   file: Express.Multer.File,
   callback: Function
 ) => {
-  if (file.mimetype === "text/csv") {
+  //-- NOTE - unexpectedly got error for a csv file, thus added `application/vnd.ms-excel` below --//
+  if (file.mimetype === "text/csv" || "application/vnd.ms-excel") {
     callback(null, true);
   } else {
     const error = new Error(
