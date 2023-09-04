@@ -14,8 +14,9 @@ phases:
       - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
       # docker CLI tool login to ECR in order to push to ECR
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 897621100871.dkr.ecr.us-east-1.amazonaws.com
-      - aws codeartifact login --tool npm --domain-owner 897621100871 --domain chrt --repository chrt-npm-packages
-      - npm install
+      # Code Artifact
+      # - aws codeartifact login --tool npm --domain-owner 897621100871 --domain chrt --repository chrt-npm-packages
+      # - npm install # DEV - is this needed?? the dockerfile also runs `npm install`...
   build:
     commands:
       - docker build -t chrt-express-postgres-tradingdata .
