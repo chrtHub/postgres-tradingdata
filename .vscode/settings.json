@@ -5,7 +5,8 @@
   // "workbench.colorTheme": "Solarized Dark",
   // "workbench.colorTheme": "Tomorrow Night Blue",
   // "workbench.colorTheme": "Monokai",
-  "material-icon-theme.activeIconPack": "react"
+  "material-icon-theme.activeIconPack": "react",
+  "cSpell.words": ["DANGERZONE", "tradingdata"]
 }
 
 // "window.autoDetectColorScheme": true,
