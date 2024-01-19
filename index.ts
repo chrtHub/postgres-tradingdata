@@ -273,6 +273,17 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
 
+app.get("/debug", (req: Request, res: Response) => {
+  const x = 2
+  const y = 2
+  const z = x + y
+
+  res.send(`Hello World, ${z}`);
+});
+
+
+
+
 //-- Dev utility for logging token --//
 // app.use((req, res, next) => {
 //   let { header, payload, token } = req.auth;
@@ -328,10 +339,10 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   if (process.env.NODE_ENV === "development") {
     console.log(`express listening at http://localhost:${PORT}`);
-    console.log(`api spec at http://localhost:${PORT}/spec`);
+    // console.log(`api spec at http://localhost:${PORT}/spec`);
   }
   if (process.env.NODE_ENV === "production") {
     console.log(`express listening on port ${PORT}`);
-    console.log(`api spec at http://alb.chrt.com/spec`);
+    // console.log(`api spec at http://alb.chrt.com/spec`);
   }
 });
