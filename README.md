@@ -1,6 +1,6 @@
 # :file_folder: Express Server repo
 
-- This repo is for a server available at [alb.chrt.com](https://alb.chrt.com)
+- This repo is for a server that was available at [alb.chrt.com](https://alb.chrt.com)
 
 ### Dev Setup
 
